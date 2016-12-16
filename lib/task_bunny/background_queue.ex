@@ -22,6 +22,16 @@ defmodule TaskBunny.BackgroundQueue do
     publish_state
   end
 
+  def state(queue) do
+    {:ok, connection, channel} = open(queue)
+
+    {:ok, state} = AMQP.Queue.declare(channel, queue, durable: true)
+
+    AMQP.Connection.close(connection)
+
+    state
+  end
+
   def listen(queue, callback) do
     {:ok, connection, channel} = open(queue)
 
@@ -39,9 +49,11 @@ defmodule TaskBunny.BackgroundQueue do
     case callback.(Poison.decode!(payload)) do
       :ok -> 
         AMQP.Basic.ack(channel, meta.delivery_tag)
-        listen(callback, connection, channel)
       _ ->
-        AMQP.Connection.close(connection)
+        AMQP.Basic.nack(channel, meta.delivery_tag)
+        # AMQP.Connection.close(connection)
     end
+
+    listen(callback, connection, channel)
   end
 end

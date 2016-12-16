@@ -63,4 +63,50 @@ defmodule TaskBunny.BackgroundJobTest do
 
     assert exit_code == :normal
   end
+
+  describe "queue state" do
+    test "contains correct message count" do
+      BackgroundQueue.push @test_job_queue, "Do this"
+      BackgroundQueue.push @test_job_queue, "Do that"
+
+    
+      %{message_count: count} = BackgroundQueue.state @test_job_queue
+
+      assert count == 2
+    end
+
+    defp spawn_listener(queue, test_pid) do
+      spawn fn -> 
+        BackgroundQueue.listen(queue, fn payload ->
+          # IO.puts "Listener <#{queue}>: #{payload}"
+          send test_pid, :receive_payload
+          :ok
+        end)
+      end
+    end
+
+    test "contains correct amount of listeners when listeners > 0" do
+      BackgroundQueue.push @test_job_queue, "I am listening to queue"
+
+      listener_pid = spawn_listener(@test_job_queue, self())
+
+      Process.unlink(listener_pid)
+
+      receive do
+        :receive_payload -> :ok
+      end
+
+      %{consumer_count: count} = BackgroundQueue.state @test_job_queue
+
+      Process.exit(listener_pid, :normal)
+
+      assert count == 1
+    end
+
+    test "contains correct amount of listeners when no one is listening" do
+      %{consumer_count: count} = BackgroundQueue.state @test_job_queue
+
+      assert count == 0
+    end
+  end
 end
