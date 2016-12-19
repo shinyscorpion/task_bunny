@@ -7,7 +7,7 @@ defmodule TaskBunny.JobSupervisor do
 
   def init(jobs) do
     jobs
-    |> Enum.map( fn job -> worker(IngameApi.JobWorker, [job]) end)
+    |> Enum.map( fn job -> worker(TaskBunny.JobWorker, [job], id: "job_worker." <> job.queue_name) end)
     |> supervise(strategy: :one_for_one)
   end
 end
