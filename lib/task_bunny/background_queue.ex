@@ -32,28 +32,20 @@ defmodule TaskBunny.BackgroundQueue do
     state
   end
 
-  def listen(queue, callback) do
+  def consume(queue, concurrency \\ 1) do
     {:ok, connection, channel} = open(queue)
 
-    AMQP.Basic.qos(channel, prefetch_count: 1)
-    AMQP.Basic.consume(channel, queue)
+    :ok = AMQP.Basic.qos(channel, prefetch_count: concurrency)
+    {:ok, _consumer_tag} = AMQP.Basic.consume(channel, queue)
 
-    listen(callback, connection, channel)
+    channel
   end
-  
-  def listen(callback, connection, channel) do
-    {payload, meta} = receive do
-      {:basic_deliver, payload, meta} -> {payload, meta}
-    end
-    
-    case callback.(Poison.decode!(payload)) do
-      :ok -> 
-        AMQP.Basic.ack(channel, meta.delivery_tag)
-      _ ->
-        AMQP.Basic.nack(channel, meta.delivery_tag)
-        # AMQP.Connection.close(connection)
-    end
 
-    listen(callback, connection, channel)
+  def ack(channel, %{deliver_tag: tag}, succeeded) do
+    if succeeded do
+      AMQP.Basic.ack(channel, tag)
+    else
+      AMQP.Basic.nack(channel, tag)
+    end
   end
 end
