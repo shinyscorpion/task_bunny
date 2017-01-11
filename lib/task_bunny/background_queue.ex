@@ -36,9 +36,15 @@ defmodule TaskBunny.BackgroundQueue do
     {:ok, connection, channel} = open(queue)
 
     :ok = AMQP.Basic.qos(channel, prefetch_count: concurrency)
-    {:ok, _consumer_tag} = AMQP.Basic.consume(channel, queue)
+    {:ok, consumer_tag} = AMQP.Basic.consume(channel, queue)
 
-    channel
+    {connection, channel, consumer_tag}
+  end
+
+  def cancel_consume({connection, channel, consumer_tag}) do
+    AMQP.Basic.cancel(channel, consumer_tag)
+    AMQP.Channel.close(channel)
+    AMQP.Connection.close(connection)
   end
 
   def ack(channel, %{deliver_tag: tag}, succeeded) do
