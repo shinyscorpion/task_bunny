@@ -39,6 +39,12 @@ defmodule TaskBunny.Job do
 
         "#{namespace}.#{name}"
       end
+
+      @doc false
+      # Returns timeout. Default 2 minutes. Overwrite the method to change the timeout.
+      def timeout, do: 120_000
+
+      defoverridable [timeout: 0]
     end
   end
 end
