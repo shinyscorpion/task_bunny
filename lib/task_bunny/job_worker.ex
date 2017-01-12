@@ -9,26 +9,31 @@ defmodule TaskBunny.JobWorker do
   end
 
   def init({job, concurrency}) do
-    channel = BackgroundQueue.consume(job.queue_name, concurrency)
+    # IO.puts "init worker with #{inspect job} and #{inspect concurrency}"
+    {_, channel, _} = BackgroundQueue.consume(job.queue_name, concurrency)
 
     {:ok, {channel, job}}
   end
 
   def handle_info({:basic_deliver, payload, meta}, {channel, job}) do
-    spawn_job(job, payload, meta)
+    JobRunner.invoke(job, Poison.decode!(payload), meta)
 
     {:noreply, {channel, job}}
   end
 
-  def handle_info({:finish_job, result, meta}, {channel, job}) do
-    BackgroundQueue.ack(channel, meta, result==:ok)
+  def handle_info({:job_finished, result, meta}, {channel, job}) do
+    succeeded = case result do
+      :ok -> true
+      {:ok, _} -> true
+      _ -> false
+    end
+
+    BackgroundQueue.ack(channel, meta, succeeded)
+
+    # TODO: logging error here!
 
     {:noreply, {channel, job}}
   end
 
   def handle_info(_msg, state), do: {:noreply, state}
-
-  def spawn_job(job, payload, meta) do
-    # TODO
-  end
 end

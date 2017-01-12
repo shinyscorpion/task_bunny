@@ -82,4 +82,63 @@ defmodule TaskBunny.BackgroundJobTest do
       assert count == 0
     end
   end
+
+  describe "ack" do
+    def receive_message(ack, channel, consumer_tag) do
+      received = receive do
+        {:basic_deliver, _, meta} ->
+          # Shutdown consumer
+          AMQP.Basic.cancel(channel, consumer_tag)
+          case ack do
+            :ack -> BackgroundQueue.ack(channel, meta, true)
+            :nack -> BackgroundQueue.ack(channel, meta, false)
+            _ -> # Ignore
+          end
+          true
+        _ -> false
+      end
+      if !received, do: receive_message(ack, channel, consumer_tag)
+    end
+
+    test "success" do
+      {_, channel, consumer_tag} = BackgroundQueue.consume @test_job_queue
+
+      BackgroundQueue.push @test_job_queue, "Do this"
+      receive_message :ack, channel, consumer_tag
+
+      %{message_count: count} = BackgroundQueue.state @test_job_queue
+
+      assert count == 0
+    end
+
+    test "with failed job" do
+      {_, channel, consumer_tag} = BackgroundQueue.consume @test_job_queue
+
+      BackgroundQueue.push @test_job_queue, "Do this"
+
+      receive_message :nack, channel, consumer_tag
+
+      %{message_count: count} = BackgroundQueue.state @test_job_queue
+
+      # RabbitMQ will be enqueueing the job automatically
+      assert count == 1
+    end
+
+    test "without ack/nack" do
+      {connection, channel, consumer_tag} = BackgroundQueue.consume @test_job_queue
+
+      BackgroundQueue.push @test_job_queue, "Do this"
+
+      receive_message nil, channel, consumer_tag
+
+      # Close channel before sending ack/nack
+      AMQP.Channel.close(channel)
+      AMQP.Connection.close(connection)
+
+      %{message_count: count} = BackgroundQueue.state @test_job_queue
+
+      # RabbitMQ will be enqueueing the job automatically
+      assert count == 1
+    end
+  end
 end

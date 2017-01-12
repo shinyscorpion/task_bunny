@@ -32,6 +32,16 @@ defmodule TaskBunny.BackgroundQueue do
     state
   end
 
+  def purge(queue) do
+    {:ok, connection, channel} = open(queue)
+
+    AMQP.Queue.purge(channel, queue)
+
+    AMQP.Connection.close(connection)
+
+    :ok
+  end
+
   def consume(queue, concurrency \\ 1) do
     {:ok, connection, channel} = open(queue)
 
@@ -47,7 +57,7 @@ defmodule TaskBunny.BackgroundQueue do
     AMQP.Connection.close(connection)
   end
 
-  def ack(channel, %{deliver_tag: tag}, succeeded) do
+  def ack(channel, %{delivery_tag: tag}, succeeded) do
     if succeeded do
       AMQP.Basic.ack(channel, tag)
     else

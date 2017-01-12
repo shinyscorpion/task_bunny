@@ -1,4 +1,5 @@
 %{"amqp": {:hex, :amqp, "0.1.5", "f38e30abfce06fd2213f5e24744a2923f9d3c30f1687db19952be547457e0e7b", [:mix], [{:amqp_client, "3.5.6", [hex: :amqp_client, optional: false]}]},
   "amqp_client": {:git, "https://github.com/jbrisbin/amqp_client.git", "d50aec00b94f0766a048b4eceaf25ddfdeeb1d86", [ref: "d50aec00b94f0766a048b4eceaf25ddfdeeb1d86"]},
+  "meck": {:hex, :meck, "0.8.4", "59ca1cd971372aa223138efcf9b29475bde299e1953046a0c727184790ab1520", [:make, :rebar], []},
   "poison": {:hex, :poison, "2.2.0", "4763b69a8a77bd77d26f477d196428b741261a761257ff1cf92753a0d4d24a63", [:mix], []},
   "rabbit_common": {:git, "https://github.com/jbrisbin/rabbit_common.git", "80814606ae23cc820c74e443383e192cd69ec030", [ref: "80814606ae23cc820c74e443383e192cd69ec030"]}}
