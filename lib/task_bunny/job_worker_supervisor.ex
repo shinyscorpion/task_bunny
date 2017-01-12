@@ -1,4 +1,4 @@
-defmodule TaskBunny.JobSupervisor do
+defmodule TaskBunny.JobWorkerSupervisor do
   use Supervisor
 
   def start_link(jobs) do
