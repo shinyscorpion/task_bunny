@@ -12,7 +12,7 @@ defmodule TaskBunny.QueueTest do
     {:ok, channel} = AMQP.Channel.open(connection)
 
     AMQP.Queue.declare(channel, queue, durable: true)
-    
+
     {:ok, connection, channel}
   end
 
@@ -30,7 +30,7 @@ defmodule TaskBunny.QueueTest do
 
   setup do
     TaskBunny.QueueHelper.clean(["jobs.test"])
-    
+
     :ok
   end
 

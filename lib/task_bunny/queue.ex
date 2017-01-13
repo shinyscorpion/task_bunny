@@ -4,7 +4,7 @@ defmodule TaskBunny.Queue do
     {:ok, channel} = AMQP.Channel.open(connection)
 
     AMQP.Queue.declare(channel, queue, durable: true)
-    
+
     {:ok, connection, channel}
   end
 
