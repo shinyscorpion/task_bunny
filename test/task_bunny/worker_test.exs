@@ -1,6 +1,6 @@
-defmodule TaskBunny.JobWorkerTest do
+defmodule TaskBunny.WorkerTest do
   use ExUnit.Case
-  alias TaskBunny.{Queue, JobWorker}
+  alias TaskBunny.{Queue, Worker}
   alias TaskBunny.TestSupport.JobTestHelper
   alias TaskBunny.TestSupport.JobTestHelper.TestJob
 
@@ -19,7 +19,7 @@ defmodule TaskBunny.JobWorkerTest do
 
   describe "worker" do
     test "invokes a job with the payload" do
-      {:ok, worker} = JobWorker.start_link({TestJob, 1})
+      {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"hello" => "world"}
       Queue.push TestJob.queue_name, payload
 
@@ -31,7 +31,7 @@ defmodule TaskBunny.JobWorkerTest do
     end
 
     test "concurrency" do
-      {:ok, worker} = JobWorker.start_link({TestJob, 5})
+      {:ok, worker} = Worker.start_link({TestJob, 5})
       payload = %{"sleep" => 10_000}
 
       # Run 10 jobs and each would take 10 seconds to finish
@@ -66,7 +66,7 @@ defmodule TaskBunny.JobWorkerTest do
     end
 
     test "acknowledges with true in succeeded when job is succeeded" do
-      {:ok, worker} = JobWorker.start_link({TestJob, 1})
+      {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"hello" => "world"}
 
       Queue.push TestJob.queue_name, payload
@@ -83,7 +83,7 @@ defmodule TaskBunny.JobWorkerTest do
     end
 
     test "acknowledges with false in succeeded when job is failed" do
-      {:ok, worker} = JobWorker.start_link({TestJob, 1})
+      {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"fail" => true}
 
       Queue.push TestJob.queue_name, payload

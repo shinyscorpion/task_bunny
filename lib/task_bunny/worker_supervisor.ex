@@ -1,4 +1,4 @@
-defmodule TaskBunny.JobWorkerSupervisor do
+defmodule TaskBunny.WorkerSupervisor do
   use Supervisor
 
   def start_link(jobs) do
@@ -9,9 +9,9 @@ defmodule TaskBunny.JobWorkerSupervisor do
     jobs
     |> Enum.map(fn ({job, concurrency}) ->
          worker(
-          TaskBunny.JobWorker,
+          TaskBunny.Worker,
           [{job, concurrency}],
-          id: "job_worker.#{job.queue_name}"
+          id: "task_bunny.worker.#{job.queue_name}"
         )
        end)
     |> supervise(strategy: :one_for_one)

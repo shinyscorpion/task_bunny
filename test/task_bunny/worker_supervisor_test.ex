@@ -1,6 +1,6 @@
-defmodule TaskBunny.JobWorkerSupervisorTest do
+defmodule TaskBunny.WorkerSupervisorTest do
   use ExUnit.Case
-  alias TaskBunny.{Queue, JobWorkerSupervisor, JobWorker}
+  alias TaskBunny.{Queue, WorkerSupervisor, JobWorker}
   alias TaskBunny.TestSupport.JobTestHelper
   alias TaskBunny.TestSupport.JobTestHelper.TestJob
 
@@ -20,7 +20,7 @@ defmodule TaskBunny.JobWorkerSupervisorTest do
   test "starts job worker" do
     jobs = [{TestJob, 3}]
 
-    {:ok, pid} = JobWorkerSupervisor.start_link(jobs)
+    {:ok, pid} = WorkerSupervisor.start_link(jobs)
     %{active: active} = Supervisor.count_children(pid)
     assert active == 1
 

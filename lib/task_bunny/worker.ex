@@ -1,4 +1,4 @@
-defmodule TaskBunny.JobWorker do
+defmodule TaskBunny.Worker do
   alias TaskBunny.{Queue, JobRunner}
 
   use GenServer
