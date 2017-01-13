@@ -1,16 +1,16 @@
-defmodule TaskBunny.JobWorkerTest do
+defmodule TaskBunny.WorkerTest do
   use ExUnit.Case
-  alias TaskBunny.{BackgroundQueue, JobWorker}
+  alias TaskBunny.{Queue, Worker}
   alias TaskBunny.TestSupport.JobTestHelper
   alias TaskBunny.TestSupport.JobTestHelper.TestJob
 
   setup do
-    BackgroundQueue.purge TestJob.queue_name
+    Queue.purge TestJob.queue_name
 
     JobTestHelper.setup
 
     on_exit fn ->
-      BackgroundQueue.purge TestJob.queue_name
+      Queue.purge TestJob.queue_name
       JobTestHelper.teardown
     end
 
@@ -19,9 +19,9 @@ defmodule TaskBunny.JobWorkerTest do
 
   describe "worker" do
     test "invokes a job with the payload" do
-      {:ok, worker} = JobWorker.start_link({TestJob, 1})
+      {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"hello" => "world"}
-      BackgroundQueue.push TestJob.queue_name, payload
+      Queue.push TestJob.queue_name, payload
 
       JobTestHelper.wait_for_perform
 
@@ -31,12 +31,12 @@ defmodule TaskBunny.JobWorkerTest do
     end
 
     test "concurrency" do
-      {:ok, worker} = JobWorker.start_link({TestJob, 5})
+      {:ok, worker} = Worker.start_link({TestJob, 5})
       payload = %{"sleep" => 10_000}
 
       # Run 10 jobs and each would take 10 seconds to finish
       Enum.each 1..10, fn (_) ->
-        BackgroundQueue.push TestJob.queue_name, payload
+        Queue.push TestJob.queue_name, payload
       end
 
       # This waits for up to 1 second
@@ -51,7 +51,7 @@ defmodule TaskBunny.JobWorkerTest do
 
   describe "message ack" do
     setup do
-      :meck.new BackgroundQueue, [:passthrough]
+      :meck.new Queue, [:passthrough]
 
       on_exit fn ->
         :meck.unload
@@ -59,17 +59,17 @@ defmodule TaskBunny.JobWorkerTest do
     end
 
     def get_ack_args do
-      :meck.history(BackgroundQueue)
+      :meck.history(Queue)
       |> Enum.find_value(fn ({_pid, {_module, method, args}, _ret}) ->
         if method==:ack, do: args
       end)
     end
 
     test "acknowledges with true in succeeded when job is succeeded" do
-      {:ok, worker} = JobWorker.start_link({TestJob, 1})
+      {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"hello" => "world"}
 
-      BackgroundQueue.push TestJob.queue_name, payload
+      Queue.push TestJob.queue_name, payload
       JobTestHelper.wait_for_perform
       :timer.sleep(10) # wait for message handled
 
@@ -83,10 +83,10 @@ defmodule TaskBunny.JobWorkerTest do
     end
 
     test "acknowledges with false in succeeded when job is failed" do
-      {:ok, worker} = JobWorker.start_link({TestJob, 1})
+      {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"fail" => true}
 
-      BackgroundQueue.push TestJob.queue_name, payload
+      Queue.push TestJob.queue_name, payload
       JobTestHelper.wait_for_perform
       :timer.sleep(10) # wait for message handled
 

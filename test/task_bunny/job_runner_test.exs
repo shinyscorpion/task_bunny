@@ -52,14 +52,14 @@ defmodule TaskBunny.JobRunnerTest do
       meta = %{tag: "a"}
       JobRunner.invoke(SampleJobs.NormalJob, %{}, meta)
 
-      assert_receive {:job_finished, :ok, meta}
+      assert_receive {:job_finished, :ok, ^meta}
     end
 
     test "invokes perform method with the given payload" do
       payload = %{hello: "world"}
       JobRunner.invoke(SampleJobs.PayloadJob, payload, nil)
 
-      assert_receive {:job_finished, {:ok, payload}, nil}
+      assert_receive {:job_finished, {:ok, ^payload}, nil}
     end
 
     test "handles job error" do

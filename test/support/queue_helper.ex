@@ -1,4 +1,4 @@
-defmodule TaskBunny.QueueHelper do
+defmodule TaskBunny.TestSupport.QueueHelper do
   defmacro clean(queues) do
     quote do
       # Remove pre-existing queues before every test.

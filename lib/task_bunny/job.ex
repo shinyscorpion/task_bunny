@@ -19,7 +19,7 @@ defmodule TaskBunny.Job do
         |> String.replace_prefix("Elixir.", "")
         |> snake_case
       end
-      
+
       defp module_queue_name(_) do
         __MODULE__
         |> Atom.to_string

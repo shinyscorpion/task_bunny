@@ -5,18 +5,22 @@ defmodule TaskBunny.JobTest do
 
   defmodule JobWithAllDefault do
     use Job
+    def perform(_), do: nil
   end
 
   defmodule JobWithId do
     use Job, id: "frank"
+    def perform(_), do: nil
   end
 
   defmodule JobWithNamespace do
     use Job, namespace: "frank"
+    def perform(_), do: nil
   end
 
   defmodule JobWithFull do
     use Job, full: true
+    def perform(_), do: nil
   end
 
   describe "queue_name" do
