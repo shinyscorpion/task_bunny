@@ -73,16 +73,17 @@ defmodule TaskBunny.Host do
   """
   @spec clear :: boolean
   def clear do
+    if table_exists?, do: :ets.delete @table
+  end
+
+  defp table_exists? do
     case :ets.info(@table) do
       :undefined -> false
-      _ -> :ets.delete @table
+      _ -> true
     end
   end
 
   defp ensure_table do
-    case :ets.info(@table) do
-      :undefined -> :ets.new @table, [:named_table]
-      _ -> @table
-    end
+    if !table_exists?, do: :ets.new @table, [:named_table, :public]
   end
 end

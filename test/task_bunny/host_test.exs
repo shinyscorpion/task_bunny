@@ -2,10 +2,12 @@ defmodule TaskBunny.HostTest do
   use ExUnit.Case
 
   setup do
+    default_options = TaskBunny.Host.connect_options
     TaskBunny.Host.clear
 
     on_exit fn ->
       TaskBunny.Host.clear
+      TaskBunny.Host.register default_options
     end
   end
 
