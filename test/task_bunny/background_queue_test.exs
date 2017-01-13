@@ -46,22 +46,14 @@ defmodule TaskBunny.BackgroundJobTest do
      assert payload == "\"Do this\""
   end
 
-  test "dequeue a job" do
+  test "consumes a job" do
+    consumer_info = BackgroundQueue.consume @test_job_queue
+
+    assert_receive {:basic_consume_ok, _tag}
     BackgroundQueue.push @test_job_queue, "Do this"
-  
-    {exit_code, _} =  try do
-      task = Task.async(fn ->
-        BackgroundQueue.listen(@test_job_queue, fn "Do this" ->
-          exit(:normal)
-        end)
-      end)
+    assert_receive {:basic_deliver, "\"Do this\"", _meta}
 
-      Task.await task, 1000
-    catch
-      :exit, reason -> reason
-    end
-
-    assert exit_code == :normal
+    BackgroundQueue.cancel_consume consumer_info
   end
 
   describe "queue state" do
@@ -69,36 +61,17 @@ defmodule TaskBunny.BackgroundJobTest do
       BackgroundQueue.push @test_job_queue, "Do this"
       BackgroundQueue.push @test_job_queue, "Do that"
 
-    
       %{message_count: count} = BackgroundQueue.state @test_job_queue
 
       assert count == 2
     end
 
-    defp spawn_listener(queue, test_pid) do
-      spawn fn -> 
-        BackgroundQueue.listen(queue, fn payload ->
-          # IO.puts "Listener <#{queue}>: #{payload}"
-          send test_pid, :receive_payload
-          :ok
-        end)
-      end
-    end
-
     test "contains correct amount of listeners when listeners > 0" do
-      BackgroundQueue.push @test_job_queue, "I am listening to queue"
-
-      listener_pid = spawn_listener(@test_job_queue, self())
-
-      Process.unlink(listener_pid)
-
-      receive do
-        :receive_payload -> :ok
-      end
+      consumer_info = BackgroundQueue.consume @test_job_queue
 
       %{consumer_count: count} = BackgroundQueue.state @test_job_queue
 
-      Process.exit(listener_pid, :normal)
+      BackgroundQueue.cancel_consume consumer_info
 
       assert count == 1
     end
@@ -107,6 +80,65 @@ defmodule TaskBunny.BackgroundJobTest do
       %{consumer_count: count} = BackgroundQueue.state @test_job_queue
 
       assert count == 0
+    end
+  end
+
+  describe "ack" do
+    def receive_message(ack, channel, consumer_tag) do
+      received = receive do
+        {:basic_deliver, _, meta} ->
+          # Shutdown consumer
+          AMQP.Basic.cancel(channel, consumer_tag)
+          case ack do
+            :ack -> BackgroundQueue.ack(channel, meta, true)
+            :nack -> BackgroundQueue.ack(channel, meta, false)
+            _ -> # Ignore
+          end
+          true
+        _ -> false
+      end
+      if !received, do: receive_message(ack, channel, consumer_tag)
+    end
+
+    test "success" do
+      {_, channel, consumer_tag} = BackgroundQueue.consume @test_job_queue
+
+      BackgroundQueue.push @test_job_queue, "Do this"
+      receive_message :ack, channel, consumer_tag
+
+      %{message_count: count} = BackgroundQueue.state @test_job_queue
+
+      assert count == 0
+    end
+
+    test "with failed job" do
+      {_, channel, consumer_tag} = BackgroundQueue.consume @test_job_queue
+
+      BackgroundQueue.push @test_job_queue, "Do this"
+
+      receive_message :nack, channel, consumer_tag
+
+      %{message_count: count} = BackgroundQueue.state @test_job_queue
+
+      # RabbitMQ will be enqueueing the job automatically
+      assert count == 1
+    end
+
+    test "without ack/nack" do
+      {connection, channel, consumer_tag} = BackgroundQueue.consume @test_job_queue
+
+      BackgroundQueue.push @test_job_queue, "Do this"
+
+      receive_message nil, channel, consumer_tag
+
+      # Close channel before sending ack/nack
+      AMQP.Channel.close(channel)
+      AMQP.Connection.close(connection)
+
+      %{message_count: count} = BackgroundQueue.state @test_job_queue
+
+      # RabbitMQ will be enqueueing the job automatically
+      assert count == 1
     end
   end
 end

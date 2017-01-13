@@ -32,28 +32,36 @@ defmodule TaskBunny.BackgroundQueue do
     state
   end
 
-  def listen(queue, callback) do
+  def purge(queue) do
     {:ok, connection, channel} = open(queue)
 
-    AMQP.Basic.qos(channel, prefetch_count: 1)
-    AMQP.Basic.consume(channel, queue)
+    AMQP.Queue.purge(channel, queue)
 
-    listen(callback, connection, channel)
+    AMQP.Connection.close(connection)
+
+    :ok
   end
-  
-  def listen(callback, connection, channel) do
-    {payload, meta} = receive do
-      {:basic_deliver, payload, meta} -> {payload, meta}
-    end
-    
-    case callback.(Poison.decode!(payload)) do
-      :ok -> 
-        AMQP.Basic.ack(channel, meta.delivery_tag)
-      _ ->
-        AMQP.Basic.nack(channel, meta.delivery_tag)
-        # AMQP.Connection.close(connection)
-    end
 
-    listen(callback, connection, channel)
+  def consume(queue, concurrency \\ 1) do
+    {:ok, connection, channel} = open(queue)
+
+    :ok = AMQP.Basic.qos(channel, prefetch_count: concurrency)
+    {:ok, consumer_tag} = AMQP.Basic.consume(channel, queue)
+
+    {connection, channel, consumer_tag}
+  end
+
+  def cancel_consume({connection, channel, consumer_tag}) do
+    AMQP.Basic.cancel(channel, consumer_tag)
+    AMQP.Channel.close(channel)
+    AMQP.Connection.close(connection)
+  end
+
+  def ack(channel, %{delivery_tag: tag}, succeeded) do
+    if succeeded do
+      AMQP.Basic.ack(channel, tag)
+    else
+      AMQP.Basic.nack(channel, tag)
+    end
   end
 end
