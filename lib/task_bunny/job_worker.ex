@@ -1,5 +1,5 @@
 defmodule TaskBunny.JobWorker do
-  alias TaskBunny.{BackgroundQueue, JobRunner}
+  alias TaskBunny.{Queue, JobRunner}
 
   use GenServer
 
@@ -9,7 +9,7 @@ defmodule TaskBunny.JobWorker do
 
   def init({job, concurrency}) do
     # IO.puts "init worker with #{inspect job} and #{inspect concurrency}"
-    {_, channel, _} = BackgroundQueue.consume(job.queue_name, concurrency)
+    {_, channel, _} = Queue.consume(job.queue_name, concurrency)
 
     {:ok, {channel, job}}
   end
@@ -27,7 +27,7 @@ defmodule TaskBunny.JobWorker do
       _ -> false
     end
 
-    BackgroundQueue.ack(channel, meta, succeeded)
+    Queue.ack(channel, meta, succeeded)
 
     # TODO: logging error here!
 

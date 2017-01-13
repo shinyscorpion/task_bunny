@@ -1,9 +1,9 @@
-defmodule TaskBunny.BackgroundJobTest do
+defmodule TaskBunny.QueueTest do
   use ExUnit.Case, async: false
 
   import TaskBunny.QueueHelper
 
-  alias TaskBunny.BackgroundQueue
+  alias TaskBunny.Queue
 
   @test_job_queue "jobs.test"
 
@@ -35,11 +35,11 @@ defmodule TaskBunny.BackgroundJobTest do
   end
 
   test "queue a job" do
-    assert BackgroundQueue.push(@test_job_queue, "Do this") == :ok
+    assert Queue.push(@test_job_queue, "Do this") == :ok
   end
 
   test "queued job exists" do
-    BackgroundQueue.push(@test_job_queue, "Do this")
+    Queue.push(@test_job_queue, "Do this")
 
      {payload, _} = pop @test_job_queue
 
@@ -47,37 +47,37 @@ defmodule TaskBunny.BackgroundJobTest do
   end
 
   test "consumes a job" do
-    consumer_info = BackgroundQueue.consume @test_job_queue
+    consumer_info = Queue.consume @test_job_queue
 
     assert_receive {:basic_consume_ok, _tag}
-    BackgroundQueue.push @test_job_queue, "Do this"
+    Queue.push @test_job_queue, "Do this"
     assert_receive {:basic_deliver, "\"Do this\"", _meta}
 
-    BackgroundQueue.cancel_consume consumer_info
+    Queue.cancel_consume consumer_info
   end
 
   describe "queue state" do
     test "contains correct message count" do
-      BackgroundQueue.push @test_job_queue, "Do this"
-      BackgroundQueue.push @test_job_queue, "Do that"
+      Queue.push @test_job_queue, "Do this"
+      Queue.push @test_job_queue, "Do that"
 
-      %{message_count: count} = BackgroundQueue.state @test_job_queue
+      %{message_count: count} = Queue.state @test_job_queue
 
       assert count == 2
     end
 
     test "contains correct amount of listeners when listeners > 0" do
-      consumer_info = BackgroundQueue.consume @test_job_queue
+      consumer_info = Queue.consume @test_job_queue
 
-      %{consumer_count: count} = BackgroundQueue.state @test_job_queue
+      %{consumer_count: count} = Queue.state @test_job_queue
 
-      BackgroundQueue.cancel_consume consumer_info
+      Queue.cancel_consume consumer_info
 
       assert count == 1
     end
 
     test "contains correct amount of listeners when no one is listening" do
-      %{consumer_count: count} = BackgroundQueue.state @test_job_queue
+      %{consumer_count: count} = Queue.state @test_job_queue
 
       assert count == 0
     end
@@ -90,8 +90,8 @@ defmodule TaskBunny.BackgroundJobTest do
           # Shutdown consumer
           AMQP.Basic.cancel(channel, consumer_tag)
           case ack do
-            :ack -> BackgroundQueue.ack(channel, meta, true)
-            :nack -> BackgroundQueue.ack(channel, meta, false)
+            :ack -> Queue.ack(channel, meta, true)
+            :nack -> Queue.ack(channel, meta, false)
             _ -> # Ignore
           end
           true
@@ -101,33 +101,33 @@ defmodule TaskBunny.BackgroundJobTest do
     end
 
     test "success" do
-      {_, channel, consumer_tag} = BackgroundQueue.consume @test_job_queue
+      {_, channel, consumer_tag} = Queue.consume @test_job_queue
 
-      BackgroundQueue.push @test_job_queue, "Do this"
+      Queue.push @test_job_queue, "Do this"
       receive_message :ack, channel, consumer_tag
 
-      %{message_count: count} = BackgroundQueue.state @test_job_queue
+      %{message_count: count} = Queue.state @test_job_queue
 
       assert count == 0
     end
 
     test "with failed job" do
-      {_, channel, consumer_tag} = BackgroundQueue.consume @test_job_queue
+      {_, channel, consumer_tag} = Queue.consume @test_job_queue
 
-      BackgroundQueue.push @test_job_queue, "Do this"
+      Queue.push @test_job_queue, "Do this"
 
       receive_message :nack, channel, consumer_tag
 
-      %{message_count: count} = BackgroundQueue.state @test_job_queue
+      %{message_count: count} = Queue.state @test_job_queue
 
       # RabbitMQ will be enqueueing the job automatically
       assert count == 1
     end
 
     test "without ack/nack" do
-      {connection, channel, consumer_tag} = BackgroundQueue.consume @test_job_queue
+      {connection, channel, consumer_tag} = Queue.consume @test_job_queue
 
-      BackgroundQueue.push @test_job_queue, "Do this"
+      Queue.push @test_job_queue, "Do this"
 
       receive_message nil, channel, consumer_tag
 
@@ -135,7 +135,7 @@ defmodule TaskBunny.BackgroundJobTest do
       AMQP.Channel.close(channel)
       AMQP.Connection.close(connection)
 
-      %{message_count: count} = BackgroundQueue.state @test_job_queue
+      %{message_count: count} = Queue.state @test_job_queue
 
       # RabbitMQ will be enqueueing the job automatically
       assert count == 1

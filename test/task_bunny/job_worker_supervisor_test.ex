@@ -1,16 +1,16 @@
 defmodule TaskBunny.JobWorkerSupervisorTest do
   use ExUnit.Case
-  alias TaskBunny.{BackgroundQueue, JobWorkerSupervisor, JobWorker}
+  alias TaskBunny.{Queue, JobWorkerSupervisor, JobWorker}
   alias TaskBunny.TestSupport.JobTestHelper
   alias TaskBunny.TestSupport.JobTestHelper.TestJob
 
   setup do
-    BackgroundQueue.purge TestJob.queue_name
+    Queue.purge TestJob.queue_name
 
     JobTestHelper.setup
 
     on_exit fn ->
-      BackgroundQueue.purge TestJob.queue_name
+      Queue.purge TestJob.queue_name
       JobTestHelper.teardown
     end
 
@@ -25,7 +25,7 @@ defmodule TaskBunny.JobWorkerSupervisorTest do
     assert active == 1
 
     payload = %{"hello" => "world"}
-    BackgroundQueue.push TestJob.queue_name, payload
+    Queue.push TestJob.queue_name, payload
 
     JobTestHelper.wait_for_perform
     assert List.first(JobTestHelper.performed_payloads) == payload
