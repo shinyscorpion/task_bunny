@@ -10,6 +10,7 @@ defmodule TaskBunny.JobWorkerTest do
     JobTestHelper.setup
 
     on_exit fn ->
+      BackgroundQueue.purge TestJob.queue_name
       JobTestHelper.teardown
     end
 
