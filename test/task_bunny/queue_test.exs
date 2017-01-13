@@ -1,7 +1,6 @@
 defmodule TaskBunny.QueueTest do
   use ExUnit.Case, async: false
-
-  import TaskBunny.QueueHelper
+  import TaskBunny.TestSupport.QueueHelper
 
   alias TaskBunny.Queue
 
@@ -17,7 +16,7 @@ defmodule TaskBunny.QueueTest do
   end
 
   defp pop(queue) do
-    {:ok, connection, channel} = open(queue)
+    {:ok, _, channel} = open(queue)
 
     AMQP.Basic.qos(channel, prefetch_count: 1)
     AMQP.Basic.consume(channel, queue)
@@ -29,7 +28,7 @@ defmodule TaskBunny.QueueTest do
   end
 
   setup do
-    TaskBunny.QueueHelper.clean(["jobs.test"])
+    clean ["jobs.test"]
 
     :ok
   end
@@ -92,7 +91,7 @@ defmodule TaskBunny.QueueTest do
           case ack do
             :ack -> Queue.ack(channel, meta, true)
             :nack -> Queue.ack(channel, meta, false)
-            _ -> # Ignore
+            _ -> nil # Ignore
           end
           true
         _ -> false

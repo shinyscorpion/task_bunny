@@ -1,6 +1,6 @@
 defmodule TaskBunny.WorkerSupervisorTest do
   use ExUnit.Case
-  alias TaskBunny.{Queue, WorkerSupervisor, JobWorker}
+  alias TaskBunny.{Queue, WorkerSupervisor}
   alias TaskBunny.TestSupport.JobTestHelper
   alias TaskBunny.TestSupport.JobTestHelper.TestJob
 
