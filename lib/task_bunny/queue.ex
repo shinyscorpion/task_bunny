@@ -1,6 +1,6 @@
 defmodule TaskBunny.Queue do
-  defp open(queue) do
-    {:ok, connection} = AMQP.Connection.open
+  defp open(host, queue) do
+    {:ok, connection} = AMQP.Connection.open TaskBunny.Host.connect_options(host)
     {:ok, channel} = AMQP.Channel.open(connection)
 
     AMQP.Queue.declare(channel, queue, durable: true)
@@ -8,8 +8,10 @@ defmodule TaskBunny.Queue do
     {:ok, connection, channel}
   end
 
-  def push(job, payload) do
-    {:ok, connection, channel} = open(job)
+  defp open(queue), do: open(:default, queue)
+
+  def push(host, job, payload) do
+    {:ok, connection, channel} = open(host, job)
 
     queue = job
     exchange = ""
@@ -22,8 +24,10 @@ defmodule TaskBunny.Queue do
     publish_state
   end
 
-  def state(queue) do
-    {:ok, connection, channel} = open(queue)
+  def push(job, payload), do: push(:default, job, payload)
+
+  def state(host, queue) do
+    {:ok, connection, channel} = open(host, queue)
 
     {:ok, state} = AMQP.Queue.declare(channel, queue, durable: true)
 
@@ -32,8 +36,10 @@ defmodule TaskBunny.Queue do
     state
   end
 
-  def purge(queue) do
-    {:ok, connection, channel} = open(queue)
+  def state(queue), do: state(:default, queue)
+
+  def purge(host, queue) do
+    {:ok, connection, channel} = open(host, queue)
 
     AMQP.Queue.purge(channel, queue)
 
@@ -42,14 +48,18 @@ defmodule TaskBunny.Queue do
     :ok
   end
 
-  def consume(queue, concurrency \\ 1) do
-    {:ok, connection, channel} = open(queue)
+  def purge(queue), do: purge(:default, queue)
+
+  def consume(host, queue, concurrency) do
+    {:ok, connection, channel} = open(host, queue)
 
     :ok = AMQP.Basic.qos(channel, prefetch_count: concurrency)
     {:ok, consumer_tag} = AMQP.Basic.consume(channel, queue)
 
     {connection, channel, consumer_tag}
   end
+
+  def consume(queue, concurrency \\ 1), do: consume(:default, queue, concurrency)
 
   def cancel_consume({connection, channel, consumer_tag}) do
     AMQP.Basic.cancel(channel, consumer_tag)
