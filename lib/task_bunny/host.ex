@@ -36,9 +36,9 @@ defmodule TaskBunny.Host do
     :ok
 
   """
-  @spec register(host_alias :: atom, connect_options :: list | String.t) :: atom
+  @spec register(host_alias :: atom, connect_options :: keyword | String.t) :: atom
   def register(host_alias, host_options) do
-    ensure_table
+    ensure_table()
     :ets.insert @table, {host_alias, host_options}
 
     host_alias
@@ -56,13 +56,13 @@ defmodule TaskBunny.Host do
     :ok
 
   """
-  @spec register(connect_options :: list | String.t) :: atom
+  @spec register(connect_options :: keyword | String.t) :: atom
   def register(connect_options), do: register(:default, connect_options)
 
   @doc """
   Returns connect options for the host
   """
-  @spec register(host_alias :: atom) :: list | String.t
+  @spec connect_options(host_alias :: atom) :: keyword | String.t
   def connect_options(host_alias \\ :default) do
     [{_, options}] = :ets.lookup(@table, host_alias)
     options
@@ -71,11 +71,14 @@ defmodule TaskBunny.Host do
   @doc """
   Clear all host information
   """
-  @spec clear :: boolean
+  @spec clear :: atom
   def clear do
-    if table_exists?, do: :ets.delete @table
+    if table_exists?(), do: :ets.delete @table
+
+    :ok
   end
 
+  @spec table_exists? :: boolean
   defp table_exists? do
     case :ets.info(@table) do
       :undefined -> false
@@ -83,7 +86,10 @@ defmodule TaskBunny.Host do
     end
   end
 
+  @spec table_exists? :: atom
   defp ensure_table do
-    if !table_exists?, do: :ets.new @table, [:named_table, :public]
+    if !table_exists?(), do: :ets.new @table, [:named_table, :public]
+
+    :ok
   end
 end
