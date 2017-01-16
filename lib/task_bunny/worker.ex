@@ -3,8 +3,8 @@ defmodule TaskBunny.Worker do
 
   use GenServer
 
-  def start_link(args) do
-    GenServer.start_link(__MODULE__, args, name: __MODULE__)
+  def start_link({job, concurrency}) do
+    GenServer.start_link(__MODULE__, {job, concurrency}, name: job)
   end
 
   def init({job, concurrency}) do
