@@ -73,7 +73,7 @@ defmodule TaskBunny.WorkerTest do
       JobTestHelper.wait_for_perform
       :timer.sleep(10) # wait for message handled
 
-      ack_args = get_ack_args
+      ack_args = get_ack_args()
 
       assert ack_args
       [_, _, succeeded] = ack_args
@@ -90,7 +90,7 @@ defmodule TaskBunny.WorkerTest do
       JobTestHelper.wait_for_perform
       :timer.sleep(10) # wait for message handled
 
-      ack_args = get_ack_args
+      ack_args = get_ack_args()
 
       assert ack_args
       [_, _, succeeded] = ack_args
