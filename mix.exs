@@ -36,7 +36,8 @@ defmodule TaskBunny.Mixfile do
       {:amqp, "~> 0.1.5"},
       {:amqp_client, github: "jbrisbin/amqp_client", override: true, ref: "d50aec00b94f0766a048b4eceaf25ddfdeeb1d86"},
       {:rabbit_common, github: "jbrisbin/rabbit_common", override: true, ref: "80814606ae23cc820c74e443383e192cd69ec030"},
-      {:meck, "~> 0.8.2", only: :test}
+      {:meck, "~> 0.8.2", only: :test},
+      {:logger_file_backend, "~> 0.0.9", only: :test}
     ]
   end
 end

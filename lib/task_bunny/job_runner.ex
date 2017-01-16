@@ -17,6 +17,8 @@ defmodule TaskBunny.JobRunner do
   After sending the messsage, JobRunner shuts down all processes it started.
   """
 
+  require Logger
+
   def invoke(job, payload, meta) do
     caller = self
 
@@ -43,9 +45,11 @@ defmodule TaskBunny.JobRunner do
           result
         nil ->
           # Timeout
+          Logger.error "TaskBunny.Worker - job timeout: #{inspect job} with #{inspect payload}"
           {:error, "#{inspect job} timed out with #{job.timeout}"}
         error ->
           # Crashed
+          Logger.error "TaskBunny.Worker - job crashed: #{inspect job} with #{inspect payload}. Error: #{inspect error}"
           {:error, error}
       end
 
