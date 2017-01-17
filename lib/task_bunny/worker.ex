@@ -9,7 +9,7 @@ defmodule TaskBunny.Worker do
   end
 
   def init({job, concurrency}) do
-    Logger.info "TaskBunny.Worker initializing with #{inspect job} and #{inspect concurrency}: PID: #{inspect self()}"
+    Logger.info "TaskBunny.Worker initializing with #{inspect job} and maximum #{inspect concurrency} concurrent jobs: PID: #{inspect self()}"
     {_, channel, _} = Queue.consume(job.queue_name, concurrency)
 
     {:ok, {channel, job}}
