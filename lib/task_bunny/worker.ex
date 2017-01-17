@@ -2,13 +2,14 @@ defmodule TaskBunny.Worker do
   alias TaskBunny.{Queue, JobRunner}
 
   use GenServer
+  require Logger
 
   def start_link({job, concurrency}) do
     GenServer.start_link(__MODULE__, {job, concurrency}, name: job)
   end
 
   def init({job, concurrency}) do
-    # IO.puts "init worker with #{inspect job} and #{inspect concurrency}"
+    Logger.info "TaskBunny.Worker initializing with #{inspect job} and #{inspect concurrency}: PID: #{inspect self()}"
     {_, channel, _} = Queue.consume(job.queue_name, concurrency)
 
     {:ok, {channel, job}}
@@ -28,8 +29,6 @@ defmodule TaskBunny.Worker do
     end
 
     Queue.ack(channel, meta, succeeded)
-
-    # TODO: logging error here!
 
     {:noreply, {channel, job}}
   end
