@@ -1,5 +1,5 @@
 defmodule TaskBunny.Worker do
-  alias TaskBunny.{Queue, JobRunner}
+  alias TaskBunny.{ChannelBroker, JobRunner}
 
   use GenServer
   require Logger
@@ -10,27 +10,29 @@ defmodule TaskBunny.Worker do
 
   def init({job, concurrency}) do
     Logger.info "TaskBunny.Worker initializing with #{inspect job} and maximum #{inspect concurrency} concurrent jobs: PID: #{inspect self()}"
-    {_, channel, _} = Queue.consume(job.queue_name, concurrency)
+    result = ChannelBroker.subscribe(job.queue_name, concurrency)
 
-    {:ok, {channel, job}}
+    if result != :ok, do: raise "Can not connect to job queue."
+
+    {:ok, {job}}
   end
 
-  def handle_info({:basic_deliver, payload, meta}, {channel, job}) do
+  def handle_info({:basic_deliver, payload, meta}, {job}) do
     JobRunner.invoke(job, Poison.decode!(payload), meta)
 
-    {:noreply, {channel, job}}
+    {:noreply, {job}}
   end
 
-  def handle_info({:job_finished, result, meta}, {channel, job}) do
+  def handle_info({:job_finished, result, meta}, {job}) do
     succeeded = case result do
       :ok -> true
       {:ok, _} -> true
       _ -> false
     end
 
-    Queue.ack(channel, meta, succeeded)
+    ChannelBroker.ack(job.queue_name, meta, succeeded)
 
-    {:noreply, {channel, job}}
+    {:noreply, {job}}
   end
 
   def handle_info(_msg, state), do: {:noreply, state}

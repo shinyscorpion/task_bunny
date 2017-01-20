@@ -1,16 +1,19 @@
 defmodule TaskBunny.WorkerTest do
   use ExUnit.Case
-  alias TaskBunny.{Queue, Worker}
-  alias TaskBunny.TestSupport.JobTestHelper
-  alias TaskBunny.TestSupport.JobTestHelper.TestJob
+  alias TaskBunny.{SyncPublisher, ChannelBroker, Worker}
+  alias TaskBunny.TestSupport.{
+    JobTestHelper,
+    JobTestHelper.TestJob,
+    QueueHelper,
+  }
 
   setup do
-    Queue.purge TestJob.queue_name
+    QueueHelper.purge TestJob
 
     JobTestHelper.setup
 
     on_exit fn ->
-      Queue.purge TestJob.queue_name
+      QueueHelper.purge TestJob
       JobTestHelper.teardown
     end
 
@@ -21,7 +24,7 @@ defmodule TaskBunny.WorkerTest do
     test "invokes a job with the payload" do
       {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"hello" => "world"}
-      Queue.push TestJob.queue_name, payload
+      SyncPublisher.push TestJob.queue_name, payload
 
       JobTestHelper.wait_for_perform
 
@@ -36,7 +39,7 @@ defmodule TaskBunny.WorkerTest do
 
       # Run 10 jobs and each would take 10 seconds to finish
       Enum.each 1..10, fn (_) ->
-        Queue.push TestJob.queue_name, payload
+        SyncPublisher.push TestJob.queue_name, payload
       end
 
       # This waits for up to 1 second
@@ -51,7 +54,7 @@ defmodule TaskBunny.WorkerTest do
 
   describe "message ack" do
     setup do
-      :meck.new Queue, [:passthrough]
+      :meck.new ChannelBroker, [:passthrough]
 
       on_exit fn ->
         :meck.unload
@@ -59,7 +62,7 @@ defmodule TaskBunny.WorkerTest do
     end
 
     def get_ack_args do
-      :meck.history(Queue)
+      :meck.history(ChannelBroker)
       |> Enum.find_value(fn ({_pid, {_module, method, args}, _ret}) ->
         if method==:ack, do: args
       end)
@@ -69,7 +72,7 @@ defmodule TaskBunny.WorkerTest do
       {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"hello" => "world"}
 
-      Queue.push TestJob.queue_name, payload
+      SyncPublisher.push TestJob.queue_name, payload
       JobTestHelper.wait_for_perform
       :timer.sleep(10) # wait for message handled
 
@@ -86,7 +89,7 @@ defmodule TaskBunny.WorkerTest do
       {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"fail" => true}
 
-      Queue.push TestJob.queue_name, payload
+      SyncPublisher.push TestJob.queue_name, payload
       JobTestHelper.wait_for_perform
       :timer.sleep(10) # wait for message handled
 
