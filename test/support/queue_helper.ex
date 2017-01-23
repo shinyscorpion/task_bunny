@@ -42,6 +42,7 @@ defmodule TaskBunny.TestSupport.QueueHelper do
     {:ok, connection, channel, _} = open_channel(queue, host)
 
     AMQP.Queue.purge(channel, queue)
+    AMQP.Queue.delete(channel, queue)
 
     AMQP.Connection.close(connection)
 
@@ -50,14 +51,6 @@ defmodule TaskBunny.TestSupport.QueueHelper do
 
   def purge(job, host) do
     purge(job.queue_name, host)
-  end
-
-  def state(queue, host \\ :default) do
-    {:ok, connection, _channel, state} = open_channel(queue, host)
-
-    AMQP.Connection.close(connection)
-
-    state
   end
 
   def pop(queue) do
@@ -69,36 +62,6 @@ defmodule TaskBunny.TestSupport.QueueHelper do
     receive do
       {:basic_deliver, payload, meta} ->
         {payload, meta}
-    end
-  end
-
-  def receive_message(ack, queue) do
-    received =
-      receive do
-        {:basic_deliver, _, meta} ->
-          # Shutdown consumer
-          # AMQP.Basic.cancel(channel, consumer_tag)
-          case ack do
-            :ack -> TaskBunny.ChannelBroker.ack(queue, meta, true)
-            :nack -> TaskBunny.ChannelBroker.ack(queue, meta, false)
-            _ -> nil # Ignore
-          end
-          true
-        _ -> false
-      end
-
-    if !received, do: receive_message(ack, queue)
-  end
-
-  def receive_delivery(delivery, queue) do
-    received = receive do
-      {:basic_deliver, payload, _} -> delivery == payload
-      _ -> :wrong_message
-    end
-
-    case received do
-      :wrong_message -> receive_delivery(delivery, queue)
-      result -> result
     end
   end
 end
