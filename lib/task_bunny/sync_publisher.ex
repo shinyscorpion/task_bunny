@@ -66,16 +66,26 @@ defmodule TaskBunny.SyncPublisher do
 
   @spec do_push(item :: message, connection :: AMQP.Connection.t) :: :ok | :failed
   defp do_push(item = {queue, exchange, routing_key, payload, options}, connection) do
-    Logger.debug "TaskBunny.Publisher: try push:\r\n    (#{inspect(item)})"
-    case AMQP.Channel.open(connection) do
-      {:ok, channel} ->
-        AMQP.Queue.declare(channel, queue, durable: true)
-        AMQP.Basic.publish(channel, exchange, routing_key, payload, options)
-        AMQP.Channel.close(channel)
+    try do
+      Logger.debug "TaskBunny.Publisher: try push:\r\n    (#{inspect(item)})"
+      case AMQP.Channel.open(connection) do
+        {:ok, channel} ->
+          AMQP.Queue.declare(channel, queue, durable: true)
+          AMQP.Basic.publish(channel, exchange, routing_key, payload, options)
+          AMQP.Channel.close(channel)
 
-        :ok
-      _ ->
-        :failed
+          :ok
+        _ ->
+          :failed
+      end
+    catch
+      error_type, error_message ->
+        Logger.warn "Channel open #{inspect(error_type)} - #{inspect(error_message)}"
+
+        case TaskBunny.Connection.open() do
+          :no_connection -> :failed
+          connection -> do_push(item, connection)
+        end
     end
   end
 end
