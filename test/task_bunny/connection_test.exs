@@ -18,6 +18,16 @@ defmodule TaskBunny.ConnectionTest do
   end
 
   describe "subscribe" do
+    defp connect() do
+      case Connection.open() do
+        :no_connection ->
+          Process.sleep(100)
+          connect()
+        connection ->
+          connection
+      end
+    end
+
     test "sends a message on connect" do
       Connection.subscribe()
 
@@ -27,7 +37,8 @@ defmodule TaskBunny.ConnectionTest do
     test "sends a message on disconnect" do
       Connection.subscribe()
 
-      AMQP.Connection.close(Connection.open())
+
+      AMQP.Connection.close(connect())
 
       assert_receive {:connection, _}, 5000
       assert_receive :no_connection, 5000
@@ -36,7 +47,7 @@ defmodule TaskBunny.ConnectionTest do
     test "sends a message on reconnect" do
       Connection.subscribe()
 
-      AMQP.Connection.close(Connection.open())
+      AMQP.Connection.close(connect())
 
       assert_receive {:connection, _}, 5000
       assert_receive :no_connection, 5000
