@@ -4,7 +4,7 @@ defmodule TaskBunny do
   @moduledoc false
 
   use Application
-  alias TaskBunny.Experimental.{Config, Connection}
+  alias TaskBunny.{Config, Connection}
 
   def start(_type, _args) do
     import Supervisor.Spec, warn: false

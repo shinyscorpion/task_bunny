@@ -1,4 +1,4 @@
-defmodule TaskBunny.Experimental.Config do
+defmodule TaskBunny.Config do
   @moduledoc """
   Modules that help you access to TaskBunny config values
   """

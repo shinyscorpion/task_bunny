@@ -1,60 +1,77 @@
 defmodule TaskBunny.Worker do
   @moduledoc """
-  Todo: Add documentation.
+  A GenServer that listens a queue and consumes messages.
   """
 
   use GenServer
-
   require Logger
+  alias TaskBunny.{Connection, Consumer, JobRunner, Worker}
 
-  alias TaskBunny.{
-    Connection,
-    JobRunner,
-    Worker,
-  }
+  defstruct [:job, host: :default, concurrency: 1, channel: nil, consumer_tag: nil]
 
-  @typedoc ~S"""
-  The state of the Worker.
-
-  Contains:
-    - `job`, the job for the worker.
-    - `concurrency`, the amount of concurrent job runners for the worker.
-    - `channel`, the AMQP channel used by the worker.
-    - `connection`, the AMQP connection used by the worker.
+  @doc """
+  Starts a worker for a job with concurrency
   """
-  @type t ::%__MODULE__{job: atom, concurrency: integer, channel: AMQP.Channel.t | nil, connection: AMQP.Connection.t | nil, consumer_tag: String.t}
-
-  @doc ~S"""
-  The state of the Worker.
-
-  Contains:
-    - `job`, the job for the worker.
-    - `concurrency`, the amount of concurrent job runners for the worker.
-    - `channel`, the AMQP channel used by the worker.
-    - `connection`, the AMQP connection used by the worker.
-  """
-  @enforce_keys [:job]
-  defstruct [:job, concurrency: 1, channel: nil, connection: nil, consumer_tag: nil]
-
+  @spec start_link({job :: atom, concurrency :: integer}) :: GenServer.on_start
   def start_link({job, concurrency}) do
-    GenServer.start_link(__MODULE__, {job, concurrency}, name: job)
+    start_link(%Worker{job: job, concurrency: concurrency})
   end
 
-  def init({job, concurrency}) do
-    Logger.info "TaskBunny.Worker initializing with #{inspect job} and maximum #{inspect concurrency} concurrent jobs: PID: #{inspect self()}"
-    result = Connection.subscribe()
-
-    if result != :ok, do: raise "Can not subscribe to the connection."
-
-    {:ok, %Worker{job: job, concurrency: concurrency}}
+  @doc """
+  Starts a worker for a job with concurrency on the host
+  """
+  @spec start_link({host :: atom, job :: atom, concurrency :: integer}) :: GenServer.on_start
+  def start_link({host, job, concurrency}) do
+    start_link(%Worker{host: host, job: job, concurrency: concurrency})
   end
 
+  @doc false
+  def start_link(state = %Worker{}) do
+    GenServer.start_link(__MODULE__, state, name: pname(state.job))
+  end
+
+  @doc """
+  Initialises GenServer. Send a request for RabbitMQ connection
+  """
+  def init(state = %Worker{}) do
+    Logger.info "TaskBunny.Worker initializing with #{inspect state.job} and maximum #{inspect state.concurrency} concurrent jobs: PID: #{inspect self()}"
+
+    case Connection.monitor_connection(state.host, self()) do
+      :ok ->
+        {:ok, state}
+      _ ->
+        {:stop, :connection_not_ready}
+    end
+  end
+
+  @doc """
+  Called when connection to RabbitMQ was established.
+  Start consumer loop
+  """
+  def handle_info({:connected, connection}, state = %Worker{}) do
+    case Consumer.consume(connection, state.job.queue_name, state.concurrency) do
+      {channel, consumer_tag} ->
+        Logger.info "TaskBunny.Worker: start consuming #{inspect state.job}. PID: #{inspect self()}"
+        {:noreply, %{state | channel: channel, consumer_tag: consumer_tag}}
+      error ->
+        {:stop, {:failed_to_consume, error}, state}
+    end
+  end
+
+  @doc """
+  Called when message was delivered from RabbitMQ.
+  Invokes a job here.
+  """
   def handle_info({:basic_deliver, payload, meta}, state) do
     JobRunner.invoke(state.job, Poison.decode!(payload), meta)
 
     {:noreply, state}
   end
 
+  @doc """
+  Called when job was done.
+  Acknowledge to RabbitMQ.
+  """
   def handle_info({:job_finished, result, meta}, state) do
     succeeded = case result do
       :ok -> true
@@ -62,28 +79,16 @@ defmodule TaskBunny.Worker do
       _ -> false
     end
 
-    # FIXME
-    # Until we merge DLX, sending nack here would cause infinite loop.
-    # For now, we always send ack and remove the message without retry
-    TaskBunny.WorkerChannel.ack(state.channel, meta, true)
+    Consumer.ack(state.channel, meta, succeeded)
 
     {:noreply, state}
   end
 
-  # Seperate this in different module for use?
+  def handle_info(_msg, state), do: {:noreply, state}
 
-  def handle_info(:no_connection, state) do
-    Logger.info "TaskBunny.Worker.#{state.job}: Lost Connection"
-
-    {:noreply, %{state| connection: nil, channel: nil, consumer_tag: nil}}
-  end
-
-  def handle_info({:connection, connection}, state) do
-    Logger.info "TaskBunny.Worker.#{state.job}: New connection #{inspect(connection)}"
-
-    state = %{state | connection: connection}
-
-    {:noreply, TaskBunny.WorkerChannel.connect(state)}
+  @spec pname(job :: atom) :: atom
+  defp pname(job) do
+    String.to_atom("TaskBunny.Worker.#{job}")
   end
 
   def handle_info(_msg, state), do: {:noreply, state}

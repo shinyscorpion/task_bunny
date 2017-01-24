@@ -1,17 +1,13 @@
-defmodule TaskBunny.Experimental.Consumer do
+defmodule TaskBunny.Consumer do
   @moduledoc """
   Functions that work on RabbitMQ consumer
   """
   require Logger
 
-  @nodoc
-  @spec consume(nil, String.t, integer) :: nil
-  def consume(nil, queue, concurrency), do: nil
-
   @doc """
   Opens a channel for the given connection and start consuming messages for the queue.
   """
-  @spec consume(struct, String.t, integer) :: {struct, string} | nil
+  @spec consume(struct, String.t, integer) :: {struct, String.t} | nil
   def consume(connection, queue, concurrency) do
     case AMQP.Channel.open(connection) do
       {:ok, channel} ->
