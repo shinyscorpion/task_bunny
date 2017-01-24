@@ -19,14 +19,10 @@ defmodule TaskBunny do
     ]
 
     # Add Connection severs for each hosts
-    children = children ++ Enum.map(Config.hosts(), fn (host) ->
-      worker(Connection, [{host, nil}])
-    end)
+    children = Enum.map(Config.hosts(), fn (host) ->
+      worker(Connection, [host])
+    end) ++ children
 
-    # TODO:
-    # We might want to supervise workers here too.
-    # Each workers should belong to one host and stay under the same supervisor
-    # so that supervisor can restart worker when connection process was died.
     opts = [strategy: :one_for_all, name: TaskBunny.MainSupervisor]
     Supervisor.start_link(children, opts)
   end
