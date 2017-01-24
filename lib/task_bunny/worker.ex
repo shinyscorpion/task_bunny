@@ -62,7 +62,10 @@ defmodule TaskBunny.Worker do
       _ -> false
     end
 
-    TaskBunny.WorkerChannel.ack(state.channel, meta, succeeded)
+    # FIXME
+    # Until we merge DLX, sending nack here would cause infinite loop.
+    # For now, we always send ack and remove the message without retry
+    TaskBunny.WorkerChannel.ack(state.channel, meta, true)
 
     {:noreply, state}
   end

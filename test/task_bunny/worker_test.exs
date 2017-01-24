@@ -106,6 +106,7 @@ defmodule TaskBunny.WorkerTest do
       GenServer.stop worker
     end
 
+    @tag :pending
     test "acknowledges with false in succeeded when job is failed" do
       {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"fail" => true}
