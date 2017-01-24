@@ -1,5 +1,6 @@
 defmodule TaskBunny.WorkerSupervisor do
   use Supervisor
+  alias TaskBunny.Experimental.Worker
 
   def start_link(jobs) do
     Supervisor.start_link(__MODULE__, jobs)
@@ -9,8 +10,8 @@ defmodule TaskBunny.WorkerSupervisor do
     jobs
     |> Enum.map(fn ({job, concurrency}) ->
          worker(
-          TaskBunny.Worker,
-          [{job, concurrency}],
+          Worker,
+          [%Worker{job: job, concurrency: concurrency}],
           id: "task_bunny.worker.#{job.queue_name}"
         )
        end)

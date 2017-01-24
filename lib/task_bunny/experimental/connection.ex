@@ -3,50 +3,48 @@ defmodule TaskBunny.Experimental.Connection do
   require Logger
   alias TaskBunny.Experimental.Config
 
-  @reconnect_interval 1_000
-  @max_retry 10
+  @reconnect_interval 5_000
 
-  def start_link({host}) do
+  def start_link({host, connection}) do
     Logger.info "TaskBunny.Connection: start_link with #{host}"
-    GenServer.start_link(__MODULE__, {host}, name: pname(host))
+    GenServer.start_link(__MODULE__, {host, connection}, name: pname(host))
   end
 
   def get_connection(host) do
-    # TODO
+    case Process.whereis(pname(host)) do
+      nil -> nil
+      pid -> GenServer.call(pid, :get_connection)
+    end
   end
 
-  def init({host}) do
-    case connect(host) do
+  def init({host, connection}) do
+    if !connection, do: send(self(), :connect)
+    {:ok, {host, connection}}
+  end
+
+  def handle_call(:get_connection, _, {host, connection}) do
+    {:reply, connection, {host, connection}}
+  end
+
+  def handle_info(:connect, {host, _}) do
+    case do_connect(host) do
       {:ok, connection} ->
         Logger.info "TaskBunny.Connection: connected to #{host}"
         Process.monitor(connection.pid)
-        {:ok, {host, connection}}
+        {:noreply, {host, connection}}
 
       error ->
-        {:stop, {:connect_error, error}}
+        Logger.warn "TaskBunny.Connection: failed to connect to #{host} - Error: #{inspect error}. Retrying in #{@reconnect_interval} ms"
+        Process.send_after(self(), :connect, @reconnect_interval)
+
+        {:noreply, {host, nil}}
     end
   end
 
   def handle_info({:DOWN, _, :process, _pid, reason}, {host, connection}) do
     Logger.warn "TaskBunny.Connection: disconnected from #{host} - PID: #{inspect self()}"
 
-    {:stop, {:connection_lost, reason}, {host}}
-  end
-
-  defp connect(host, retried \\ 0) do
-    case do_connect(host) do
-      {:ok, connection} -> {:ok, connection}
-      error -> retry_connect(host, error, retried)
-    end
-  end
-
-  defp retry_connect(_host, last_error, retried) when retried > @max_retry, do: last_error
-
-  defp retry_connect(host, last_error, retried) do
-    Logger.warn "TaskBunny.Connection: failed to connect to #{host}. Error: #{inspect last_error}. Retrying in #{@reconnect_interval} ms"
-
-    :timer.sleep(@reconnect_interval)
-    connect(host, retried + 1)
+    {:stop, {:connection_lost, reason}, {host, nil}}
   end
 
   defp do_connect(host) do
