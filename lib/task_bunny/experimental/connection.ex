@@ -45,7 +45,7 @@ defmodule TaskBunny.Experimental.Connection do
       notify_connect(connection, [listener])
       {:noreply, {host, connection, listeners}}
     else
-      {:noreply, {host, connection, listeners ++ listener}}
+      {:noreply, {host, connection, [listener | listeners]}}
     end
   end
 
