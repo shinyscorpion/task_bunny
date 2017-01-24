@@ -27,7 +27,10 @@ defmodule TaskBunny.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger]]
+    [
+      extra_applications: [:logger],
+      mod: {TaskBunny, []}
+    ]
   end
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
