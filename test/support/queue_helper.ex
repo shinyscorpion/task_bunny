@@ -17,7 +17,7 @@ defmodule TaskBunny.TestSupport.QueueHelper do
 
   # Queue Helpers
   def open_channel(queue, host \\ :default) do
-    {:ok, connection} = AMQP.Connection.open TaskBunny.Host.connect_options(host)
+    {:ok, connection} = AMQP.Connection.open TaskBunny.Config.connect_options(host)
     {:ok, channel} = AMQP.Channel.open(connection)
 
     {:ok, state} = AMQP.Queue.declare(channel, queue, durable: true)

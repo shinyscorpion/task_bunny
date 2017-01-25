@@ -6,7 +6,8 @@ defmodule TaskBunny.SyncSyncPublisherTest do
     TestSupport.QueueHelper,
   }
 
-  @queue_name "test.SyncPublishertest"
+
+  @queue_name "test.SyncPublisherTest"
 
   setup do
     QueueHelper.purge @queue_name
@@ -39,7 +40,8 @@ defmodule TaskBunny.SyncSyncPublisherTest do
       {payload_do_this, _} = QueueHelper.pop @queue_name
 
       # Simulate connection closure
-      AMQP.Connection.close(TaskBunny.Connection.open(:default))
+      AMQP.Connection.close(TaskBunny.Connection.get_connection(:default))
+      :timer.sleep(10)
 
       # Now send the message again
       QueueHelper.push_when_server_back(@queue_name, "Also do this")

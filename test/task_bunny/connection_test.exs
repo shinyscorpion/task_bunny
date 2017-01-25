@@ -1,57 +1,72 @@
 defmodule TaskBunny.ConnectionTest do
   use ExUnit.Case, async: false
 
-  alias TaskBunny.Connection
+  alias TaskBunny.{Connection, Config}
 
-  describe "open" do
-    test "returns a connection" do
-      assert Connection.open()
+  setup do
+    on_exit fn ->
+      :meck.unload
     end
   end
 
-  describe "close" do
-    test "closes a connection" do
-      Connection.open()
+  describe "get_connection" do
+    test "returns AMQP connection" do
+      conn = Connection.get_connection(:default)
+      assert %AMQP.Connection{} = conn
+    end
 
-      assert Connection.close() == :ok
+    test "returns nil when connection is not available" do
+      conn = Connection.get_connection(:invalid_host)
+      assert conn == nil
     end
   end
 
-  describe "subscribe" do
-    defp connect() do
-      case Connection.open() do
-        :no_connection ->
-          Process.sleep(100)
-          connect()
-        connection ->
-          connection
-      end
+  describe "monitor_connection" do
+    test "sends connection to caller process" do
+      ret = Connection.monitor_connection(:default, self())
+      assert ret == :ok
+      assert_receive {:connected, %AMQP.Connection{}}
     end
 
-    test "sends a message on connect" do
-      Connection.subscribe()
-
-      assert_receive {:connection, _}, 5000
+    test "returns :error for invalid host" do
+      ret = Connection.monitor_connection(:invalid_host, self())
+      assert ret == :error
     end
 
-    test "sends a message on disconnect" do
-      Connection.subscribe()
+    test "when the server has not established a connection" do
+      :meck.new Config
+      :meck.expect Config, :connect_options, fn (:foo) -> "amqp://localhost:1111" end
 
+      {:ok, pid} = Connection.start_link(:foo)
+      ret = Connection.monitor_connection(:foo, self())
 
-      AMQP.Connection.close(connect())
+      # Trying to connect
+      assert ret == :ok
+      # Since the connect options is invalid, you won't get any message
+      refute_receive {:connected, _}, 10
 
-      assert_receive {:connection, _}, 5000
-      assert_receive :no_connection, 5000
+      # Now connection will be made and you will receive a message
+      :meck.expect Config, :connect_options, fn (:foo) -> [] end
+      send pid, :connect
+      assert_receive {:connected, %AMQP.Connection{}}
+
+      GenServer.stop(pid)
     end
+  end
 
-    test "sends a message on reconnect" do
-      Connection.subscribe()
+  describe "when connection is lost" do
+    test "exits the process" do # ...so that the supervisor can restart it
+      :meck.new Config
+      :meck.expect Config, :connect_options, fn (:foo) -> [] end
 
-      AMQP.Connection.close(connect())
+      {:ok, pid} = Connection.start_link(:foo)
+      Process.unlink(pid)
 
-      assert_receive {:connection, _}, 5000
-      assert_receive :no_connection, 5000
-      assert_receive {:connection, _}, 5000
+      conn = Connection.get_connection(:foo)
+      AMQP.Connection.close(conn)
+      :timer.sleep(10)
+
+      refute Process.alive?(pid)
     end
   end
 end

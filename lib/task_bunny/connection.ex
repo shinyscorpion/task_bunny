@@ -32,7 +32,7 @@ defmodule TaskBunny.Connection do
   Returns nil when the connection is not available.
   """
   @spec get_connection(host :: atom) :: struct | nil
-  def get_connection(host) do
+  def get_connection(host \\ :default) do
     case Process.whereis(pname(host)) do
       nil -> nil
       pid -> GenServer.call(pid, :get_connection)
@@ -47,7 +47,7 @@ defmodule TaskBunny.Connection do
   Returns :error when the server doesn't exist.
   """
   @spec monitor_connection(host :: atom, listener_pid :: pid) :: :ok | :error
-  def monitor_connection(host, listener_pid) do
+  def monitor_connection(host \\ :default, listener_pid) do
     case Process.whereis(pname(host)) do
       nil -> :error
       pid ->

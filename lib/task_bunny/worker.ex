@@ -90,6 +90,4 @@ defmodule TaskBunny.Worker do
   defp pname(job) do
     String.to_atom("TaskBunny.Worker.#{job}")
   end
-
-  def handle_info(_msg, state), do: {:noreply, state}
 end
