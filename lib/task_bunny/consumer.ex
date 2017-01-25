@@ -11,7 +11,6 @@ defmodule TaskBunny.Consumer do
   def consume(connection, queue, concurrency) do
     case AMQP.Channel.open(connection) do
       {:ok, channel} ->
-        AMQP.Queue.declare(channel, queue, durable: true)
         :ok = AMQP.Basic.qos(channel, prefetch_count: concurrency)
         {:ok, consumer_tag} = AMQP.Basic.consume(channel, queue)
 

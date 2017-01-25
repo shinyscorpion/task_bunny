@@ -11,6 +11,7 @@ defmodule TaskBunny.SyncSyncPublisherTest do
 
   setup do
     QueueHelper.purge @queue_name
+    QueueHelper.declare @queue_name
 
     on_exit fn ->
       QueueHelper.purge @queue_name

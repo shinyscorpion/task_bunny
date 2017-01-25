@@ -19,7 +19,6 @@ defmodule TaskBunny.TestSupport.QueueHelper do
   def open_channel(queue, host \\ :default) do
     {:ok, connection} = AMQP.Connection.open TaskBunny.Config.connect_options(host)
     {:ok, channel} = AMQP.Channel.open(connection)
-
     {:ok, state} = AMQP.Queue.declare(channel, queue, durable: true)
 
     {:ok, connection, channel, state}
@@ -34,6 +33,13 @@ defmodule TaskBunny.TestSupport.QueueHelper do
 
         push_when_server_back(queue, payload, host)
     end
+  end
+
+  def declare(queue, host \\ :default) do
+    {:ok, conn, channel, state} = open_channel(queue)
+    AMQP.Channel.close(channel)
+
+    :ok
   end
 
   def purge(queue, host \\ :default)

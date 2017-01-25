@@ -1,12 +1,12 @@
 defmodule TaskBunny.SupervisorTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
   import TaskBunny.TestSupport.QueueHelper
   alias TaskBunny.TestSupport.JobTestHelper
   alias TaskBunny.TestSupport.JobTestHelper.TestJob
   alias TaskBunny.{Config, Connection, SyncPublisher}
 
   setup do
-    clean [TestJob.queue_name]
+    clean(TestJob.all_queues())
 
     job = [
       job: TaskBunny.TestSupport.JobTestHelper.TestJob,
@@ -20,6 +20,7 @@ defmodule TaskBunny.SupervisorTest do
     :meck.expect Config, :jobs, fn -> [job] end
 
     JobTestHelper.setup
+    TestJob.declare_queue(Connection.get_connection())
 
     {:ok, pid} = TaskBunny.Supervisor.start_link()
 

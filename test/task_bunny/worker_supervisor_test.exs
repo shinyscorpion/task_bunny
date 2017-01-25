@@ -2,13 +2,14 @@ defmodule TaskBunny.WorkerSupervisorTest do
   use ExUnit.Case
 
   import TaskBunny.TestSupport.QueueHelper
-  alias TaskBunny.{SyncPublisher, WorkerSupervisor}
+  alias TaskBunny.{Connection, SyncPublisher, WorkerSupervisor}
   alias TaskBunny.TestSupport.JobTestHelper
   alias TaskBunny.TestSupport.JobTestHelper.TestJob
 
   setup do
-    clean [TestJob.queue_name]
+    clean(TestJob.all_queues())
     JobTestHelper.setup
+    TestJob.declare_queue(Connection.get_connection())
 
     on_exit fn ->
       JobTestHelper.teardown

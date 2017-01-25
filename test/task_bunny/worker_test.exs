@@ -1,23 +1,23 @@
 defmodule TaskBunny.WorkerTest do
   use ExUnit.Case, async: false
-
+  import TaskBunny.TestSupport.QueueHelper
   alias TaskBunny.{
     SyncPublisher,
-    Worker,
+    Connection,
+    Worker
   }
   alias TaskBunny.TestSupport.{
     JobTestHelper,
-    JobTestHelper.TestJob,
-    QueueHelper,
+    JobTestHelper.TestJob
   }
 
   setup do
-    QueueHelper.purge TestJob
+    clean(TestJob.all_queues())
 
     JobTestHelper.setup
+    TestJob.declare_queue(Connection.get_connection())
 
     on_exit fn ->
-      QueueHelper.purge TestJob
       JobTestHelper.teardown
     end
 
@@ -27,10 +27,11 @@ defmodule TaskBunny.WorkerTest do
   describe "worker" do
     test "invokes a job with the payload" do
       {:ok, worker} = Worker.start_link({TestJob, 1})
-      payload = %{"hello" => "world"}
-      SyncPublisher.push TestJob.queue_name, payload
+      payload = %{"hello" => "world1"}
 
-      JobTestHelper.wait_for_perform
+      SyncPublisher.push TestJob.queue_name(), payload
+
+      JobTestHelper.wait_for_perform()
 
       assert List.first(JobTestHelper.performed_payloads) == payload
 
@@ -43,7 +44,7 @@ defmodule TaskBunny.WorkerTest do
 
       # Run 10 jobs and each would take 10 seconds to finish
       Enum.each 1..10, fn (_) ->
-        SyncPublisher.push TestJob.queue_name, payload
+        SyncPublisher.push TestJob.queue_name(), payload
       end
 
       # This waits for up to 1 second
@@ -77,8 +78,7 @@ defmodule TaskBunny.WorkerTest do
       payload = %{"hello" => "world"}
 
       SyncPublisher.push TestJob.queue_name, payload
-      JobTestHelper.wait_for_perform
-      :timer.sleep(10) # wait for message handled
+      JobTestHelper.wait_for_perform()
 
       ack_args = get_ack_args()
 
@@ -89,14 +89,12 @@ defmodule TaskBunny.WorkerTest do
       GenServer.stop worker
     end
 
-    @tag :pending
     test "acknowledges with false in succeeded when job is failed" do
       {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"fail" => true}
 
       SyncPublisher.push TestJob.queue_name, payload
-      JobTestHelper.wait_for_perform
-      :timer.sleep(10) # wait for message handled
+      JobTestHelper.wait_for_perform()
 
       ack_args = get_ack_args()
 

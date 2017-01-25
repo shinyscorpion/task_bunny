@@ -20,7 +20,7 @@ defmodule TaskBunny.TestSupport.JobTestHelper do
   end
 
   def wait_for_perform(number \\ 1) do
-    Enum.find_value 1..100, fn (_) ->
+    performed = Enum.find_value 1..100, fn (_) ->
       history = :meck.history(Tracer)
       if length(history) >= number do
         true
@@ -29,6 +29,9 @@ defmodule TaskBunny.TestSupport.JobTestHelper do
         false
       end
     end || false
+
+    :timer.sleep(5) # wait for the last message handled
+    performed
   end
 
   def performed_payloads do

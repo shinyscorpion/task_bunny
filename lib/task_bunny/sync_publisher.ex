@@ -31,13 +31,12 @@ defmodule TaskBunny.SyncPublisher do
   # Api
 
   @doc ~S"""
-  Push a given payload for a given job to a given host.
+  Push a payload to a queue.
 
   The call is synchronous.
   """
-  @spec push(host :: atom, job :: atom, payload :: any) :: :ok | :failed
-  def push(host, job, payload) do
-    queue = job
+  @spec push(host :: atom, queue:: atom, payload :: any) :: :ok | :failed
+  def push(host, queue, payload) do
     exchange = ""
     routing_key = queue
     message = Poison.encode!(payload)
@@ -49,12 +48,12 @@ defmodule TaskBunny.SyncPublisher do
   end
 
   @doc ~S"""
-  Push a given payload for a given job to the default (`:default`) host.
+  Push a payload to a queue on :default host.
 
   For more info see: [`push/3`](file:///Users/ianlu/projects/square/elixir/onlinedev-task-bunny/doc/TaskBunny.SyncPublisher.html#push/3).
   """
-  @spec push(job :: atom, payload :: any) :: :ok | :failed
-  def push(job, payload), do: push(:default, job, payload)
+  @spec push(queue:: atom, payload :: any) :: :ok | :failed
+  def push(queue, payload), do: push(:default, queue, payload)
 
   # Helpers
 
@@ -65,22 +64,16 @@ defmodule TaskBunny.SyncPublisher do
   end
 
   @spec do_push(item :: message, connection :: AMQP.Connection.t) :: :ok | :failed
-  defp do_push(item = {queue, exchange, routing_key, payload, options}, connection) do
+  defp do_push(item = {_, exchange, routing_key, payload, options}, connection) do
     try do
       Logger.debug "TaskBunny.Publisher: try push:\r\n    (#{inspect(item)})"
-      case AMQP.Channel.open(connection) do
-        {:ok, channel} ->
-          AMQP.Queue.declare(channel, queue, durable: true)
-          AMQP.Basic.publish(channel, exchange, routing_key, payload, options)
-          AMQP.Channel.close(channel)
-
-          :ok
-        _ ->
-          :failed
-      end
-    catch
-      error_type, error_message ->
-        Logger.warn "TaskBunny.Publisher: failed to push. #{inspect(error_type)} - #{inspect(error_message)}"
+      {:ok, channel} = AMQP.Channel.open(connection)
+      Logger.debug "TaskBunny.Publisher: channel #{inspect channel}"
+      :ok = AMQP.Basic.publish(channel, exchange, routing_key, payload, options)
+      :ok = AMQP.Channel.close(channel)
+    rescue
+      e ->
+        Logger.warn "TaskBunny.Publisher: failed to push. #{inspect(e)}"
         :failed
     end
   end

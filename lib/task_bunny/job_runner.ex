@@ -24,7 +24,7 @@ defmodule TaskBunny.JobRunner do
 
     spawn fn ->
       result = run_job_with_task(job, payload)
-      send caller, {:job_finished, result, meta}
+      send caller, {:job_finished, result, payload, meta}
     end
   end
 
