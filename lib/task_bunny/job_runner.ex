@@ -19,46 +19,40 @@ defmodule TaskBunny.JobRunner do
 
   require Logger
 
+  @doc ~S"""
+  Invokes the given job with the given payload.
+
+  The job is run in a seperate process, which is killed after the job.timeout if the job has not finished yet.
+  A :error message is send to the :job_finished of the caller if the job times out.
+  """
+  @spec invoke(job :: atom, payload :: any, meta :: any) :: {:ok | :error, any}
   def invoke(job, payload, meta) do
     caller = self()
 
-    spawn fn ->
-      result = run_job_with_task(job, payload)
-      send caller, {:job_finished, result, payload, meta}
+    timer = Process.send_after caller, {:job_finished, {:error, "#{inspect job} timed out with #{job.timeout}"}, payload, meta}, job.timeout
+
+    pid = spawn fn ->
+      send caller, {:job_finished, run_job(job, payload), payload, meta}
+      Process.cancel_timer timer
     end
+
+    :timer.kill_after(job.timeout + 10, pid)
   end
 
-  defp run_job_with_task(job, payload) do
-    # Spawn task supervisor
-    {:ok, sv_pid} = Task.Supervisor.start_link()
-
-    # Spawn task without link. It prevents parent process to crash when task is crashed.
-    task = Task.Supervisor.async_nolink sv_pid, fn ->
+  # Performs a job with the given payload.
+  # Any raises or throws in the perform are caught and turned into an :error tuple.
+  @spec run_job(job :: atom, payload :: any) :: :ok | {:ok, any} | {:error, any}
+  defp run_job(job, payload) do
+    try do
       job.perform(payload)
+    rescue
+      error ->
+        Logger.error "TaskBunny.Worker - Runner rescued #{inspect error}"
+        {:error, error}
+    catch
+      _, reason ->
+        Logger.error "TaskBunny.Worker - Runner caught reason: #{inspect reason}"
+        {:error, reason}
     end
-
-    # Yield the task
-    ret_val =
-      case Task.yield(task, job.timeout) do
-        {:ok, result} ->
-          # Job performed and returned the result
-          result
-        nil ->
-          # Timeout
-          Logger.error "TaskBunny.Worker - job timeout: #{inspect job} with #{inspect payload}"
-          {:error, "#{inspect job} timed out with #{job.timeout}"}
-        error ->
-          # Crashed
-          Logger.error "TaskBunny.Worker - job crashed: #{inspect job} with #{inspect payload}. Error: #{inspect error}"
-          {:error, error}
-      end
-
-    # Kill task
-    if Process.alive?(task.pid), do: Task.shutdown(task, 1000)
-
-    # Kill task supervisor
-    if Process.alive?(sv_pid), do: Process.exit(sv_pid, :normal)
-
-    ret_val
   end
 end
