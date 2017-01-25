@@ -120,7 +120,7 @@ defmodule TaskBunny.Connection do
 
   @spec pname(host :: atom) :: atom
   defp pname(host) do
-    "task_bunny.connection." <> Atom.to_string(host)
+    "TaskBunny.Connection." <> Atom.to_string(host)
     |> String.to_atom
   end
 end

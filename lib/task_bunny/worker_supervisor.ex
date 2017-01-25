@@ -8,10 +8,10 @@ defmodule TaskBunny.WorkerSupervisor do
 
   def init(jobs) do
     jobs
-    |> Enum.map(fn ({job, concurrency}) ->
+    |> Enum.map(fn ({host, job, concurrency}) ->
          worker(
           Worker,
-          [{job, concurrency}],
+          [{host, job, concurrency}],
           id: "task_bunny.worker.#{job.queue_name}"
         )
        end)

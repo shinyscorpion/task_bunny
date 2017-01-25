@@ -20,6 +20,17 @@ defmodule TaskBunny.Config do
     hosts_config()[host][:connect_options] || raise "Can not find host '#{host}' in config"
   end
 
+  @doc """
+  Returns jobs in config.
+  """
+  @spec jobs :: [keyword]
+  def jobs do
+    case Application.fetch_env(:task_bunny, :jobs) do
+      {:ok, jobs} -> jobs
+      _ -> []
+    end
+  end
+
   @spec hosts_config() :: list
   defp hosts_config do
     case Application.fetch_env(:task_bunny, :hosts) do

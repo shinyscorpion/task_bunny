@@ -18,7 +18,7 @@ defmodule TaskBunny.WorkerSupervisorTest do
   end
 
   test "starts job worker" do
-    jobs = [{TestJob, 3}]
+    jobs = [{:default, TestJob, 3}]
 
     {:ok, pid} = WorkerSupervisor.start_link(jobs)
     %{active: active} = Supervisor.count_children(pid)

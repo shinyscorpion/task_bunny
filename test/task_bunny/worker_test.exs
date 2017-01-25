@@ -2,7 +2,6 @@ defmodule TaskBunny.WorkerTest do
   use ExUnit.Case, async: false
 
   alias TaskBunny.{
-    Connection,
     SyncPublisher,
     Worker,
   }
