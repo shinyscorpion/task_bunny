@@ -63,10 +63,24 @@ defmodule TaskBunny.Worker do
 
     case Connection.monitor_connection(state.host, self()) do
       :ok ->
+        Process.flag(:trap_exit, true)
+
         {:ok, state}
       _ ->
         {:stop, :connection_not_ready}
     end
+  end
+
+  @doc ~S"""
+  Closes the AMQP Channel, when the worker exit is captured.
+  """
+  @spec terminate(any, TaskBunny.Worker.t) :: :normal
+  def terminate(_reason, state) do
+    if state.channel do
+      AMQP.Channel.close(state.channel)
+    end
+
+    :normal
   end
 
   @doc """
