@@ -2,7 +2,6 @@ defmodule TaskBunny.WorkerTest do
   use ExUnit.Case, async: false
 
   alias TaskBunny.{
-    Connection,
     SyncPublisher,
     Worker,
   }
@@ -38,22 +37,6 @@ defmodule TaskBunny.WorkerTest do
       GenServer.stop worker
     end
 
-    test "invokes a job with the payload after disconnect" do
-      {:ok, worker} = Worker.start_link({TestJob, 1})
-
-      AMQP.Connection.close(Connection.open())
-
-      payload = %{"hello" => "world"}
-      QueueHelper.push_when_server_back TestJob.queue_name, payload
-
-      JobTestHelper.wait_for_perform
-
-      assert List.first(JobTestHelper.performed_payloads) == payload
-
-      GenServer.stop worker
-    end
-
-
     test "concurrency" do
       {:ok, worker} = Worker.start_link({TestJob, 5})
       payload = %{"sleep" => 10_000}
@@ -75,7 +58,7 @@ defmodule TaskBunny.WorkerTest do
 
   describe "message ack" do
     setup do
-      :meck.new TaskBunny.WorkerChannel, [:passthrough]
+      :meck.new TaskBunny.Consumer, [:passthrough]
 
       on_exit fn ->
         :meck.unload
@@ -83,7 +66,7 @@ defmodule TaskBunny.WorkerTest do
     end
 
     def get_ack_args do
-      :meck.history(TaskBunny.WorkerChannel)
+      :meck.history(TaskBunny.Consumer)
       |> Enum.find_value(fn ({_pid, {_module, method, args}, _ret}) ->
         if method==:ack, do: args
       end)

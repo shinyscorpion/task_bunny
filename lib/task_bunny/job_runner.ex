@@ -20,7 +20,7 @@ defmodule TaskBunny.JobRunner do
   require Logger
 
   def invoke(job, payload, meta) do
-    caller = self
+    caller = self()
 
     spawn fn ->
       result = run_job_with_task(job, payload)

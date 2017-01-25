@@ -22,3 +22,21 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
     end
     ```
 
+  3. Configure hosts and jobs
+
+    ```elixir
+    config :task_bunny, hosts: [
+      default: [
+        # See more options on
+        # https://github.com/pma/amqp/blob/master/lib/amqp/connection.ex
+        connect_options: "amqp://localhost"
+      ]
+    ]
+
+    config :task_bunny, jobs: [
+      [
+        job: YourApp.HelloJob, concurrency: 5
+      ]
+    ]
+    ```
+

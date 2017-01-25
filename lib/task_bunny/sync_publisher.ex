@@ -43,7 +43,7 @@ defmodule TaskBunny.SyncPublisher do
     message = Poison.encode!(payload)
     options = [persistent: true]
 
-    connection = TaskBunny.Connection.open(host)
+    connection = TaskBunny.Connection.get_connection(host)
 
     do_push({queue, exchange, routing_key, message, options}, connection)
   end
@@ -58,8 +58,8 @@ defmodule TaskBunny.SyncPublisher do
 
   # Helpers
 
-  @spec do_push(item :: message, :no_connection) :: :ok | :failed
-  defp do_push(item, :no_connection) do
+  @spec do_push(item :: message, nil) :: :ok | :failed
+  defp do_push(item, nil) do
     Logger.debug "TaskBunny.Publisher: try push but no connection:\r\n    (#{inspect(item)})"
     :failed
   end
@@ -80,12 +80,8 @@ defmodule TaskBunny.SyncPublisher do
       end
     catch
       error_type, error_message ->
-        Logger.warn "Channel open #{inspect(error_type)} - #{inspect(error_message)}"
-
-        case TaskBunny.Connection.open() do
-          :no_connection -> :failed
-          connection -> do_push(item, connection)
-        end
+        Logger.warn "TaskBunny.Publisher: failed to push. #{inspect(error_type)} - #{inspect(error_message)}"
+        :failed
     end
   end
 end
