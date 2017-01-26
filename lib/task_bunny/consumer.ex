@@ -11,7 +11,6 @@ defmodule TaskBunny.Consumer do
   def consume(connection, queue, concurrency) do
     case AMQP.Channel.open(connection) do
       {:ok, channel} ->
-        AMQP.Queue.declare(channel, queue, durable: true)
         :ok = AMQP.Basic.qos(channel, prefetch_count: concurrency)
         {:ok, consumer_tag} = AMQP.Basic.consume(channel, queue)
 
@@ -29,5 +28,8 @@ defmodule TaskBunny.Consumer do
   def ack(channel, meta, succeeded)
 
   def ack(channel, %{delivery_tag: tag}, true), do: AMQP.Basic.ack(channel, tag)
-  def ack(channel, %{delivery_tag: tag}, false), do: AMQP.Basic.nack(channel, tag)
+  def ack(channel, %{delivery_tag: tag}, false) do
+    # You have to set false to requeue option to be dead lettered
+    AMQP.Basic.nack(channel, tag, requeue: false)
+  end
 end

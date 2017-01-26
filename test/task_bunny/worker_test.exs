@@ -1,23 +1,18 @@
 defmodule TaskBunny.WorkerTest do
   use ExUnit.Case, async: false
-
-  alias TaskBunny.{
-    SyncPublisher,
-    Worker,
-  }
+  import TaskBunny.TestSupport.QueueHelper
+  alias TaskBunny.{SyncPublisher, Connection, Worker, Queue}
   alias TaskBunny.TestSupport.{
     JobTestHelper,
-    JobTestHelper.TestJob,
-    QueueHelper,
+    JobTestHelper.TestJob
   }
 
   setup do
-    QueueHelper.purge TestJob
+    clean(TestJob.all_queues())
 
     JobTestHelper.setup
 
     on_exit fn ->
-      QueueHelper.purge TestJob
       JobTestHelper.teardown
     end
 
@@ -27,10 +22,11 @@ defmodule TaskBunny.WorkerTest do
   describe "worker" do
     test "invokes a job with the payload" do
       {:ok, worker} = Worker.start_link({TestJob, 1})
-      payload = %{"hello" => "world"}
-      SyncPublisher.push TestJob.queue_name, payload
+      payload = %{"hello" => "world1"}
 
-      JobTestHelper.wait_for_perform
+      SyncPublisher.push TestJob, payload
+
+      JobTestHelper.wait_for_perform()
 
       assert List.first(JobTestHelper.performed_payloads) == payload
 
@@ -43,7 +39,7 @@ defmodule TaskBunny.WorkerTest do
 
       # Run 10 jobs and each would take 10 seconds to finish
       Enum.each 1..10, fn (_) ->
-        SyncPublisher.push TestJob.queue_name, payload
+        SyncPublisher.push TestJob, payload
       end
 
       # This waits for up to 1 second
@@ -76,9 +72,8 @@ defmodule TaskBunny.WorkerTest do
       {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"hello" => "world"}
 
-      SyncPublisher.push TestJob.queue_name, payload
-      JobTestHelper.wait_for_perform
-      :timer.sleep(10) # wait for message handled
+      SyncPublisher.push TestJob, payload
+      JobTestHelper.wait_for_perform()
 
       ack_args = get_ack_args()
 
@@ -89,20 +84,72 @@ defmodule TaskBunny.WorkerTest do
       GenServer.stop worker
     end
 
-    @tag :pending
     test "acknowledges with false in succeeded when job is failed" do
       {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"fail" => true}
 
-      SyncPublisher.push TestJob.queue_name, payload
-      JobTestHelper.wait_for_perform
-      :timer.sleep(10) # wait for message handled
+      SyncPublisher.push TestJob, payload
+      JobTestHelper.wait_for_perform()
 
       ack_args = get_ack_args()
 
       assert ack_args
       [_, _, succeeded] = ack_args
       refute succeeded
+
+      GenServer.stop worker
+    end
+  end
+
+  describe "retry" do
+    test "sends failed job to retry queue" do
+      {:ok, worker} = Worker.start_link({TestJob, 1})
+      [main, retry, failed] = TestJob.all_queues()
+      payload = %{"fail" => true}
+
+      SyncPublisher.push(TestJob, payload)
+      JobTestHelper.wait_for_perform()
+
+      conn = Connection.get_connection()
+      %{message_count: main_count} = Queue.state(conn, main)
+      %{message_count: retry_count} = Queue.state(conn, retry)
+      %{message_count: failed_count} = Queue.state(conn, failed)
+
+      assert main_count == 0
+      assert retry_count == 1
+      assert failed_count == 0
+
+      GenServer.stop(worker)
+    end
+
+    def reset_test_job_retry_interval(interval) do
+      :meck.new(JobTestHelper.RetryInterval, [:passthrough])
+      :meck.expect(JobTestHelper.RetryInterval, :interval, fn () -> interval end)
+      TestJob.declare_queue(Connection.get_connection())
+    end
+
+    test "retries max_retry times then sends to failed queue" do
+      # Sets up TestJob to retry shortly
+      reset_test_job_retry_interval(5)
+
+      {:ok, worker} = Worker.start_link({TestJob, 1})
+      [main, retry, failed] = TestJob.all_queues()
+      payload = %{"fail" => true}
+
+      SyncPublisher.push(TestJob, payload)
+      JobTestHelper.wait_for_perform(11)
+
+      # 1 normal + 10 retries = 11
+      assert JobTestHelper.performed_count == 11
+
+      conn = Connection.get_connection()
+      %{message_count: main_count} = Queue.state(conn, main)
+      %{message_count: retry_count} = Queue.state(conn, retry)
+      %{message_count: failed_count} = Queue.state(conn, failed)
+
+      assert main_count == 0
+      assert retry_count == 0
+      assert failed_count == 1
 
       GenServer.stop worker
     end

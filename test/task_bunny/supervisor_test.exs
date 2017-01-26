@@ -1,12 +1,12 @@
 defmodule TaskBunny.SupervisorTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
   import TaskBunny.TestSupport.QueueHelper
   alias TaskBunny.TestSupport.JobTestHelper
   alias TaskBunny.TestSupport.JobTestHelper.TestJob
   alias TaskBunny.{Config, Connection, SyncPublisher}
 
   setup do
-    clean [TestJob.queue_name]
+    clean(TestJob.all_queues())
 
     job = [
       job: TaskBunny.TestSupport.JobTestHelper.TestJob,
@@ -33,7 +33,7 @@ defmodule TaskBunny.SupervisorTest do
 
   test "starts connection and worker" do
     payload = %{"hello" => "world"}
-    SyncPublisher.push :foo, TestJob.queue_name, payload
+    SyncPublisher.push :foo, TestJob, payload
 
     JobTestHelper.wait_for_perform
     assert List.first(JobTestHelper.performed_payloads) == payload
@@ -60,7 +60,7 @@ defmodule TaskBunny.SupervisorTest do
 
       # Make sure worker handles the job
       payload = %{"hello" => "world"}
-      SyncPublisher.push :foo, TestJob.queue_name, payload
+      SyncPublisher.push :foo, TestJob, payload
 
       JobTestHelper.wait_for_perform
       assert List.first(JobTestHelper.performed_payloads) == payload

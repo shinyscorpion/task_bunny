@@ -102,6 +102,7 @@ defmodule TaskBunny.Connection do
 
   @spec notify_connect(connection :: struct, listeners :: list(pid)) :: :ok
   defp notify_connect(connection, listeners) do
+    Logger.debug "TaskBunny.Connection: notifying to #{inspect listeners}"
     Enum.each listeners, fn (pid) ->
       if Process.alive?(pid), do: send(pid, {:connected, connection})
     end

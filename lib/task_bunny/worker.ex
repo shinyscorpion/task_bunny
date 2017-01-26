@@ -5,7 +5,7 @@ defmodule TaskBunny.Worker do
 
   use GenServer
   require Logger
-  alias TaskBunny.{Connection, Consumer, JobRunner, Worker}
+  alias TaskBunny.{Connection, Consumer, JobRunner, Queue, SyncPublisher, Worker}
 
   defstruct [:job, host: :default, concurrency: 1, channel: nil, consumer_tag: nil]
 
@@ -49,7 +49,11 @@ defmodule TaskBunny.Worker do
   Start consumer loop
   """
   def handle_info({:connected, connection}, state = %Worker{}) do
-    case Consumer.consume(connection, state.job.queue_name, state.concurrency) do
+    # Declares queue
+    state.job.declare_queue(connection)
+
+    # Consumes the queue
+    case Consumer.consume(connection, state.job.queue_name(), state.concurrency) do
       {channel, consumer_tag} ->
         Logger.info "TaskBunny.Worker: start consuming #{inspect state.job}. PID: #{inspect self()}"
         {:noreply, %{state | channel: channel, consumer_tag: consumer_tag}}
@@ -63,6 +67,7 @@ defmodule TaskBunny.Worker do
   Invokes a job here.
   """
   def handle_info({:basic_deliver, payload, meta}, state) do
+    Logger.debug "TaskBunny.Worker: basic_deliver with #{inspect payload} on #{inspect self()}"
     JobRunner.invoke(state.job, Poison.decode!(payload), meta)
 
     {:noreply, state}
@@ -72,14 +77,30 @@ defmodule TaskBunny.Worker do
   Called when job was done.
   Acknowledge to RabbitMQ.
   """
-  def handle_info({:job_finished, result, meta}, state) do
+  def handle_info({:job_finished, result, payload, meta}, state) do
     succeeded = case result do
       :ok -> true
       {:ok, _} -> true
       _ -> false
     end
 
-    Consumer.ack(state.channel, meta, succeeded)
+    failed_count = TaskBunny.Message.failed_count(meta)
+
+    cond do
+      succeeded ->
+        Consumer.ack(state.channel, meta, true)
+      failed_count < state.job.max_retry() ->
+        Consumer.ack(state.channel, meta, false)
+      true ->
+        # Failed more than X times
+        Logger.error "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny stops retrying the job. JOB: #{inspect state.job}. PAYLOAD: #{inspect payload}. ERROR: #{inspect result}"
+
+        # Enqueue failed queue
+        failed_queue = Queue.failed_queue_name(state.job.queue_name())
+        SyncPublisher.push(state.host, failed_queue, payload)
+
+        Consumer.ack(state.channel, meta, true)
+    end
 
     {:noreply, state}
   end

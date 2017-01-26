@@ -3,6 +3,10 @@ defmodule TaskBunny.TestSupport.JobTestHelper do
     def performed(_), do: nil
   end
 
+  defmodule RetryInterval do
+    def interval, do: 60_000
+  end
+
   defmodule TestJob do
     use TaskBunny.Job
 
@@ -17,10 +21,12 @@ defmodule TaskBunny.TestSupport.JobTestHelper do
         :ok
       end
     end
+
+    def retry_interval, do: RetryInterval.interval()
   end
 
   def wait_for_perform(number \\ 1) do
-    Enum.find_value 1..100, fn (_) ->
+    performed = Enum.find_value 1..100, fn (_) ->
       history = :meck.history(Tracer)
       if length(history) >= number do
         true
@@ -29,6 +35,9 @@ defmodule TaskBunny.TestSupport.JobTestHelper do
         false
       end
     end || false
+
+    :timer.sleep(5) # wait for the last message handled
+    performed
   end
 
   def performed_payloads do

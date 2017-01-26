@@ -7,7 +7,7 @@ defmodule TaskBunny.WorkerSupervisorTest do
   alias TaskBunny.TestSupport.JobTestHelper.TestJob
 
   setup do
-    clean [TestJob.queue_name]
+    clean(TestJob.all_queues())
     JobTestHelper.setup
 
     on_exit fn ->
@@ -25,7 +25,7 @@ defmodule TaskBunny.WorkerSupervisorTest do
     assert active == 1
 
     payload = %{"hello" => "world"}
-    SyncPublisher.push TestJob.queue_name, payload
+    SyncPublisher.push TestJob, payload
 
     JobTestHelper.wait_for_perform
     assert List.first(JobTestHelper.performed_payloads) == payload

@@ -1,56 +1,31 @@
 defmodule TaskBunny.SyncSyncPublisherTest do
   use ExUnit.Case, async: false
+  import TaskBunny.TestSupport.QueueHelper
+  alias TaskBunny.{SyncPublisher,TestSupport.QueueHelper}
 
-  alias TaskBunny.{
-    SyncPublisher,
-    TestSupport.QueueHelper,
-  }
+  defmodule TestJob do
+    use TaskBunny.Job
 
-
-  @queue_name "test.SyncPublisherTest"
+    def perform(_payload), do: :ok
+  end
 
   setup do
-    QueueHelper.purge @queue_name
-
-    on_exit fn ->
-      QueueHelper.purge @queue_name
-    end
+    clean(TestJob.all_queues())
 
     :ok
   end
 
   describe "push" do
     test "queues a job" do
-      assert SyncPublisher.push(@queue_name, "Do this") == :ok
+      assert SyncPublisher.push(TestJob, "Do this") == :ok
     end
 
     test "queued job exists" do
-      SyncPublisher.push(@queue_name, "Do this")
+      SyncPublisher.push(TestJob, "Do this")
 
-      {payload, _} = QueueHelper.pop @queue_name
+      {payload, _} = QueueHelper.pop(TestJob.queue_name())
 
       assert payload == "\"Do this\""
-    end
-  end
-
-  describe "SyncPublisher connection" do
-    test "reconnects" do
-      SyncPublisher.push(@queue_name, "Do this")
-
-      {payload_do_this, _} = QueueHelper.pop @queue_name
-
-      # Simulate connection closure
-      AMQP.Connection.close(TaskBunny.Connection.get_connection(:default))
-      :timer.sleep(10)
-
-      # Now send the message again
-      QueueHelper.push_when_server_back(@queue_name, "Also do this")
-
-      {payload_also_do_this, _} = QueueHelper.pop @queue_name
-
-      # Check to see if both payloads match (before and after the connection going own.)
-      assert payload_do_this == "\"Do this\""
-      assert payload_also_do_this == "\"Also do this\""
     end
   end
 end
