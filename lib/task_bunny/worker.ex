@@ -106,10 +106,17 @@ defmodule TaskBunny.Worker do
   Invokes a job here.
   """
   def handle_info({:basic_deliver, payload, meta}, state) do
-    Logger.debug "TaskBunny.Worker:(#{state.job}) basic_deliver with #{inspect payload} on #{inspect self()}"
-    JobRunner.invoke(state.job, Poison.decode!(payload), meta)
+    case Poison.decode(payload) do
+      {:ok, parsed_payload} ->
+        Logger.debug "TaskBunny.Worker:(#{state.job}) basic_deliver with #{inspect payload} on #{inspect self()}"
+        JobRunner.invoke(state.job, parsed_payload, meta)
 
-    {:noreply, %{state | runners: state.runners + 1}}
+        {:noreply, %{state | runners: state.runners + 1}}
+      error ->
+        Logger.error "TaskBunny.Worker:(#{state.job}) basic_deliver with invalid (#{inspect error}) payload: (#{inspect payload} on #{inspect self()}"
+
+        reject_payload(%{state | runners: state.runners + 1}, payload, meta)
+    end
   end
 
   @doc """
@@ -140,16 +147,21 @@ defmodule TaskBunny.Worker do
         Logger.error "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny stops retrying the job. JOB: #{inspect state.job}. PAYLOAD: #{inspect payload}. ERROR: #{inspect result}"
 
         # Enqueue failed queue
-        failed_queue = Queue.failed_queue_name(state.job.queue_name())
-        SyncPublisher.push(state.host, failed_queue, payload)
-
-        Consumer.ack(state.channel, meta, true)
-
-        {:noreply, update_job_stats(state, :rejected)}
+        reject_payload(state, payload, meta)
     end
   end
 
   def handle_info(_msg, state), do: {:noreply, state}
+
+  @spec reject_payload(state :: TaskBunny.Worker.t, payload :: any, meta :: any) :: {:noreply, TaskBunny.Worker.t}
+  defp reject_payload(state, payload, meta) do
+    failed_queue = Queue.failed_queue_name(state.job.queue_name())
+    SyncPublisher.push(state.host, failed_queue, payload)
+
+    Consumer.ack(state.channel, meta, true)
+
+    {:noreply, update_job_stats(state, :rejected)}
+  end
 
   @spec pname(job :: atom) :: atom
   defp pname(job) do
@@ -175,6 +187,7 @@ defmodule TaskBunny.Worker do
     {:reply, status, state}
   end
 
+  @spec update_job_stats(state :: TaskBunny.Worker.t, success :: :succeeded | :failed | :rejected) :: TaskBunny.Worker.t
   defp update_job_stats(state, success) do
     stats =
       case success do
