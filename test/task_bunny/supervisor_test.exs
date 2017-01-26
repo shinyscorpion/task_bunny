@@ -14,7 +14,7 @@ defmodule TaskBunny.SupervisorTest do
       host: :foo
     ]
 
-    :meck.new Config
+    :meck.new Config, [:passthrough]
     :meck.expect Config, :hosts, fn -> [:foo] end
     :meck.expect Config, :connect_options, fn (:foo) -> "amqp://localhost" end
     :meck.expect Config, :jobs, fn -> [job] end

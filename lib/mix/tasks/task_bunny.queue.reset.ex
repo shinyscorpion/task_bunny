@@ -14,7 +14,10 @@ defmodule Mix.Tasks.TaskBunny.Queue.Reset do
 
   @doc false
   def run(_args) do
-    connections = Enum.map Config.hosts(), fn (host) ->
+    Config.disable_auto_start()
+    Mix.Task.run "app.start"
+
+    _connections = Enum.map Config.hosts(), fn (host) ->
       Connection.start_link(host)
     end
 
