@@ -20,7 +20,6 @@ defmodule TaskBunny.SupervisorTest do
     :meck.expect Config, :jobs, fn -> [job] end
 
     JobTestHelper.setup
-    TestJob.declare_queue(Connection.get_connection())
 
     {:ok, pid} = TaskBunny.Supervisor.start_link()
 
@@ -34,7 +33,7 @@ defmodule TaskBunny.SupervisorTest do
 
   test "starts connection and worker" do
     payload = %{"hello" => "world"}
-    SyncPublisher.push :foo, TestJob.queue_name, payload
+    SyncPublisher.push :foo, TestJob, payload
 
     JobTestHelper.wait_for_perform
     assert List.first(JobTestHelper.performed_payloads) == payload
@@ -61,7 +60,7 @@ defmodule TaskBunny.SupervisorTest do
 
       # Make sure worker handles the job
       payload = %{"hello" => "world"}
-      SyncPublisher.push :foo, TestJob.queue_name, payload
+      SyncPublisher.push :foo, TestJob, payload
 
       JobTestHelper.wait_for_perform
       assert List.first(JobTestHelper.performed_payloads) == payload

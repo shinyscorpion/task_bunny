@@ -31,11 +31,30 @@ defmodule TaskBunny.SyncPublisher do
   # Api
 
   @doc ~S"""
-  Push a payload to a queue.
+  Push a payload to a queue of job.
 
   The call is synchronous.
   """
-  @spec push(host :: atom, queue:: atom, payload :: any) :: :ok | :failed
+  @spec push(host :: atom, job :: atom, payload :: any) :: :ok | :failed
+  def push(host, job, payload) when is_atom(job) do
+    queue = job.queue_name()
+    exchange = ""
+    routing_key = queue
+    message = Poison.encode!(payload)
+    options = [persistent: true]
+
+    connection = TaskBunny.Connection.get_connection(host)
+    job.declare_queue(connection)
+
+    do_push({exchange, routing_key, message, options}, connection)
+  end
+
+  @doc ~S"""
+  Push a payload to the queue.
+
+  This function doesn't declare the queue and supposes the queue already exists.
+  """
+  @spec push(host :: atom, queue :: String.t, payload :: any) :: :ok | :failed
   def push(host, queue, payload) do
     exchange = ""
     routing_key = queue
@@ -44,7 +63,7 @@ defmodule TaskBunny.SyncPublisher do
 
     connection = TaskBunny.Connection.get_connection(host)
 
-    do_push({queue, exchange, routing_key, message, options}, connection)
+    do_push({exchange, routing_key, message, options}, connection)
   end
 
   @doc ~S"""
@@ -52,8 +71,8 @@ defmodule TaskBunny.SyncPublisher do
 
   For more info see: [`push/3`](file:///Users/ianlu/projects/square/elixir/onlinedev-task-bunny/doc/TaskBunny.SyncPublisher.html#push/3).
   """
-  @spec push(queue:: atom, payload :: any) :: :ok | :failed
-  def push(queue, payload), do: push(:default, queue, payload)
+  @spec push(job :: atom, payload :: any) :: :ok | :failed
+  def push(job, payload), do: push(:default, job, payload)
 
   # Helpers
 
@@ -64,7 +83,7 @@ defmodule TaskBunny.SyncPublisher do
   end
 
   @spec do_push(item :: message, connection :: AMQP.Connection.t) :: :ok | :failed
-  defp do_push(item = {_, exchange, routing_key, payload, options}, connection) do
+  defp do_push(item = {exchange, routing_key, payload, options}, connection) do
     try do
       Logger.debug "TaskBunny.Publisher: try push:\r\n    (#{inspect(item)})"
       {:ok, channel} = AMQP.Channel.open(connection)

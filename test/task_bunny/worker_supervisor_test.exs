@@ -2,14 +2,13 @@ defmodule TaskBunny.WorkerSupervisorTest do
   use ExUnit.Case
 
   import TaskBunny.TestSupport.QueueHelper
-  alias TaskBunny.{Connection, SyncPublisher, WorkerSupervisor}
+  alias TaskBunny.{SyncPublisher, WorkerSupervisor}
   alias TaskBunny.TestSupport.JobTestHelper
   alias TaskBunny.TestSupport.JobTestHelper.TestJob
 
   setup do
     clean(TestJob.all_queues())
     JobTestHelper.setup
-    TestJob.declare_queue(Connection.get_connection())
 
     on_exit fn ->
       JobTestHelper.teardown
@@ -26,7 +25,7 @@ defmodule TaskBunny.WorkerSupervisorTest do
     assert active == 1
 
     payload = %{"hello" => "world"}
-    SyncPublisher.push TestJob.queue_name, payload
+    SyncPublisher.push TestJob, payload
 
     JobTestHelper.wait_for_perform
     assert List.first(JobTestHelper.performed_payloads) == payload

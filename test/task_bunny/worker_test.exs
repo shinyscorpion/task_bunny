@@ -11,7 +11,6 @@ defmodule TaskBunny.WorkerTest do
     clean(TestJob.all_queues())
 
     JobTestHelper.setup
-    TestJob.declare_queue(Connection.get_connection())
 
     on_exit fn ->
       JobTestHelper.teardown
@@ -25,7 +24,7 @@ defmodule TaskBunny.WorkerTest do
       {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"hello" => "world1"}
 
-      SyncPublisher.push TestJob.queue_name(), payload
+      SyncPublisher.push TestJob, payload
 
       JobTestHelper.wait_for_perform()
 
@@ -40,7 +39,7 @@ defmodule TaskBunny.WorkerTest do
 
       # Run 10 jobs and each would take 10 seconds to finish
       Enum.each 1..10, fn (_) ->
-        SyncPublisher.push TestJob.queue_name(), payload
+        SyncPublisher.push TestJob, payload
       end
 
       # This waits for up to 1 second
@@ -73,7 +72,7 @@ defmodule TaskBunny.WorkerTest do
       {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"hello" => "world"}
 
-      SyncPublisher.push TestJob.queue_name, payload
+      SyncPublisher.push TestJob, payload
       JobTestHelper.wait_for_perform()
 
       ack_args = get_ack_args()
@@ -89,7 +88,7 @@ defmodule TaskBunny.WorkerTest do
       {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"fail" => true}
 
-      SyncPublisher.push TestJob.queue_name, payload
+      SyncPublisher.push TestJob, payload
       JobTestHelper.wait_for_perform()
 
       ack_args = get_ack_args()
@@ -108,7 +107,7 @@ defmodule TaskBunny.WorkerTest do
       [main, retry, failed] = TestJob.all_queues()
       payload = %{"fail" => true}
 
-      SyncPublisher.push(main, payload)
+      SyncPublisher.push(TestJob, payload)
       JobTestHelper.wait_for_perform()
 
       conn = Connection.get_connection()
@@ -138,7 +137,7 @@ defmodule TaskBunny.WorkerTest do
       [main, retry, failed] = TestJob.all_queues()
       payload = %{"fail" => true}
 
-      SyncPublisher.push(main, payload)
+      SyncPublisher.push(TestJob, payload)
       JobTestHelper.wait_for_perform(11)
 
       # 1 normal + 10 retries = 11
