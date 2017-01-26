@@ -28,5 +28,8 @@ defmodule TaskBunny.Consumer do
   def ack(channel, meta, succeeded)
 
   def ack(channel, %{delivery_tag: tag}, true), do: AMQP.Basic.ack(channel, tag)
-  def ack(channel, %{delivery_tag: tag}, false), do: AMQP.Basic.nack(channel, tag)
+  def ack(channel, %{delivery_tag: tag}, false) do
+    # You have to set false to requeue option to be dead lettered
+    AMQP.Basic.nack(channel, tag, requeue: false)
+  end
 end

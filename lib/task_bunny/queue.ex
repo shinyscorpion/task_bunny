@@ -54,6 +54,14 @@ defmodule TaskBunny.Queue do
     state
   end
 
+  def state(connection, queue) do
+    {:ok, channel} = AMQP.Channel.open(connection)
+    {:ok, state} = AMQP.Queue.status(channel, queue)
+    AMQP.Channel.close(channel)
+
+    state
+  end
+
   def retry_queue_name(queue_name) do
     queue_name <> ".retry"
   end

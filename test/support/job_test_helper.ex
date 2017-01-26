@@ -3,6 +3,10 @@ defmodule TaskBunny.TestSupport.JobTestHelper do
     def performed(_), do: nil
   end
 
+  defmodule RetryInterval do
+    def interval, do: 60_000
+  end
+
   defmodule TestJob do
     use TaskBunny.Job
 
@@ -17,6 +21,8 @@ defmodule TaskBunny.TestSupport.JobTestHelper do
         :ok
       end
     end
+
+    def retry_interval, do: RetryInterval.interval()
   end
 
   def wait_for_perform(number \\ 1) do

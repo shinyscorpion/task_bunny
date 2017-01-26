@@ -1,11 +1,7 @@
 defmodule TaskBunny.WorkerTest do
   use ExUnit.Case, async: false
   import TaskBunny.TestSupport.QueueHelper
-  alias TaskBunny.{
-    SyncPublisher,
-    Connection,
-    Worker
-  }
+  alias TaskBunny.{SyncPublisher, Connection, Worker, Queue}
   alias TaskBunny.TestSupport.{
     JobTestHelper,
     JobTestHelper.TestJob
@@ -101,6 +97,61 @@ defmodule TaskBunny.WorkerTest do
       assert ack_args
       [_, _, succeeded] = ack_args
       refute succeeded
+
+      GenServer.stop worker
+    end
+  end
+
+  describe "retry" do
+    test "sends failed job to retry queue" do
+      {:ok, worker} = Worker.start_link({TestJob, 1})
+      [main, retry, failed] = TestJob.all_queues()
+      payload = %{"fail" => true}
+
+      SyncPublisher.push(main, payload)
+      JobTestHelper.wait_for_perform()
+
+      conn = Connection.get_connection()
+      %{message_count: main_count} = Queue.state(conn, main)
+      %{message_count: retry_count} = Queue.state(conn, retry)
+      %{message_count: failed_count} = Queue.state(conn, failed)
+
+      assert main_count == 0
+      assert retry_count == 1
+      assert failed_count == 0
+
+      GenServer.stop(worker)
+    end
+
+    def reset_test_job_retry_interval(interval) do
+      TestJob.delete_queue(Connection.get_connection())
+      :meck.new(JobTestHelper.RetryInterval, [:passthrough])
+      :meck.expect(JobTestHelper.RetryInterval, :interval, fn () -> interval end)
+      TestJob.declare_queue(Connection.get_connection())
+    end
+
+    test "retries max_retry times then sends to failed queue" do
+      # Sets up TestJob to retry shortly
+      reset_test_job_retry_interval(5)
+
+      {:ok, worker} = Worker.start_link({TestJob, 1})
+      [main, retry, failed] = TestJob.all_queues()
+      payload = %{"fail" => true}
+
+      SyncPublisher.push(main, payload)
+      JobTestHelper.wait_for_perform(11)
+
+      # 1 normal + 10 retries = 11
+      assert JobTestHelper.performed_count == 11
+
+      conn = Connection.get_connection()
+      %{message_count: main_count} = Queue.state(conn, main)
+      %{message_count: retry_count} = Queue.state(conn, retry)
+      %{message_count: failed_count} = Queue.state(conn, failed)
+
+      assert main_count == 0
+      assert retry_count == 0
+      assert failed_count == 1
 
       GenServer.stop worker
     end
