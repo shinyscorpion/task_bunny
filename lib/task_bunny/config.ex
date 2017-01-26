@@ -31,6 +31,25 @@ defmodule TaskBunny.Config do
     end
   end
 
+  @doc """
+  Returns if auto start is enabled.
+  """
+  @spec auto_start? :: boolean
+  def auto_start? do
+    case Application.fetch_env(:task_bunny, :disable_auto_start) do
+      {:ok, true} -> false
+      _ -> true
+    end
+  end
+
+  @doc """
+  Disable auto start manually
+  """
+  @spec disable_auto_start :: :ok
+  def disable_auto_start do
+    :ok = Application.put_env(:task_bunny, :disable_auto_start, true)
+  end
+
   @spec hosts_config() :: list
   defp hosts_config do
     case Application.fetch_env(:task_bunny, :hosts) do

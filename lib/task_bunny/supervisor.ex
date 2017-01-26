@@ -27,7 +27,11 @@ defmodule TaskBunny.Supervisor do
       worker(Connection, [host])
     end
 
-    children = connections ++ children
+    children = if Config.auto_start?() do
+        connections ++ children
+      else
+        []
+      end
 
     supervise(children, strategy: :one_for_all)
   end
