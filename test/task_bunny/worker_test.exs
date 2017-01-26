@@ -123,7 +123,6 @@ defmodule TaskBunny.WorkerTest do
     end
 
     def reset_test_job_retry_interval(interval) do
-      TestJob.delete_queue(Connection.get_connection())
       :meck.new(JobTestHelper.RetryInterval, [:passthrough])
       :meck.expect(JobTestHelper.RetryInterval, :interval, fn () -> interval end)
       TestJob.declare_queue(Connection.get_connection())

@@ -55,10 +55,15 @@ defmodule TaskBunny.Job do
             connection, queue_name(), retry_interval: retry_interval()
           )
           :ok
-        rescue
-          e ->
+        catch
+          :exit, e ->
+            # Handles the error but we carry on...
+            # It's highly likely caused by the options on queue declare don't match.
+            # e.g. retry interbval a.k.a message ttl in retry queue
+            # We carry on with error log.
             Logger.error "Failed to declare queue for #{queue_name()}. If you have changed the queue configuration, you have to delete the queue and create it again. Error: #{inspect e}"
-            :error
+
+            {:error, {:exit, e}}
         end
       end
 
