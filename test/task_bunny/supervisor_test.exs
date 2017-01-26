@@ -76,7 +76,7 @@ defmodule TaskBunny.SupervisorTest do
 
       # Kill worker
       Process.exit(work_pid, :kill)
-      :timer.sleep(10)
+      :timer.sleep(20)
 
       new_conn_pid = Process.whereis(conn_name)
       new_work_pid = Process.whereis(work_name)
