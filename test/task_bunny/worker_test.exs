@@ -154,4 +154,30 @@ defmodule TaskBunny.WorkerTest do
       GenServer.stop worker
     end
   end
+
+  test "invalid payload" do
+    # Sets up TestJob to retry shortly
+    reset_test_job_retry_interval(5)
+
+    {:ok, worker} = Worker.start_link({TestJob, 1})
+    [main, retry, failed] = TestJob.all_queues()
+
+    conn = Connection.get_connection()
+
+    {:ok, channel} = AMQP.Channel.open(conn)
+    :ok = AMQP.Basic.publish(channel, "", TestJob.queue_name(), "invalid payload", [])
+    :ok = AMQP.Channel.close(channel)
+
+    Process.sleep(100)
+
+    %{message_count: main_count} = Queue.state(conn, main)
+    %{message_count: retry_count} = Queue.state(conn, retry)
+    %{message_count: failed_count} = Queue.state(conn, failed)
+
+    assert main_count == 0
+    assert retry_count == 0
+    assert failed_count == 1
+
+    GenServer.stop worker
+  end
 end
