@@ -3,7 +3,7 @@ defmodule TaskBunny.Queue do
     {:ok, channel} = AMQP.Channel.open(connection)
 
     retry_queue = retry_queue_name(queue_name)
-    failed_queue = failed_queue_name(queue_name)
+    rejected_queue = rejected_queue_name(queue_name)
 
     retry_interval = options[:retry_interval] || 60_000
 
@@ -29,11 +29,11 @@ defmodule TaskBunny.Queue do
     ]
     retry = declare(channel, retry_queue, retry_options)
 
-    failed = declare(channel, failed_queue, [durable: true])
+    rejected = declare(channel, rejected_queue, [durable: true])
 
     AMQP.Channel.close(channel)
 
-    {work, retry, failed}
+    {work, retry, rejected}
   end
 
   def delete_with_retry(connection, queue_name) do
@@ -41,7 +41,7 @@ defmodule TaskBunny.Queue do
 
     AMQP.Queue.delete(channel, queue_name)
     AMQP.Queue.delete(channel, retry_queue_name(queue_name))
-    AMQP.Queue.delete(channel, failed_queue_name(queue_name))
+    AMQP.Queue.delete(channel, rejected_queue_name(queue_name))
 
     AMQP.Channel.close(channel)
     :ok
@@ -66,7 +66,7 @@ defmodule TaskBunny.Queue do
     queue_name <> ".retry"
   end
 
-  def failed_queue_name(queue_name) do
-    queue_name <> ".failed"
+  def rejected_queue_name(queue_name) do
+    queue_name <> ".rejected"
   end
 end

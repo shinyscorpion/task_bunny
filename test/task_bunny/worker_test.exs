@@ -104,7 +104,7 @@ defmodule TaskBunny.WorkerTest do
   describe "retry" do
     test "sends failed job to retry queue" do
       {:ok, worker} = Worker.start_link({TestJob, 1})
-      [main, retry, failed] = TestJob.all_queues()
+      [main, retry, rejected] = TestJob.all_queues()
       payload = %{"fail" => true}
 
       SyncPublisher.push(TestJob, payload)
@@ -113,11 +113,11 @@ defmodule TaskBunny.WorkerTest do
       conn = Connection.get_connection()
       %{message_count: main_count} = Queue.state(conn, main)
       %{message_count: retry_count} = Queue.state(conn, retry)
-      %{message_count: failed_count} = Queue.state(conn, failed)
+      %{message_count: rejected_count} = Queue.state(conn, rejected)
 
       assert main_count == 0
       assert retry_count == 1
-      assert failed_count == 0
+      assert rejected_count == 0
 
       GenServer.stop(worker)
     end
@@ -128,12 +128,12 @@ defmodule TaskBunny.WorkerTest do
       TestJob.declare_queue(Connection.get_connection())
     end
 
-    test "retries max_retry times then sends to failed queue" do
+    test "retries max_retry times then sends to rejected queue" do
       # Sets up TestJob to retry shortly
       reset_test_job_retry_interval(5)
 
       {:ok, worker} = Worker.start_link({TestJob, 1})
-      [main, retry, failed] = TestJob.all_queues()
+      [main, retry, rejected] = TestJob.all_queues()
       payload = %{"fail" => true}
 
       SyncPublisher.push(TestJob, payload)
@@ -145,11 +145,11 @@ defmodule TaskBunny.WorkerTest do
       conn = Connection.get_connection()
       %{message_count: main_count} = Queue.state(conn, main)
       %{message_count: retry_count} = Queue.state(conn, retry)
-      %{message_count: failed_count} = Queue.state(conn, failed)
+      %{message_count: rejected_count} = Queue.state(conn, rejected)
 
       assert main_count == 0
       assert retry_count == 0
-      assert failed_count == 1
+      assert rejected_count == 1
 
       GenServer.stop worker
     end
@@ -160,7 +160,7 @@ defmodule TaskBunny.WorkerTest do
     reset_test_job_retry_interval(5)
 
     {:ok, worker} = Worker.start_link({TestJob, 1})
-    [main, retry, failed] = TestJob.all_queues()
+    [main, retry, rejected] = TestJob.all_queues()
 
     conn = Connection.get_connection()
 
@@ -172,11 +172,11 @@ defmodule TaskBunny.WorkerTest do
 
     %{message_count: main_count} = Queue.state(conn, main)
     %{message_count: retry_count} = Queue.state(conn, retry)
-    %{message_count: failed_count} = Queue.state(conn, failed)
+    %{message_count: rejected_count} = Queue.state(conn, rejected)
 
     assert main_count == 0
     assert retry_count == 0
-    assert failed_count == 1
+    assert rejected_count == 1
 
     GenServer.stop worker
   end

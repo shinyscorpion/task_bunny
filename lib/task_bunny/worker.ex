@@ -155,8 +155,8 @@ defmodule TaskBunny.Worker do
 
   @spec reject_payload(state :: TaskBunny.Worker.t, payload :: any, meta :: any) :: {:noreply, TaskBunny.Worker.t}
   defp reject_payload(state, payload, meta) do
-    failed_queue = Queue.failed_queue_name(state.job.queue_name())
-    SyncPublisher.push(state.host, failed_queue, payload)
+    rejected_queue = Queue.rejected_queue_name(state.job.queue_name())
+    SyncPublisher.push(state.host, rejected_queue, payload)
 
     Consumer.ack(state.channel, meta, true)
 

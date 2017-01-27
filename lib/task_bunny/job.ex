@@ -45,7 +45,7 @@ defmodule TaskBunny.Job do
         [
           queue_name(),
           TaskBunny.Queue.retry_queue_name(queue_name()),
-          TaskBunny.Queue.failed_queue_name(queue_name())
+          TaskBunny.Queue.rejected_queue_name(queue_name())
         ]
       end
 
@@ -61,7 +61,7 @@ defmodule TaskBunny.Job do
             # It's highly likely caused by the options on queue declare don't match.
             # e.g. retry interbval a.k.a message ttl in retry queue
             # We carry on with error log.
-            Logger.error "Failed to declare queue for #{queue_name()}. If you have changed the queue configuration, you have to delete the queue and create it again. Error: #{inspect e}"
+            Logger.error "failed to declare queue for #{queue_name()}. If you have changed the queue configuration, you have to delete the queue and create it again. Error: #{inspect e}"
 
             {:error, {:exit, e}}
         end
