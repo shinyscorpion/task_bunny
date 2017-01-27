@@ -12,8 +12,8 @@ defmodule TaskBunny.Supervisor do
   use Supervisor
   alias TaskBunny.{Connection, Config, WorkerSupervisor}
 
-  def start_link() do
-    Supervisor.start_link(__MODULE__, [])
+  def start_link(name \\ __MODULE__) do
+    Supervisor.start_link(__MODULE__, [], name: name)
   end
 
   def init([]) do
