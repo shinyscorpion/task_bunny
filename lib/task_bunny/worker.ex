@@ -139,6 +139,8 @@ defmodule TaskBunny.Worker do
 
         {:noreply, update_job_stats(state, :succeeded)}
       failed_count < state.job.max_retry() ->
+        Logger.warn "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny will retry the job. JOB: #{inspect state.job}. PAYLOAD: #{inspect payload}. ERROR: #{inspect result}"
+
         Consumer.ack(state.channel, meta, false)
 
         {:noreply, update_job_stats(state, :failed)}
