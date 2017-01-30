@@ -18,6 +18,7 @@ defmodule TaskBunny.WorkerSupervisor do
   @spec init(list({host :: atom, job :: atom, concurrenct :: integer})) :: {:ok, {:supervisor.sup_flags, [Supervisor.Spec.spec]}} | :ignore
   def init(jobs) do
     jobs
+    |> Enum.filter(fn ({_, job, _}) -> Code.ensure_loaded?(job) end)
     |> Enum.map(fn ({host, job, concurrency}) ->
          worker(
           Worker,
