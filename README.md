@@ -40,3 +40,20 @@ If [available in Hex](https://hex.pm/docs/publish), the package can be installed
     ]
     ```
 
+When you use TaskBunny under an umbrella app and each apps needs different job
+diffinition, you can prefix jobs.
+
+```
+config :task_bunny, app_a_jobs: [
+  [
+    job: AppA.HelloJob, concurrency: 5
+  ]
+]
+
+config :task_bunny, app_b_jobs: [
+  [
+    job: AppB.HolaJob, concurrency: 5
+  ]
+]
+
+```
