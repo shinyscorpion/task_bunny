@@ -5,11 +5,11 @@ TaskBunny is a background processing application written in Elixir and uses Rabb
 ## Why RabbitMQ? Why not Erlang process?
 
 It is a fair question and we are not surprised by that.
-OTP allows you run background processes conncurrently in distributed manner out of the box.
+OTP allows you run background processes concurrently in distributed manner out of the box.
 Why do we need RabbitMQ for background processing?
 
 Well, first of all, if you don't need to persist messages(job requests) outside your system, we suggest you to use Erlang process.
-Erlang process and OTP would be always your first choice for backgrond processing in Elixir.
+Erlang process and OTP would be always your first choice for background processing in Elixir.
 
 However you might be interested in TaskBunny if you...
 
@@ -20,7 +20,7 @@ here are some of our reasons:
 
 - We use Docker based deployment and each deploy is immutable and disposable.
 - Relatively new to Elixir/Erlang so we don't want to change our infrastructure drastically yet.
-- Need some background processes that access to various internal/external systems around the world. We want to controll concurrency and retry interval and see failed processes.
+- Need some background processes that access to various internal/external systems around the world. We want to control concurrency and retry interval and see failed processes.
 
 ## Project status and versioning
 
@@ -28,7 +28,7 @@ TaskBunny is pre 0.1 and not available on hex.pm yet.
 Please be aware that we plan to make breaking changes aggressively without considering backward compatibilities.
 We are still discussing about the core design decision like module structure day by day.
 
-However we have decided to opensource this library in some reasons:
+However we have decided to open source this library in some reasons:
 
 - It is used in our production code.
 - We noticed quite a few people want to use RabbitMQ for same purpose in their Elixir application.
@@ -44,7 +44,7 @@ Hopefully we can make 0.1 release soon but there is nothing preventing you try o
 - Elixir 1.4
 - Rabbit MQ 3.6.0 or greater
 
-TaskBunny heavily relies on [ampq](https://github.com/pma/amqp) by Paulo Almeida.
+TaskBunny heavily relies on [amqp](https://github.com/pma/amqp) by Paulo Almeida.
 
 ### Installation
 
@@ -130,7 +130,7 @@ TaskBunny starts a process for a worker.
 A worker listen to one queue and run number of jobs set in config file concurrently.
 
 There is not limit on concurrency on TaskBunny layer.
-You want to blance between performance and needs on throttle.
+You want to balance between performance and needs on throttle.
 
 ### Retry
 
@@ -147,7 +147,7 @@ defmodule SampleJob do
   def perform(%{"id" => id}) do
     Logger.info("SampleJob was invoked with ID=#{id}")
   end
-  
+
   def max_retry, do: 100
   def retry_interval, do: 10_000
 end
