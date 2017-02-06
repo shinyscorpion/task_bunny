@@ -5,18 +5,18 @@ TaskBunny is a background processing application written in Elixir and uses Rabb
 ## Why RabbitMQ? Why not Erlang process?
 
 It is a fair question and we are not surprised by that.
-OTP allows you run background processes concurrently in distributed manner out of the box.
+OTP allows you run background processes concurrently in a distributed manner out of the box.
 Why do we need RabbitMQ for background processing?
 
-Well, first of all, if you don't need to persist messages(job requests) outside your system, we suggest you to use Erlang process.
-Erlang process and OTP would be always your first choice for background processing in Elixir.
+Well, first of all, if you don't need to persist messages(job requests) outside your system, we suggest you use an Erlang process.
+Erlang process and OTP would always be your first choice for background processing in Elixir.
 
 However you might be interested in TaskBunny if you...
 
 - have some reasons to persist and deliver messages outside your Elixir application
 - consider using RabbitMQ as background processing message bus
 
-here are some of our reasons:
+Here are some of our reasons:
 
 - We use Docker based deployment and each deploy is immutable and disposable.
 - Relatively new to Elixir/Erlang so we don't want to change our infrastructure drastically yet.
@@ -26,16 +26,16 @@ here are some of our reasons:
 
 TaskBunny is pre 0.1 and not available on hex.pm yet.
 Please be aware that we plan to make breaking changes aggressively without considering backward compatibilities.
-We are still discussing about the core design decision like module structure day by day.
+We are still discussing core design decisions, like module structure, day by day.
 
-However we have decided to open source this library in some reasons:
+However we have decided to open source this library for some reasons:
 
 - It is used in our production code.
-- We noticed quite a few people want to use RabbitMQ for same purpose in their Elixir application.
-- We want to hear from community to make this library better.
-- Elixir is great but still young. There aren't many examples but we have been helped those examples. Inspired by that, we want to share our work before spending time on polishing.
+- We noticed quite a few people want to use RabbitMQ for the same purpose in their Elixir application.
+- We want to hear from the community to make this library better.
+- Elixir is great but still young. There are few examples but we have been helped by those examples. Inspired by that, we want to share our work before spending time on polishing.
 
-Hopefully we can make 0.1 release soon but there is nothing preventing you try out this library.
+Hopefully we can make 0.1 release soon but there is nothing preventing you trying out this library.
 
 ## Getting started
 
@@ -75,7 +75,7 @@ TaskBunny heavily relies on [amqp](https://github.com/pma/amqp) by Paulo Almeida
           [job: YourApp.HolaJob, concurrency: 2]
         ]
 
-        # When you use TaskBunny under an umbrella app and each apps needs different job
+        # When you use TaskBunny under an umbrella app and each app needs a different job
         # definition, you can prefix jobs like below.
 
         config :task_bunny, app_a_jobs: [
@@ -88,7 +88,7 @@ TaskBunny heavily relies on [amqp](https://github.com/pma/amqp) by Paulo Almeida
 
 ### Define job module
 
-use `TaskBunny.Job` module in your job module and define `perform/1` that takes map as an argument.
+Use `TaskBunny.Job` module in your job module and define `perform/1` that takes map as an argument.
 
 ```elixir
 defmodule SampleJob do
@@ -127,17 +127,17 @@ If you define `SampleJob` module like above, TaskBunny will define those three q
 ### Concurrency
 
 TaskBunny starts a process for a worker.
-A worker listen to one queue and run number of jobs set in config file concurrently.
+A worker listens to one queue and runs the number of jobs set in config file concurrently.
 
-There is not limit on concurrency on TaskBunny layer.
+There is no limit on concurrency on TaskBunny layer.
 You want to balance between performance and needs on throttle.
 
 ### Retry
 
-TaskBunny retries the job if the job is failed.
-In default, it retries 10 times for every 5 minutes.
+TaskBunny retries the job if the job has failed.
+By default, it retries 10 times for every 5 minutes.
 
-If you want to change it, you want to overwrite the value on a job module.
+If you want to change it, you can overwrite the value on a job module.
 
 ```elixir
 defmodule SampleJob do
@@ -154,17 +154,17 @@ end
 
 ```
 
-With this example, it will retry 100 times for every 10 seconds.
+In this example, it will retry 100 times for every 10 seconds.
 
-If job failed more than `max_retry` times, the payload will be sent to `jobs.[job_name].rejected` queue.
-At this moment, TaskBunny doesn't provide any feature accessing to this queue.
+If a job fails more than `max_retry` times, the payload will be sent to `jobs.[job_name].rejected` queue.
+At this moment, TaskBunny doesn't provide any feature for accessing this queue.
 
 Under the hood, TaskBunny uses [dead letter exchanges](https://www.rabbitmq.com/dlx.html) to support retry.
 
 ### Timeout
 
-In default, job gets timeout in 2 minutes.
-If job doesn't respond more than 2 minutes, worker kills the process and move it to retry queue.
+By default, jobs timeout after 2 minutes.
+If job doesn't respond for more than 2 minutes, worker kills the process and moves it to retry queue.
 
 You can change the timeout by overwriting `timeout/0` in your job.
 
@@ -188,12 +188,12 @@ That means existing messages in the queue will be lost so please be aware of it.
 % mix task_bunny.queue.reset
 ```
 
-You need to redefine a queue when you want to change retry interval for a queue too.
+You need to redefine a queue when you want to change the retry interval for a queue.
 
 
 ### Reconnection
 
-TaskBunny automatically try reconnecting to RabbitMQ if the connection is gone.
+TaskBunny automatically tries reconnecting to RabbitMQ if the connection is gone.
 All workers will be restarted automatically once the new connection is established.
 
 
