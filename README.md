@@ -4,38 +4,38 @@ TaskBunny is a background processing application written in Elixir and uses Rabb
 
 ## Why RabbitMQ? Why not Erlang process?
 
-It is a fair question and we are not surprised by that.
-OTP allows you run background processes conncurrently in distributed manner out of the box.
+A fair question and we are not surprised by that.
+OTP allows you run background processes concurrently in a distributed manner.
 Why do we need RabbitMQ for background processing?
 
-Well, first of all, if you don't need to persist messages(job requests) outside your system, we suggest you to use Erlang process.
-Erlang process and OTP would be always your first choice for backgrond processing in Elixir.
+Well, first of all, if you don't need to persist messages(job requests) outside your system, we suggest you use an Erlang process.
+Erlang process and OTP would always be your first choice for background processing in Elixir.
 
-However you might be interested in TaskBunny if you...
+TaskBunny might be of interest if you:
 
-- have some reasons to persist and deliver messages outside your Elixir application
+- have reasons to persist and deliver messages outside your Elixir application
 - consider using RabbitMQ as background processing message bus
 
-here are some of our reasons:
+Here are some of our reasons:
 
 - We use Docker based deployment and each deploy is immutable and disposable.
-- Relatively new to Elixir/Erlang so we don't want to change our infrastructure drastically yet.
-- Need some background processes that access to various internal/external systems around the world. We want to controll concurrency and retry interval and see failed processes.
+- New to Elixir/Erlang so we don't want to change our infrastructure drastically yet.
+- Need some background processes that access to internal/external systems around the world. We want to control concurrency and retry interval and see failed processes.
 
 ## Project status and versioning
 
 TaskBunny is pre 0.1 and not available on hex.pm yet.
-Please be aware that we plan to make breaking changes aggressively without considering backward compatibilities.
-We are still discussing about the core design decision like module structure day by day.
+Please be aware that we plan to make breaking changes aggressively without considering backward compatibility.
+We are still discussing core design decisions, like module structure.
 
-However we have decided to opensource this library in some reasons:
+We decided to open source this library because:
 
 - It is used in our production code.
-- We noticed quite a few people want to use RabbitMQ for same purpose in their Elixir application.
-- We want to hear from community to make this library better.
-- Elixir is great but still young. There aren't many examples but we have been helped those examples. Inspired by that, we want to share our work before spending time on polishing.
+- We noticed people wanted to use RabbitMQ for the same purpose in their Elixir application.
+- We want to hear from the community to make this library better.
+- There are few examples and we have been helped by those examples. Inspired by that, we want to share our work before spending time on polishing.
 
-Hopefully we can make 0.1 release soon but there is nothing preventing you try out this library.
+Hopefully we can make 0.1 release soon but there is nothing preventing you trying out this library.
 
 ## Getting started
 
@@ -44,7 +44,7 @@ Hopefully we can make 0.1 release soon but there is nothing preventing you try o
 - Elixir 1.4
 - Rabbit MQ 3.6.0 or greater
 
-TaskBunny heavily relies on [ampq](https://github.com/pma/amqp) by Paulo Almeida.
+TaskBunny heavily relies on [amqp](https://github.com/pma/amqp) by Paulo Almeida.
 
 ### Installation
 
@@ -54,7 +54,7 @@ TaskBunny heavily relies on [ampq](https://github.com/pma/amqp) by Paulo Almeida
           [{:task_bunny, github: "shinyscorpion/task_bunny"}]
         end
 
-  1. Ensure `task_bunny` is started before your application (required Elixir 1.3 and before):
+  1. Start `task_bunny` before your application (required Elixir 1.3 and before):
 
         def application do
           [applications: [:task_bunny]]
@@ -75,7 +75,7 @@ TaskBunny heavily relies on [ampq](https://github.com/pma/amqp) by Paulo Almeida
           [job: YourApp.HolaJob, concurrency: 2]
         ]
 
-        # When you use TaskBunny under an umbrella app and each apps needs different job
+        # When you use TaskBunny under an umbrella app and each app needs a different job
         # definition, you can prefix jobs like below.
 
         config :task_bunny, app_a_jobs: [
@@ -88,7 +88,7 @@ TaskBunny heavily relies on [ampq](https://github.com/pma/amqp) by Paulo Almeida
 
 ### Define job module
 
-use `TaskBunny.Job` module in your job module and define `perform/1` that takes map as an argument.
+Use `TaskBunny.Job` module in your job module and define `perform/1` that takes map as an argument.
 
 ```elixir
 defmodule SampleJob do
@@ -109,7 +109,7 @@ Then enqueue a job
 :ok = TaskBunny.SyncPublisher.push(SampleJob, %{"id" => 123123})
 ```
 
-You will see the worker invokes the job and see `SampleJob was invoked with ID=123123` in your logger output.
+The worker invokes the job with `SampleJob was invoked with ID=123123` in your logger output.
 
 ## Design topics and features
 
@@ -122,22 +122,22 @@ If you define `SampleJob` module like above, TaskBunny will define those three q
 - jobs.sample_job.retry: queue for retry
 - jobs.sample_job.rejected: queue that stores jobs failed more than allowed times
 
-**We are currently discussing about this design decision that queues and workers are tied strongly with job.**
+**We are discussing the design decision about queues and workers being tied strongly with a job.**
 
 ### Concurrency
 
 TaskBunny starts a process for a worker.
-A worker listen to one queue and run number of jobs set in config file concurrently.
+A worker listens to one queue and runs the number of jobs set in config file concurrently.
 
-There is not limit on concurrency on TaskBunny layer.
-You want to blance between performance and needs on throttle.
+There is no limit on concurrency on TaskBunny layer.
+You want to balance between performance and needs on throttle.
 
 ### Retry
 
-TaskBunny retries the job if the job is failed.
-In default, it retries 10 times for every 5 minutes.
+TaskBunny retries the job if the job has failed.
+By default, it retries 10 times for every 5 minutes.
 
-If you want to change it, you want to overwrite the value on a job module.
+If you want to change it, you can overwrite the value on a job module.
 
 ```elixir
 defmodule SampleJob do
@@ -147,24 +147,24 @@ defmodule SampleJob do
   def perform(%{"id" => id}) do
     Logger.info("SampleJob was invoked with ID=#{id}")
   end
-  
+
   def max_retry, do: 100
   def retry_interval, do: 10_000
 end
 
 ```
 
-With this example, it will retry 100 times for every 10 seconds.
+In this example, it will retry 100 times for every 10 seconds.
 
-If job failed more than `max_retry` times, the payload will be sent to `jobs.[job_name].rejected` queue.
-At this moment, TaskBunny doesn't provide any feature accessing to this queue.
+If a job fails more than `max_retry` times, the payload is sent to `jobs.[job_name].rejected` queue.
+At the moment, TaskBunny doesn't provide any feature for accessing this queue.
 
 Under the hood, TaskBunny uses [dead letter exchanges](https://www.rabbitmq.com/dlx.html) to support retry.
 
 ### Timeout
 
-In default, job gets timeout in 2 minutes.
-If job doesn't respond more than 2 minutes, worker kills the process and move it to retry queue.
+By default, jobs timeout after 2 minutes.
+If job doesn't respond for more than 2 minutes, worker kills the process and moves it to retry queue.
 
 You can change the timeout by overwriting `timeout/0` in your job.
 
@@ -181,20 +181,20 @@ end
 ### Redefine queues
 
 TaskBunny provides a mix task to reset queues.
-What the task does is basically to delete the queues and create them again.
-That means existing messages in the queue will be lost so please be aware of it.
+This task deletes the queues and creates them again.
+Existing messages in the queue will be lost so please be aware of this.
 
 ```
 % mix task_bunny.queue.reset
 ```
 
-You need to redefine a queue when you want to change retry interval for a queue too.
+You need to redefine a queue when you want to change the retry interval for a queue.
 
 
 ### Reconnection
 
-TaskBunny automatically try reconnecting to RabbitMQ if the connection is gone.
-All workers will be restarted automatically once the new connection is established.
+TaskBunny automatically tries reconnecting to RabbitMQ if the connection is gone.
+All workers will restart automatically once the new connection is established.
 
 
 ## Copyright and License
