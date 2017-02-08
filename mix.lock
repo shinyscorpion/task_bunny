@@ -1,8 +1,8 @@
-%{"amqp": {:hex, :amqp, "0.1.5", "f38e30abfce06fd2213f5e24744a2923f9d3c30f1687db19952be547457e0e7b", [:mix], [{:amqp_client, "3.5.6", [hex: :amqp_client, optional: false]}]},
-  "amqp_client": {:git, "https://github.com/jbrisbin/amqp_client.git", "d50aec00b94f0766a048b4eceaf25ddfdeeb1d86", [ref: "d50aec00b94f0766a048b4eceaf25ddfdeeb1d86"]},
+%{"amqp_client": {:hex, :amqp_client, "3.6.7-pre.1", "5d689656443cf652a0114806e7e2f5c63ceac4d768382ffa08570a246f0e8eaf", [:make, :rebar3], [{:rabbit_common, "3.6.7-pre.1", [hex: :rabbit_common, optional: false]}]},
   "earmark": {:hex, :earmark, "1.1.0", "8c2bf85d725050a92042bc1edf362621004d43ca6241c756f39612084e95487f", [:mix], []},
   "ex_doc": {:hex, :ex_doc, "0.14.5", "c0433c8117e948404d93ca69411dd575ec6be39b47802e81ca8d91017a0cf83c", [:mix], [{:earmark, "~> 1.0", [hex: :earmark, optional: false]}]},
   "logger_file_backend": {:hex, :logger_file_backend, "0.0.9", "5c2f7d4a28431e695cdf94d191523dbafe609321a67bb654254897f546c393db", [:mix], []},
   "meck": {:hex, :meck, "0.8.4", "59ca1cd971372aa223138efcf9b29475bde299e1953046a0c727184790ab1520", [:make, :rebar], []},
+  "ono_amqp": {:hex, :ono_amqp, "0.2.0-pre.1", "de4b23df67bbf045ca2b2a5252628d045e2873370665f30c158bf2324a5d707a", [:mix], [{:amqp_client, "~> 3.6.7-pre.1", [hex: :amqp_client, optional: false]}]},
   "poison": {:hex, :poison, "2.2.0", "4763b69a8a77bd77d26f477d196428b741261a761257ff1cf92753a0d4d24a63", [:mix], []},
-  "rabbit_common": {:git, "https://github.com/jbrisbin/rabbit_common.git", "80814606ae23cc820c74e443383e192cd69ec030", [ref: "80814606ae23cc820c74e443383e192cd69ec030"]}}
+  "rabbit_common": {:hex, :rabbit_common, "3.6.7-pre.1", "cd8503e4176b5187e168c73d4f703aaf50de4e2b49e8a71df78370a8b6cf7d5b", [:make], []}}
