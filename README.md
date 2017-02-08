@@ -42,7 +42,7 @@ Hopefully we can make 0.1 release soon but there is nothing preventing you tryin
 ### Requirements
 
 - Elixir 1.4
-- Rabbit MQ 3.6.0 or greater
+- RabbitMQ 3.6.0 or greater
 
 TaskBunny heavily relies on [amqp](https://github.com/pma/amqp) by Paulo Almeida.
 
