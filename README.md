@@ -24,7 +24,7 @@ Here are some of our reasons:
 
 ## Project status and versioning
 
-TaskBunny is pre 0.1 and not available on hex.pm yet.
+TaskBunny is pre 0.1.
 Please be aware that we plan to make breaking changes aggressively without considering backward compatibility.
 We are still discussing core design decisions, like module structure.
 
@@ -51,7 +51,7 @@ TaskBunny heavily relies on [amqp](https://github.com/pma/amqp) by Paulo Almeida
   1. Add `task_bunny` to your list of dependencies in `mix.exs`:
 
         def deps do
-          [{:task_bunny, github: "shinyscorpion/task_bunny"}]
+          [{:task_bunny, "~> 0.0.1-dev.1"}]
         end
 
   1. Start `task_bunny` before your application (required Elixir 1.3 and before):
