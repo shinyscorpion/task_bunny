@@ -1,6 +1,6 @@
 defmodule TaskBunny.Mixfile do
   use Mix.Project
-  @version "0.0.1-dev.1"
+  @version "0.0.1-dev.2"
 
   def project do
     [
@@ -55,7 +55,7 @@ defmodule TaskBunny.Mixfile do
   defp deps do
     [
       {:poison, "~> 2.0"},
-      {:ono_amqp, "~> 0.2.0-pre.1"},
+      {:amqp, "~> 0.2.0-pre.1"},
       {:meck, "~> 0.8.2", only: :test},
       {:logger_file_backend, "~> 0.0.9", only: :test},
       {:ex_doc, "~> 0.14", only: :dev},

@@ -1,4 +1,5 @@
-%{"amqp_client": {:hex, :amqp_client, "3.6.7-pre.1", "5d689656443cf652a0114806e7e2f5c63ceac4d768382ffa08570a246f0e8eaf", [:make, :rebar3], [{:rabbit_common, "3.6.7-pre.1", [hex: :rabbit_common, optional: false]}]},
+%{"amqp": {:hex, :amqp, "0.2.0-pre.1", "55b7755ea840ee0beb194f891736323ef7059e8beda2c240ee07730338157114", [:mix], [{:amqp_client, "~> 3.6.7-pre.1", [hex: :amqp_client, optional: false]}]},
+  "amqp_client": {:hex, :amqp_client, "3.6.7-pre.1", "5d689656443cf652a0114806e7e2f5c63ceac4d768382ffa08570a246f0e8eaf", [:make, :rebar3], [{:rabbit_common, "3.6.7-pre.1", [hex: :rabbit_common, optional: false]}]},
   "earmark": {:hex, :earmark, "1.1.0", "8c2bf85d725050a92042bc1edf362621004d43ca6241c756f39612084e95487f", [:mix], []},
   "ex_doc": {:hex, :ex_doc, "0.14.5", "c0433c8117e948404d93ca69411dd575ec6be39b47802e81ca8d91017a0cf83c", [:mix], [{:earmark, "~> 1.0", [hex: :earmark, optional: false]}]},
   "logger_file_backend": {:hex, :logger_file_backend, "0.0.9", "5c2f7d4a28431e695cdf94d191523dbafe609321a67bb654254897f546c393db", [:mix], []},
