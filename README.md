@@ -51,7 +51,7 @@ TaskBunny heavily relies on [amqp](https://github.com/pma/amqp) by Paulo Almeida
   1. Add `task_bunny` to your list of dependencies in `mix.exs`:
 
         def deps do
-          [{:task_bunny, "~> 0.0.1-dev.2"}]
+          [{:task_bunny, "~> 0.0.1-dev.3"}]
         end
 
   1. Start `task_bunny` before your application (required Elixir 1.3 and before):
@@ -195,6 +195,13 @@ You need to redefine a queue when you want to change the retry interval for a qu
 
 TaskBunny automatically tries reconnecting to RabbitMQ if the connection is gone.
 All workers will restart automatically once the new connection is established.
+
+
+### Wobserver Integration
+
+TaskBunny automatically integrates with [Wobserver](https://github.com/shinyscorpion/wobserver).
+All worker and connection information will be added as a page on the web interface.
+The current amount of job runners and job success, failure, and reject totals are added to the `/metrics` endpoint.
 
 
 ## Copyright and License
