@@ -22,7 +22,8 @@ defmodule TaskBunny.Mixfile do
             ],
         ],
       description: description(),
-      package: package()
+      package: package(),
+      xref: [exclude: [Wobserver]],
     ]
   end
 
