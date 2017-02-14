@@ -174,7 +174,7 @@ defmodule TaskBunny.Worker do
   end
 
   # Retreive worker status
-
+  @spec handle_call(atom, {pid, any}, any) :: {:reply, map, %Worker{}}
   def handle_call(:status, _from, state) do
     channel =
       case state.channel do

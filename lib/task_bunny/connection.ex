@@ -12,10 +12,12 @@ defmodule TaskBunny.Connection do
 
   @reconnect_interval 5_000
 
+  @type state :: {atom, %AMQP.Connection{} | nil, list(pid)}
+
   @doc """
   Starts a GenServer process linked to the cunnrent process.
   """
-  @spec start_link(host :: atom | {atom, nil, list}) :: GenServer.on_start
+  @spec start_link(host :: atom | state) :: GenServer.on_start
   def start_link(host)
 
   def start_link({host, _, _} = state) do
@@ -66,10 +68,12 @@ defmodule TaskBunny.Connection do
     {:ok, state}
   end
 
+  @spec handle_call(atom, {pid, term}, state) :: {:reply, %AMQP.Connection{}, state}
   def handle_call(:get_connection, _, {_, connection, _} = state) do
     {:reply, connection, state}
   end
 
+  @spec handle_cast(tuple, state) :: {:noreply, state}
   def handle_cast({:monitor_connection, listener}, {host, connection, listeners}) do
     if connection do
       notify_connect(connection, [listener])
@@ -78,6 +82,11 @@ defmodule TaskBunny.Connection do
       {:noreply, {host, connection, [listener | listeners]}}
     end
   end
+
+  @spec handle_info(any, state) ::
+    {:noreply, state} |
+    {:stop, reason :: term, state}
+  def handle_info(message, state)
 
   def handle_info(:connect, {host, _, listeners}) do
     case do_connect(host) do
