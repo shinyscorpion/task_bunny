@@ -113,7 +113,7 @@ defmodule TaskBunny.Status do
     |> Enum.map(&Status.Worker.get/1)
   end
 
-  @spec get_workers_status(any) :: []
+  @spec get_worker_supervisor_status(any) :: []
   defp get_worker_supervisor_status(_) do
     []
   end

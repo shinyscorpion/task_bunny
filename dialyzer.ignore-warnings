@@ -1,0 +1,2 @@
+lib/mix/tasks/analyze.ex:1: Callback info about the 'Elixir.Mix.Task' behaviour is not available
+lib/mix/tasks/task_bunny.queue.reset.ex:1: Callback info about the 'Elixir.Mix.Task' behaviour is not available

@@ -50,7 +50,10 @@ defmodule TaskBunny.Worker do
     start_link(%Worker{host: host, job: job, concurrency: concurrency})
   end
 
-  @doc false
+  @doc """
+  Starts a worker given a worker's state
+  """
+  @spec start_link(%Worker{}) :: GenServer.on_start
   def start_link(state = %Worker{}) do
     GenServer.start_link(__MODULE__, state, name: pname(state.job))
   end
