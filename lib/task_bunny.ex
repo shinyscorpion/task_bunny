@@ -7,6 +7,7 @@ defmodule TaskBunny do
 
   alias TaskBunny.Status
 
+  @spec start(atom, term) :: {:ok, pid} | {:ok, pid, any} | {:error, term}
   def start(_type, _args) do
     import Supervisor.Spec, warn: false
 

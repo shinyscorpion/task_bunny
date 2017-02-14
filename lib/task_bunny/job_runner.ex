@@ -43,16 +43,14 @@ defmodule TaskBunny.JobRunner do
   # Any raises or throws in the perform are caught and turned into an :error tuple.
   @spec run_job(job :: atom, payload :: any) :: :ok | {:ok, any} | {:error, any}
   defp run_job(job, payload) do
-    try do
-      job.perform(payload)
-    rescue
-      error ->
-        Logger.error "TaskBunny.Worker - Runner rescued #{inspect error}"
-        {:error, error}
-    catch
-      _, reason ->
-        Logger.error "TaskBunny.Worker - Runner caught reason: #{inspect reason}"
-        {:error, reason}
-    end
+    job.perform(payload)
+  rescue
+    error ->
+      Logger.error "TaskBunny.Worker - Runner rescued #{inspect error}"
+      {:error, error}
+  catch
+    _, reason ->
+      Logger.error "TaskBunny.Worker - Runner caught reason: #{inspect reason}"
+      {:error, reason}
   end
 end

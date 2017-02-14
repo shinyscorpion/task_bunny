@@ -11,11 +11,14 @@ defmodule TaskBunny.WorkerSupervisor do
 
   alias TaskBunny.Worker
 
+  @type jobs :: list({host :: atom, job :: atom, concurrenct :: integer})
+
+  @spec start_link(jobs) :: {:ok, pid} | {:error, term}
   def start_link(jobs) do
     Supervisor.start_link(__MODULE__, jobs)
   end
 
-  @spec init(list({host :: atom, job :: atom, concurrenct :: integer})) :: {:ok, {:supervisor.sup_flags, [Supervisor.Spec.spec]}} | :ignore
+  @spec init(jobs) :: {:ok, {:supervisor.sup_flags, [Supervisor.Spec.spec]}} | :ignore
   def init(jobs) do
     jobs
     |> Enum.filter(fn ({_, job, _}) -> Code.ensure_loaded?(job) end)

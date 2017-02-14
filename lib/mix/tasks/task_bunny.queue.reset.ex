@@ -13,6 +13,7 @@ defmodule Mix.Tasks.TaskBunny.Queue.Reset do
   alias TaskBunny.{Connection, Config}
 
   @doc false
+  @spec run(list) :: any
   def run(_args) do
     Config.disable_auto_start()
     Mix.Task.run "app.start"

@@ -3,7 +3,7 @@ defmodule TaskBunny.Status do
   Modules that handles TaskBunny status.
   """
 
-  alias TaskBunny.Status
+  alias TaskBunny.{Status, Connection}
   alias TaskBunny.Status.Worker
 
   @typedoc ~S"""
@@ -84,7 +84,7 @@ defmodule TaskBunny.Status do
 
   @spec get_connection_status() :: boolean
   defp get_connection_status do
-    case TaskBunny.Connection.get_connection do
+    case Connection.get_connection do
       nil -> false
       _ -> true
     end

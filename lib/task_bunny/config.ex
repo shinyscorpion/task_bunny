@@ -25,11 +25,12 @@ defmodule TaskBunny.Config do
   """
   @spec jobs :: [keyword]
   def jobs do
-    Application.get_all_env(:task_bunny)
+    :task_bunny
+    |> Application.get_all_env
     |> Enum.filter(fn ({key, _}) ->
          is_atom(key) && Atom.to_string(key) =~ ~r/jobs$/
        end)
-    |> Enum.flat_map(fn ({_, jobs}) -> jobs end)
+    |> Enum.flat_map(fn ({_, job_list}) -> job_list end)
   end
 
   @doc """
@@ -54,7 +55,7 @@ defmodule TaskBunny.Config do
   @spec hosts_config() :: list
   defp hosts_config do
     case Application.fetch_env(:task_bunny, :hosts) do
-      {:ok, hosts} -> hosts
+      {:ok, host_list} -> host_list
       _ -> []
     end
   end

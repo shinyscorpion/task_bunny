@@ -7,10 +7,8 @@ defmodule TaskBunny.SyncPublisher do
       iex> TaskBunny.SynPublisher.push
       %AMQP.Connection{pid: #PID<0.185.0>}
 
-
       iex> TaskBunny.Connection.open(:host_down)
       :no_connection
-
 
   ### Asynchronous
   #### Default host
@@ -27,6 +25,8 @@ defmodule TaskBunny.SyncPublisher do
   A AMQP message.
   """
   @type message :: {exchange :: String.t, routing_key :: String.t, message :: String.t, options :: list}
+
+  alias AMQP.{Channel, Basic}
 
   # Api
 
@@ -86,9 +86,9 @@ defmodule TaskBunny.SyncPublisher do
 
   defp do_push(item = {exchange, routing_key, payload, options}, connection) do
     Logger.debug "TaskBunny.Publisher: push:\r\n    #{inspect(item)}"
-    {:ok, channel} = AMQP.Channel.open(connection)
-    :ok = AMQP.Basic.publish(channel, exchange, routing_key, payload, options)
-    :ok = AMQP.Channel.close(channel)
+    {:ok, channel} = Channel.open(connection)
+    :ok = Basic.publish(channel, exchange, routing_key, payload, options)
+    :ok = Channel.close(channel)
 
     :ok
   rescue
