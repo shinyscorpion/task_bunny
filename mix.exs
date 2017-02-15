@@ -40,7 +40,11 @@ defmodule TaskBunny.Mixfile do
   defp package do
     [
       name: :task_bunny,
-      files: ["lib","mix.exs","README.md","LICENSE.md"],
+      files: [
+          "mix.exs","README.md","LICENSE.md", # Project files
+          "lib/task_bunny.ex", "lib/task_bunny", # TaskBunny
+          "lib/mix/tasks/task_bunny.queue.reset.ex", # Tasks
+      ],
       maintainers: ["Ian Luites", "Tatsuya Ono", "Ricardo Perez", "Francesco Grammatico"],
       licenses: ["MIT"],
       links: %{"Github" => "https://github.com/shinyscorpion/task_bunny"}
