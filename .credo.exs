@@ -33,7 +33,7 @@
       #
       # If you want to enforce a style guide and need a more traditional linting
       # experience, you can change `strict` to `true` below:
-      strict: false,
+      strict: true,
       #
       # If you want to use uncolored output by default, you can change `color`
       # to `false` below:
@@ -57,7 +57,7 @@
 
         # For some checks, like AliasUsage, you can only customize the priority
         # Priority values are: `low, normal, high, higher`
-        {Credo.Check.Design.AliasUsage, priority: :low},
+        {Credo.Check.Design.AliasUsage, false},
 
         # For others you can set parameters
 

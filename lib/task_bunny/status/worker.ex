@@ -36,12 +36,12 @@ defmodule TaskBunny.Status.Worker do
   @doc ~S"""
   Returns the Worker status.
   """
-  @spec get({any, pid :: pid, atom, list}) :: TaskBunny.Status.Worker.t
+  @spec get({any, pid, atom, list}) :: TaskBunny.Status.Worker.t
   def get({_name, pid, _atom, _list}) do
     get(pid)
   end
 
-  @spec get(pid :: pid) :: TaskBunny.Status.Worker.t
+  @spec get(pid) :: TaskBunny.Status.Worker.t
   def get(pid) do
     GenServer.call(pid, :status)
   end

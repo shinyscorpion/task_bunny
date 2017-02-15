@@ -1,11 +1,9 @@
 defmodule TaskBunny.Queue do
   @moduledoc false
 
-  alias AMQP.{Connection, Channel, Queue}
-
-  @spec declare_with_retry(%Connection{}, String.t, list) :: {map, map, map}
+  @spec declare_with_retry(%AMQP.Connection{}, String.t, list) :: {map, map, map}
   def declare_with_retry(connection, queue_name, options) do
-    {:ok, channel} = Channel.open(connection)
+    {:ok, channel} = AMQP.Channel.open(connection)
 
     retry_queue = retry_queue_name(queue_name)
     rejected_queue = rejected_queue_name(queue_name)
@@ -36,36 +34,36 @@ defmodule TaskBunny.Queue do
 
     rejected = declare(channel, rejected_queue, [durable: true])
 
-    Channel.close(channel)
+    AMQP.Channel.close(channel)
 
     {work, retry, rejected}
   end
 
-  @spec delete_with_retry(%Connection{}, String.t) :: :ok
+  @spec delete_with_retry(%AMQP.Connection{}, String.t) :: :ok
   def delete_with_retry(connection, queue_name) do
-    {:ok, channel} = Channel.open(connection)
+    {:ok, channel} = AMQP.Channel.open(connection)
 
-    Queue.delete(channel, queue_name)
-    Queue.delete(channel, retry_queue_name(queue_name))
-    Queue.delete(channel, rejected_queue_name(queue_name))
+    AMQP.Queue.delete(channel, queue_name)
+    AMQP.Queue.delete(channel, retry_queue_name(queue_name))
+    AMQP.Queue.delete(channel, rejected_queue_name(queue_name))
 
-    Channel.close(channel)
+    AMQP.Channel.close(channel)
     :ok
   end
 
-  @spec declare(%Channel{}, String.t, keyword) :: map
+  @spec declare(%AMQP.Channel{}, String.t, keyword) :: map
   def declare(channel, queue_name, options \\ []) do
     options = options ++ [durable: true]
-    {:ok, state} = Queue.declare(channel, queue_name, options)
+    {:ok, state} = AMQP.Queue.declare(channel, queue_name, options)
 
     state
   end
 
-  @spec state(%Connection{}, String.t) :: map
+  @spec state(%AMQP.Connection{}, String.t) :: map
   def state(connection, queue) do
-    {:ok, channel} = Channel.open(connection)
-    {:ok, state} = Queue.status(channel, queue)
-    Channel.close(channel)
+    {:ok, channel} = AMQP.Channel.open(connection)
+    {:ok, state} = AMQP.Queue.status(channel, queue)
+    AMQP.Channel.close(channel)
 
     state
   end

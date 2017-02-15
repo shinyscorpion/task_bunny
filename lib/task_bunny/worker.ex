@@ -7,13 +7,13 @@ defmodule TaskBunny.Worker do
   require Logger
   alias TaskBunny.{Connection, Consumer, JobRunner, Queue,
                    SyncPublisher, Worker, Message}
-  alias AMQP.Channel
 
   @type t ::%__MODULE__{
     job: atom,
+    host: atom,
     concurrency: integer,
-    channel: Channel.t | nil,
-    consumer_tag: String.t,
+    channel: AMQP.Channel.t | nil,
+    consumer_tag: String.t | nil,
     runners: integer,
     job_stats: %{
       failed: integer,
@@ -39,7 +39,7 @@ defmodule TaskBunny.Worker do
   @doc """
   Starts a worker for a job with concurrency
   """
-  @spec start_link({job :: atom, concurrency :: integer}) :: GenServer.on_start
+  @spec start_link({atom, integer}) :: GenServer.on_start
   def start_link({job, concurrency}) do
     start_link(%Worker{job: job, concurrency: concurrency})
   end
@@ -47,7 +47,7 @@ defmodule TaskBunny.Worker do
   @doc """
   Starts a worker for a job with concurrency on the host
   """
-  @spec start_link({host :: atom, job :: atom, concurrency :: integer}) :: GenServer.on_start
+  @spec start_link({atom, atom, integer}) :: GenServer.on_start
   def start_link({host, job, concurrency}) do
     start_link(%Worker{host: host, job: job, concurrency: concurrency})
   end
@@ -55,7 +55,7 @@ defmodule TaskBunny.Worker do
   @doc """
   Starts a worker given a worker's state
   """
-  @spec start_link(%Worker{}) :: GenServer.on_start
+  @spec start_link(t) :: GenServer.on_start
   def start_link(state = %Worker{}) do
     GenServer.start_link(__MODULE__, state, name: pname(state.job))
   end
@@ -63,7 +63,7 @@ defmodule TaskBunny.Worker do
   @doc """
   Initialises GenServer. Send a request for RabbitMQ connection
   """
-  @spec init(%Worker{}) :: {:ok, %Worker{}} | {:stop, :connection_not_ready}
+  @spec init(t) :: {:ok, t} | {:stop, :connection_not_ready}
   def init(state = %Worker{}) do
     Logger.info "TaskBunny.Worker initializing with #{inspect state.job} and maximum #{inspect state.concurrency} concurrent jobs: PID: #{inspect self()}"
 
@@ -78,12 +78,12 @@ defmodule TaskBunny.Worker do
   end
 
   @doc ~S"""
-  Closes the AMQP Channel, when the worker exit is captured.
+  Closes the AMQP AMQP.Channel, when the worker exit is captured.
   """
   @spec terminate(any, TaskBunny.Worker.t) :: :normal
   def terminate(_reason, state) do
     if state.channel do
-      Channel.close(state.channel)
+      AMQP.Channel.close(state.channel)
     end
 
     :normal
@@ -93,9 +93,9 @@ defmodule TaskBunny.Worker do
   Called when connection to RabbitMQ was established.
   Start consumer loop
   """
-  @spec handle_info(any, %Worker{}) ::
-    {:noreply, %Worker{}} |
-    {:stop, reason :: term, %Worker{}}
+  @spec handle_info(any, t) ::
+    {:noreply, t} |
+    {:stop, reason :: term, t}
   def handle_info(message, state)
 
   def handle_info({:connected, connection}, state = %Worker{}) do
@@ -148,7 +148,7 @@ defmodule TaskBunny.Worker do
 
   def handle_info(_msg, state), do: {:noreply, state}
 
-  @spec reject_payload(state :: TaskBunny.Worker.t, payload :: any, meta :: any) :: {:noreply, TaskBunny.Worker.t}
+  @spec reject_payload(TaskBunny.Worker.t, any, any) :: {:noreply, TaskBunny.Worker.t}
   defp reject_payload(state, payload, meta) do
     rejected_queue = Queue.rejected_queue_name(state.job.queue_name())
     SyncPublisher.push(state.host, rejected_queue, payload)
@@ -164,7 +164,7 @@ defmodule TaskBunny.Worker do
   end
 
   # Retreive worker status
-  @spec handle_call(atom, {pid, any}, any) :: {:reply, map, %Worker{}}
+  @spec handle_call(atom, {pid, any}, any) :: {:reply, map, t}
   def handle_call(:status, _from, state) do
     channel =
       case state.channel do
@@ -182,7 +182,7 @@ defmodule TaskBunny.Worker do
     {:reply, status, state}
   end
 
-  @spec update_job_stats(state :: TaskBunny.Worker.t, success :: :succeeded | :failed | :rejected) :: TaskBunny.Worker.t
+  @spec update_job_stats(TaskBunny.Worker.t, :succeeded | :failed | :rejected) :: TaskBunny.Worker.t
   defp update_job_stats(state, success) do
     stats =
       case success do

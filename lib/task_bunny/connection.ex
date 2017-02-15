@@ -18,7 +18,7 @@ defmodule TaskBunny.Connection do
   @doc """
   Starts a GenServer process linked to the cunnrent process.
   """
-  @spec start_link(host :: atom | state) :: GenServer.on_start
+  @spec start_link(atom | state) :: GenServer.on_start
   def start_link(host)
 
   def start_link(state = {host, _, _}) do
@@ -35,7 +35,7 @@ defmodule TaskBunny.Connection do
   Gets a RabbitMQ connection for the given host.
   Returns nil when the connection is not available.
   """
-  @spec get_connection(host :: atom) :: struct | nil
+  @spec get_connection(atom) :: struct | nil
   def get_connection(host \\ :default) do
     case Process.whereis(pname(host)) do
       nil -> nil
@@ -50,7 +50,7 @@ defmodule TaskBunny.Connection do
   Returns :ok when the server exists.
   Returns :error when the server doesn't exist.
   """
-  @spec monitor_connection(host :: atom, listener_pid :: pid) :: :ok | :error
+  @spec monitor_connection(atom, pid) :: :ok | :error
   def monitor_connection(host \\ :default, listener_pid) do
     case Process.whereis(pname(host)) do
       nil -> :error
@@ -111,7 +111,7 @@ defmodule TaskBunny.Connection do
     {:stop, {:connection_lost, reason}, {host, nil, []}}
   end
 
-  @spec notify_connect(connection :: struct, listeners :: list(pid)) :: :ok
+  @spec notify_connect(struct, list(pid)) :: :ok
   defp notify_connect(connection, listeners) do
     Logger.debug "TaskBunny.Connection: notifying to #{inspect listeners}"
     Enum.each listeners, fn (pid) ->
@@ -121,14 +121,14 @@ defmodule TaskBunny.Connection do
     :ok
   end
 
-  @spec do_connect(host :: atom) :: {:ok, %Connection{}} | {:error, any}
+  @spec do_connect(atom) :: {:ok, %Connection{}} | {:error, any}
   defp do_connect(host) do
     Connection.open Config.connect_options(host)
   rescue
     error -> {:error, error}
   end
 
-  @spec pname(host :: atom) :: atom
+  @spec pname(atom) :: atom
   defp pname(host) do
     "TaskBunny.Connection." <> Atom.to_string(host)
     |> String.to_atom

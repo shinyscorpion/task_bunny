@@ -17,7 +17,7 @@ defmodule TaskBunny.Supervisor do
     Supervisor.start_link(__MODULE__, [], name: name)
   end
 
-  @spec init([]) ::
+  @spec init(list()) ::
     {:ok, {:supervisor.sup_flags, [Supervisor.Spec.spec]}} |
     :ignore
   def init([]) do
