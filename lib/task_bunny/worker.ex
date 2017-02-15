@@ -78,7 +78,7 @@ defmodule TaskBunny.Worker do
   end
 
   @doc ~S"""
-  Closes the AMQP AMQP.Channel, when the worker exit is captured.
+  Closes the AMQP Channel, when the worker exit is captured.
   """
   @spec terminate(any, TaskBunny.Worker.t) :: :normal
   def terminate(_reason, state) do

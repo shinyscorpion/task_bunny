@@ -9,11 +9,10 @@ defmodule TaskBunny.Connection do
   use GenServer
   require Logger
   alias TaskBunny.Config
-  alias AMQP.Connection
 
   @reconnect_interval 5_000
 
-  @type state :: {atom, %Connection{} | nil, list(pid)}
+  @type state :: {atom, %AMQP.Connection{} | nil, list(pid)}
 
   @doc """
   Starts a GenServer process linked to the cunnrent process.
@@ -69,7 +68,7 @@ defmodule TaskBunny.Connection do
     {:ok, state}
   end
 
-  @spec handle_call(atom, {pid, term}, state) :: {:reply, %Connection{}, state}
+  @spec handle_call(atom, {pid, term}, state) :: {:reply, %AMQP.Connection{}, state}
   def handle_call(:get_connection, _, state = {_, connection, _}) do
     {:reply, connection, state}
   end
@@ -121,9 +120,9 @@ defmodule TaskBunny.Connection do
     :ok
   end
 
-  @spec do_connect(atom) :: {:ok, %Connection{}} | {:error, any}
+  @spec do_connect(atom) :: {:ok, %AMQP.Connection{}} | {:error, any}
   defp do_connect(host) do
-    Connection.open Config.connect_options(host)
+    AMQP.Connection.open Config.connect_options(host)
   rescue
     error -> {:error, error}
   end
