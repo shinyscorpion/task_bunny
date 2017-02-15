@@ -5,13 +5,15 @@ defmodule TaskBunny.Worker do
 
   use GenServer
   require Logger
-  alias TaskBunny.{Connection, Consumer, JobRunner, Queue, SyncPublisher, Worker}
+  alias TaskBunny.{Connection, Consumer, JobRunner, Queue,
+                   SyncPublisher, Worker, Message}
 
   @type t ::%__MODULE__{
     job: atom,
+    host: atom,
     concurrency: integer,
     channel: AMQP.Channel.t | nil,
-    consumer_tag: String.t,
+    consumer_tag: String.t | nil,
     runners: integer,
     job_stats: %{
       failed: integer,
@@ -37,7 +39,7 @@ defmodule TaskBunny.Worker do
   @doc """
   Starts a worker for a job with concurrency
   """
-  @spec start_link({job :: atom, concurrency :: integer}) :: GenServer.on_start
+  @spec start_link({atom, integer}) :: GenServer.on_start
   def start_link({job, concurrency}) do
     start_link(%Worker{job: job, concurrency: concurrency})
   end
@@ -45,12 +47,15 @@ defmodule TaskBunny.Worker do
   @doc """
   Starts a worker for a job with concurrency on the host
   """
-  @spec start_link({host :: atom, job :: atom, concurrency :: integer}) :: GenServer.on_start
+  @spec start_link({atom, atom, integer}) :: GenServer.on_start
   def start_link({host, job, concurrency}) do
     start_link(%Worker{host: host, job: job, concurrency: concurrency})
   end
 
-  @doc false
+  @doc """
+  Starts a worker given a worker's state
+  """
+  @spec start_link(t) :: GenServer.on_start
   def start_link(state = %Worker{}) do
     GenServer.start_link(__MODULE__, state, name: pname(state.job))
   end
@@ -58,6 +63,7 @@ defmodule TaskBunny.Worker do
   @doc """
   Initialises GenServer. Send a request for RabbitMQ connection
   """
+  @spec init(t) :: {:ok, t} | {:stop, :connection_not_ready}
   def init(state = %Worker{}) do
     Logger.info "TaskBunny.Worker initializing with #{inspect state.job} and maximum #{inspect state.concurrency} concurrent jobs: PID: #{inspect self()}"
 
@@ -87,6 +93,11 @@ defmodule TaskBunny.Worker do
   Called when connection to RabbitMQ was established.
   Start consumer loop
   """
+  @spec handle_info(any, t) ::
+    {:noreply, t} |
+    {:stop, reason :: term, t}
+  def handle_info(message, state)
+
   def handle_info({:connected, connection}, state = %Worker{}) do
     # Declares queue
     state.job.declare_queue(connection)
@@ -125,37 +136,19 @@ defmodule TaskBunny.Worker do
   """
   def handle_info({:job_finished, result, payload, meta}, state) do
     Logger.debug "TaskBunny.Worker:(#{state.job}) job_finished with #{inspect payload} on #{inspect self()} with meta #{inspect meta}"
-    succeeded = case result do
-      :ok -> true
-      {:ok, _} -> true
-      _ -> false
-    end
-
-    failed_count = TaskBunny.Message.failed_count(meta)
-
-    cond do
-      succeeded ->
+    case succeeded?(result) do
+      true ->
         Consumer.ack(state.channel, meta, true)
 
         {:noreply, update_job_stats(state, :succeeded)}
-      failed_count < state.job.max_retry() ->
-        Logger.warn "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny will retry the job. JOB: #{inspect state.job}. PAYLOAD: #{inspect payload}. ERROR: #{inspect result}"
-
-        Consumer.ack(state.channel, meta, false)
-
-        {:noreply, update_job_stats(state, :failed)}
-      true ->
-        # Failed more than X times
-        Logger.error "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny stops retrying the job. JOB: #{inspect state.job}. PAYLOAD: #{inspect payload}. ERROR: #{inspect result}"
-
-        # Enqueue failed queue
-        reject_payload(state, payload, meta)
+      false ->
+        failed_job(state, meta, payload, result)
     end
   end
 
   def handle_info(_msg, state), do: {:noreply, state}
 
-  @spec reject_payload(state :: TaskBunny.Worker.t, payload :: any, meta :: any) :: {:noreply, TaskBunny.Worker.t}
+  @spec reject_payload(TaskBunny.Worker.t, any, any) :: {:noreply, TaskBunny.Worker.t}
   defp reject_payload(state, payload, meta) do
     rejected_queue = Queue.rejected_queue_name(state.job.queue_name())
     SyncPublisher.push(state.host, rejected_queue, payload)
@@ -171,7 +164,7 @@ defmodule TaskBunny.Worker do
   end
 
   # Retreive worker status
-
+  @spec handle_call(atom, {pid, any}, any) :: {:reply, map, t}
   def handle_call(:status, _from, state) do
     channel =
       case state.channel do
@@ -189,7 +182,7 @@ defmodule TaskBunny.Worker do
     {:reply, status, state}
   end
 
-  @spec update_job_stats(state :: TaskBunny.Worker.t, success :: :succeeded | :failed | :rejected) :: TaskBunny.Worker.t
+  @spec update_job_stats(TaskBunny.Worker.t, :succeeded | :failed | :rejected) :: TaskBunny.Worker.t
   defp update_job_stats(state, success) do
     stats =
       case success do
@@ -199,5 +192,28 @@ defmodule TaskBunny.Worker do
       end
 
     %{state | runners: state.runners - 1, job_stats: stats}
+  end
+
+  defp succeeded?(:ok), do: true
+  defp succeeded?({:ok, _}), do: true
+  defp succeeded?(_), do: false
+
+  defp failed_job(state, meta, payload, result) do
+    failed_count = Message.failed_count(meta)
+
+    case failed_count < state.job.max_retry() do
+      true ->
+        Logger.warn "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny will retry the job. JOB: #{inspect state.job}. PAYLOAD: #{inspect payload}. ERROR: #{inspect result}"
+
+        Consumer.ack(state.channel, meta, false)
+
+        {:noreply, update_job_stats(state, :failed)}
+      false ->
+        # Failed more than X times
+        Logger.error "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny stops retrying the job. JOB: #{inspect state.job}. PAYLOAD: #{inspect payload}. ERROR: #{inspect result}"
+
+        # Enqueue failed queue
+        reject_payload(state, payload, meta)
+    end
   end
 end

@@ -25,7 +25,7 @@ defmodule TaskBunny.JobRunner do
   The job is run in a seperate process, which is killed after the job.timeout if the job has not finished yet.
   A :error message is send to the :job_finished of the caller if the job times out.
   """
-  @spec invoke(job :: atom, payload :: any, meta :: any) :: {:ok | :error, any}
+  @spec invoke(atom, any, any) :: {:ok | :error, any}
   def invoke(job, payload, meta) do
     caller = self()
 
@@ -41,18 +41,16 @@ defmodule TaskBunny.JobRunner do
 
   # Performs a job with the given payload.
   # Any raises or throws in the perform are caught and turned into an :error tuple.
-  @spec run_job(job :: atom, payload :: any) :: :ok | {:ok, any} | {:error, any}
+  @spec run_job(atom, any) :: :ok | {:ok, any} | {:error, any}
   defp run_job(job, payload) do
-    try do
-      job.perform(payload)
-    rescue
-      error ->
-        Logger.error "TaskBunny.Worker - Runner rescued #{inspect error}"
-        {:error, error}
-    catch
-      _, reason ->
-        Logger.error "TaskBunny.Worker - Runner caught reason: #{inspect reason}"
-        {:error, reason}
-    end
+    job.perform(payload)
+  rescue
+    error ->
+      Logger.error "TaskBunny.Worker - Runner rescued #{inspect error}"
+      {:error, error}
+  catch
+    _, reason ->
+      Logger.error "TaskBunny.Worker - Runner caught reason: #{inspect reason}"
+      {:error, reason}
   end
 end

@@ -25,6 +25,7 @@ defmodule TaskBunny.Consumer do
   @doc """
   Acknowledges to the message.
   """
+  @spec ack(%AMQP.Channel{}, map, boolean) :: :ok
   def ack(channel, meta, succeeded)
 
   def ack(channel, %{delivery_tag: tag}, true), do: AMQP.Basic.ack(channel, tag)

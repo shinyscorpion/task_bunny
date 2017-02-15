@@ -12,7 +12,7 @@ defmodule TaskBunny.Message do
       iex> TaskBunny.Message.failed_count(meta)
       67
   """
-  @spec failed_count(meta :: map | tuple | any) :: integer
+  @spec failed_count(map | tuple | any) :: integer
   def failed_count(meta)
 
   def failed_count(%{headers: :undefined}), do: 0

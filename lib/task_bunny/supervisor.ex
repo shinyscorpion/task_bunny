@@ -12,25 +12,27 @@ defmodule TaskBunny.Supervisor do
   use Supervisor
   alias TaskBunny.{Connection, Config, WorkerSupervisor}
 
+  @spec start_link(atom) :: {:ok, pid} | {:error, term}
   def start_link(name \\ __MODULE__) do
     Supervisor.start_link(__MODULE__, [], name: name)
   end
 
+  @spec init(list()) ::
+    {:ok, {:supervisor.sup_flags, [Supervisor.Spec.spec]}} |
+    :ignore
   def init([]) do
-    # Define workers and child supervisors to be supervised
-    children = [
-      supervisor(WorkerSupervisor, [get_jobs()])
-    ]
-
     # Add Connection severs for each hosts
     connections = Enum.map Config.hosts(), fn (host) ->
       worker(Connection, [host])
     end
 
-    children = if Config.auto_start?() do
-        connections ++ children
-      else
-        []
+    # Define workers and child supervisors to be supervised
+    children =
+      case Config.auto_start?() do
+        true ->
+          connections ++ [supervisor(WorkerSupervisor, [get_jobs()])]
+        false ->
+          []
       end
 
     supervise(children, strategy: :one_for_all)

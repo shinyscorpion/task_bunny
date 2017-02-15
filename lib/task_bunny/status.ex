@@ -3,7 +3,7 @@ defmodule TaskBunny.Status do
   Modules that handles TaskBunny status.
   """
 
-  alias TaskBunny.Status
+  alias TaskBunny.{Status, Connection}
   alias TaskBunny.Status.Worker
 
   @typedoc ~S"""
@@ -20,7 +20,7 @@ defmodule TaskBunny.Status do
   @doc ~S"""
   Returns TaskBunny status.
   """
-  @spec overview(supervisor :: atom) :: Status.t
+  @spec overview(atom) :: Status.t
   def overview(supervisor \\ TaskBunny.Supervisor) do
     case supervisor_alive?(supervisor) do
       true ->
@@ -40,7 +40,7 @@ defmodule TaskBunny.Status do
   @doc ~S"""
   Returns TaskBunny metrics.
   """
-  @spec metrics(supervisor :: atom) :: keyword
+  @spec metrics(atom) :: keyword
   def metrics(supervisor \\ TaskBunny.Supervisor) do
     case supervisor_alive?(supervisor) do
       true ->
@@ -63,7 +63,7 @@ defmodule TaskBunny.Status do
   @doc ~S"""
   Returns TaskBunny `:wobserver` page.
   """
-  @spec page(supervisor :: atom) :: map
+  @spec page(atom) :: map
   def page(supervisor \\ TaskBunny.Supervisor) do
     page =
       %{
@@ -84,13 +84,13 @@ defmodule TaskBunny.Status do
 
   @spec get_connection_status() :: boolean
   defp get_connection_status do
-    case TaskBunny.Connection.get_connection do
+    case Connection.get_connection do
       nil -> false
       _ -> true
     end
   end
 
-  @spec supervisor_alive?(supervisor :: atom) :: boolean
+  @spec supervisor_alive?(atom) :: boolean
   defp supervisor_alive?(supervisor) do
     case Process.whereis(supervisor) do
       nil -> false
@@ -98,7 +98,7 @@ defmodule TaskBunny.Status do
     end
   end
 
-  @spec get_workers_status(supervisor :: atom) :: list(Worker.t)
+  @spec get_workers_status(atom) :: list(Worker.t)
   defp get_workers_status(supervisor) do
     supervisor
     |> Supervisor.which_children
@@ -106,19 +106,19 @@ defmodule TaskBunny.Status do
     |> List.flatten
   end
 
-  @spec get_workers_status({TaskBunny.WorkerSupervisor, pid :: pid, atom, list()}) :: list(Worker.t)
+  @spec get_workers_status({TaskBunny.WorkerSupervisor, pid, atom, list()}) :: list(Worker.t)
   defp get_worker_supervisor_status({TaskBunny.WorkerSupervisor, pid, _atom, _list}) do
     pid
     |> Supervisor.which_children
     |> Enum.map(&Status.Worker.get/1)
   end
 
-  @spec get_workers_status(any) :: []
+  @spec get_worker_supervisor_status(any) :: []
   defp get_worker_supervisor_status(_) do
     []
   end
 
-  @spec get_workers_page(supervisor :: atom) :: list(map)
+  @spec get_workers_page(atom) :: list(map)
   defp get_workers_page(supervisor) do
     supervisor
     |> get_workers_status()
@@ -133,7 +133,7 @@ defmodule TaskBunny.Status do
       end)
   end
 
-  @spec get_worker_metrics(workers :: Worker.t, {list, list, list, list}) :: {list, list, list, list}
+  @spec get_worker_metrics(Worker.t, {list, list, list, list}) :: {list, list, list, list}
   defp get_worker_metrics(worker, {runners, succeeded, failed, rejected}) do
     {
       [{worker.runners, [job: worker.job]} | runners],

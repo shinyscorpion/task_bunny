@@ -1,4 +1,7 @@
 defmodule TaskBunny.Queue do
+  @moduledoc false
+
+  @spec declare_with_retry(%AMQP.Connection{}, String.t, list) :: {map, map, map}
   def declare_with_retry(connection, queue_name, options) do
     {:ok, channel} = AMQP.Channel.open(connection)
 
@@ -36,6 +39,7 @@ defmodule TaskBunny.Queue do
     {work, retry, rejected}
   end
 
+  @spec delete_with_retry(%AMQP.Connection{}, String.t) :: :ok
   def delete_with_retry(connection, queue_name) do
     {:ok, channel} = AMQP.Channel.open(connection)
 
@@ -47,6 +51,7 @@ defmodule TaskBunny.Queue do
     :ok
   end
 
+  @spec declare(%AMQP.Channel{}, String.t, keyword) :: map
   def declare(channel, queue_name, options \\ []) do
     options = options ++ [durable: true]
     {:ok, state} = AMQP.Queue.declare(channel, queue_name, options)
@@ -54,6 +59,7 @@ defmodule TaskBunny.Queue do
     state
   end
 
+  @spec state(%AMQP.Connection{}, String.t) :: map
   def state(connection, queue) do
     {:ok, channel} = AMQP.Channel.open(connection)
     {:ok, state} = AMQP.Queue.status(channel, queue)
@@ -62,10 +68,12 @@ defmodule TaskBunny.Queue do
     state
   end
 
+  @spec retry_queue_name(String.t) :: String.t
   def retry_queue_name(queue_name) do
     queue_name <> ".retry"
   end
 
+  @spec rejected_queue_name(String.t) :: String.t
   def rejected_queue_name(queue_name) do
     queue_name <> ".rejected"
   end
