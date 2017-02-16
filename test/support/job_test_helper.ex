@@ -36,7 +36,7 @@ defmodule TaskBunny.TestSupport.JobTestHelper do
       end
     end || false
 
-    :timer.sleep(5) # wait for the last message handled
+    :timer.sleep(20) # wait for the last message handled
     performed
   end
 

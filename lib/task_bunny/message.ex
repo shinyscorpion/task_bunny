@@ -26,18 +26,56 @@ defmodule TaskBunny.Message do
   end
 
   def failed_count({"x-death", :array, tables}) do
-    tables
-    |> Enum.map(fn({_, attributes}) ->
-         count_attr = Enum.find attributes, fn ({key, _, _}) ->
-           key == "count"
-         end
+    count =
+      tables
+      |> Enum.map(fn({_, attributes}) ->
+           count_attr = Enum.find attributes, fn ({key, _, _}) ->
+             key == "count"
+           end
 
-         case count_attr do
-           {_, _, count} -> count
-           _ -> 0
-         end
-       end)
-    |> Enum.max(fn -> 0 end)
+           case count_attr do
+             {_, _, count} -> count
+             _ -> 0
+           end
+         end)
+      |> Enum.max(fn -> 0 end)
+
+    if count > 0, do: count, else: failed_count_pre_3_6(tables)
+  end
+
+  # Priort to 3.6, it doesn't contain count information.
+  # We need to count it up by ourselves.
+  def failed_count_pre_3_6(tables) do
+    # List up queues
+    queues =
+      tables
+      |> Enum.map(fn ({_, tuples}) ->
+        tuple = Enum.find(tuples, fn ({key, _type, _value}) ->
+          key == "queue"
+        end)
+        case tuple do
+          {_, _, queue_name} -> queue_name
+          _ -> nil
+        end
+      end)
+      |> Enum.filter(fn (queue) -> queue end)
+
+    # Count up queues
+    # ["jobs.a.retry", "jobs.a", "jobs.a.retry", "jobs.a"]
+    # => %{"jobs.a.retry" => 2, "jobs.a" => 2}
+    # => then takes the max value
+
+    queues
+    |> Enum.reduce(%{}, fn (queue, counts) ->
+      if counts[queue] do
+        %{counts | queue => counts[queue] + 1}
+      else
+        Map.merge(counts, %{queue => 1})
+      end
+    end)
+    |> Map.to_list
+    |> Enum.map(fn ({_q, count}) -> count end)
+    |> Enum.max
   end
 
   def failed_count(_), do: 0
