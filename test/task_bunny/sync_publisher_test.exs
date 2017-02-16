@@ -1,7 +1,7 @@
 defmodule TaskBunny.SyncSyncPublisherTest do
   use ExUnit.Case, async: false
   import TaskBunny.TestSupport.QueueHelper
-  alias TaskBunny.{SyncPublisher,TestSupport.QueueHelper}
+  alias TaskBunny.{SyncPublisher,TestSupport.QueueHelper, Message}
 
   defmodule TestJob do
     use TaskBunny.Job
@@ -23,9 +23,10 @@ defmodule TaskBunny.SyncSyncPublisherTest do
     test "queued job exists" do
       SyncPublisher.push(TestJob, "Do this")
 
-      {payload, _} = QueueHelper.pop(TestJob.queue_name())
+      {message, _} = QueueHelper.pop(TestJob.queue_name())
+      {:ok, %{"payload" => payload}} = Message.decode(message)
 
-      assert payload == "\"Do this\""
+      assert payload == "Do this"
     end
   end
 end

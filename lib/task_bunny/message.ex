@@ -3,17 +3,25 @@ defmodule TaskBunny.Message do
   Functions to access messages and its meta data.
   """
 
-  def encode_payload(job, argument) do
+  @doc """
+  Encode message body in JSON with job and arugment.
+  """
+  @spec encode(atom, any) :: String.t
+  def encode(job, payload) do
     %{
       "job" => Atom.to_string(job),
-      "argument" => argument,
+      "payload" => payload,
       "created_at" => DateTime.utc_now()
     }
     |> Poison.encode!
   end
 
-  def decode_payload(payload) do
-    case Poison.decode(payload) do
+  @doc """
+  Decode message body in JSON to map
+  """
+  @spec decode(String.t) :: map
+  def decode(message) do
+    case Poison.decode(message) do
       {:ok, decoded} ->
         job = String.to_atom(decoded["job"])
         if Code.ensure_loaded?(job) do

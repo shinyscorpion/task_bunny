@@ -73,8 +73,8 @@ defmodule TaskBunny.Status.WorkerTest do
 
       Process.sleep(10)
 
-      SyncPublisher.push :foo, TestJob.queue_name, payload
-      SyncPublisher.push :foo, TestJob.queue_name, payload
+      SyncPublisher.push :foo, TestJob, payload
+      SyncPublisher.push :foo, TestJob, payload
 
       JobTestHelper.wait_for_perform(2)
 
