@@ -8,3 +8,7 @@ after_script:
   - mix inch.report
 services:
   - rabbitmq
+cache:
+  directories:
+    - _build
+    - deps
