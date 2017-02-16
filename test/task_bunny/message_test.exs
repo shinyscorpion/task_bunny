@@ -10,24 +10,24 @@ defmodule TaskBunny.MessageTest do
 
   describe "encode/decode message body(payload)" do
     test "encode and decode payload" do
-      encoded = Message.encode_payload(NameJob, %{"name" => "Joe"})
-      {:ok, %{"job" => job, "argument" => arg}} = Message.decode_payload(encoded)
-      assert job.perform(arg) == {:ok, "Joe"}
+      encoded = Message.encode(NameJob, %{"name" => "Joe"})
+      {:ok, %{"job" => job, "payload" => payload}} = Message.decode(encoded)
+      assert job.perform(payload) == {:ok, "Joe"}
     end
 
     test "decode broken json" do
       message = "{aaa:bbb}"
-      assert {:error, {:poison_decode_error, _}} = Message.decode_payload(message)
+      assert {:error, {:poison_decode_error, _}} = Message.decode(message)
     end
 
     test "decode wrong format" do
       message = "{\"foo\": \"bar\"}"
-      assert {:error, {:decode_exception, _}} = Message.decode_payload(message)
+      assert {:error, {:decode_exception, _}} = Message.decode(message)
     end
 
     test "decode invalid job" do
-      encoded = Message.encode_payload(InvalidJob, %{"name" => "Joe"})
-      assert {:error, :job_not_loaded} = Message.decode_payload(encoded)
+      encoded = Message.encode(InvalidJob, %{"name" => "Joe"})
+      assert {:error, :job_not_loaded} = Message.decode(encoded)
     end
   end
 

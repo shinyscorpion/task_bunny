@@ -20,6 +20,7 @@ defmodule TaskBunny.SyncPublisher do
   """
 
   require Logger
+  alias TaskBunny.Message
 
   @typedoc ~S"""
   A AMQP message.
@@ -34,13 +35,13 @@ defmodule TaskBunny.SyncPublisher do
   The call is synchronous.
   """
   @spec push(atom, atom | String.t, any) :: :ok | :failed
-  def push(host, job, payload)
+  def push(host \\ :default, job_or_queue, payload_or_message)
 
   def push(host, job, payload) when is_atom(job) do
     queue = job.queue_name()
     exchange = ""
     routing_key = queue
-    message = Poison.encode!(payload)
+    message = Message.encode(job, payload)
     options = [persistent: true]
 
     connection = TaskBunny.Connection.get_connection(host)
@@ -49,29 +50,15 @@ defmodule TaskBunny.SyncPublisher do
     do_push({exchange, routing_key, message, options}, connection)
   end
 
-  @doc ~S"""
-  Push a payload to the queue.
-
-  This function doesn't declare the queue and supposes the queue already exists.
-  """
-  def push(host, queue, payload) do
+  def push(host, queue, message) do
     exchange = ""
     routing_key = queue
-    message = Poison.encode!(payload)
     options = [persistent: true]
 
     connection = TaskBunny.Connection.get_connection(host)
 
     do_push({exchange, routing_key, message, options}, connection)
   end
-
-  @doc ~S"""
-  Push a payload to a queue on :default host.
-
-  For more info see: [`push/3`](file:///Users/ianlu/projects/square/elixir/onlinedev-task-bunny/doc/TaskBunny.SyncPublisher.html#push/3).
-  """
-  @spec push(atom | String.t, any) :: :ok | :failed
-  def push(job, payload), do: push(:default, job, payload)
 
   # Helpers
   @spec do_push(message, AMQP.Connection.t | nil) :: :ok | :failed
