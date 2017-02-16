@@ -1,5 +1,11 @@
 # TaskBunny
 
+[![Hex.pm](https://img.shields.io/hexpm/v/task_bunny.svg "Hex")](https://hex.pm/packages/task_bunny)
+[![Build Status](https://travis-ci.org/shinyscorpion/task_bunny.svg?branch=master)](https://travis-ci.org/shinyscorpion/task_bunny)
+[![Inline docs](http://inch-ci.org/github/shinyscorpion/task_bunny.svg?branch=master)](http://inch-ci.org/github/shinyscorpion/task_bunny)
+[![Deps Status](https://beta.hexfaktor.org/badge/all/github/shinyscorpion/task_bunny.svg)](https://beta.hexfaktor.org/github/shinyscorpion/task_bunny)
+[![Hex.pm](https://img.shields.io/hexpm/l/task_bunny.svg "License")](LICENSE.md)
+
 TaskBunny is a background processing application written in Elixir and uses RabbitMQ as a messaging backend.
 
 ## Why RabbitMQ? Why not Erlang process?
