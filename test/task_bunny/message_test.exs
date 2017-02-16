@@ -2,6 +2,35 @@ defmodule TaskBunny.MessageTest do
   use ExUnit.Case, async: true
   alias TaskBunny.Message
 
+  defmodule NameJob do
+    use TaskBunny.Job
+
+    def perform(payload), do: {:ok, payload["name"]}
+  end
+
+  describe "encode/decode message body(payload)" do
+    test "encode and decode payload" do
+      encoded = Message.encode_payload(NameJob, %{"name" => "Joe"})
+      {:ok, %{"job" => job, "argument" => arg}} = Message.decode_payload(encoded)
+      assert job.perform(arg) == {:ok, "Joe"}
+    end
+
+    test "decode broken json" do
+      message = "{aaa:bbb}"
+      assert {:error, {:poison_decode_error, _}} = Message.decode_payload(message)
+    end
+
+    test "decode wrong format" do
+      message = "{\"foo\": \"bar\"}"
+      assert {:error, {:decode_exception, _}} = Message.decode_payload(message)
+    end
+
+    test "decode invalid job" do
+      encoded = Message.encode_payload(InvalidJob, %{"name" => "Joe"})
+      assert {:error, :job_not_loaded} = Message.decode_payload(encoded)
+    end
+  end
+
   describe "failed_count" do
     test "RabbitMQ 3.6 header" do
       meta = %{app_id: :undefined, cluster_id: :undefined, consumer_tag: "amq.ctag-6gbrfVhVEsg5UluIEagNcQ", content_encoding: :undefined, content_type: :undefined, correlation_id: :undefined, delivery_tag: 69, exchange: "", expiration: :undefined, headers: [{"x-death", :array, [table: [{"count", :long, 67}, {"exchange", :longstr, ""}, {"queue", :longstr, "dlx.retry"}, {"reason", :longstr, "expired"}, {"routing-keys", :array, [longstr: "dlx.retry"]}, {"time", :timestamp, 1484651945}], table: [{"count", :long, 67}, {"exchange", :longstr, ""},{"queue", :longstr, "dlx"}, {"reason", :longstr, "rejected"}, {"routing-keys", :array, [longstr: "dlx"]}, {"time", :timestamp, 1484651915}]]}], message_id: :undefined, persistent: true, priority: :undefined, redelivered: false, reply_to: :undefined, routing_key: "dlx",timestamp: :undefined, type: :undefined, user_id: :undefined}
