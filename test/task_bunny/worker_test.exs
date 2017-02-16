@@ -156,28 +156,26 @@ defmodule TaskBunny.WorkerTest do
   end
 
   test "invalid payload" do
-    # Sets up TestJob to retry shortly
-    reset_test_job_retry_interval(5)
+    :meck.expect TaskBunny.Consumer, :ack, fn (_, _, _) -> nil end
 
-    {:ok, worker} = Worker.start_link({TestJob, 1})
-    [main, retry, rejected] = TestJob.all_queues()
-
-    conn = Connection.get_connection()
-
-    {:ok, channel} = AMQP.Channel.open(conn)
-    :ok = AMQP.Basic.publish(channel, "", TestJob.queue_name(), "invalid payload", [])
-    :ok = AMQP.Channel.close(channel)
-
-    Process.sleep(100)
-
-    %{message_count: main_count} = Queue.state(conn, main)
-    %{message_count: retry_count} = Queue.state(conn, retry)
-    %{message_count: rejected_count} = Queue.state(conn, rejected)
-
-    assert main_count == 0
-    assert retry_count == 0
-    assert rejected_count == 1
-
-    GenServer.stop worker
+    assert Worker.handle_info({:basic_deliver, "}", %{}}, %{
+      job: TestJob,
+      runners: 0,
+      host: :default,
+      channel: nil,
+      job_stats: %{
+        failed: 0,
+        succeeded: 0,
+        rejected: 0,
+      },
+    }) == {:noreply,
+      %{
+        channel: nil,
+        host: :default,
+        job: TaskBunny.TestSupport.JobTestHelper.TestJob,
+        runners: 0,
+        job_stats: %{failed: 0, rejected: 1, succeeded: 0},
+      }
+    }
   end
 end
