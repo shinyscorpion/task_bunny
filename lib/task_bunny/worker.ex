@@ -126,6 +126,7 @@ defmodule TaskBunny.Worker do
       error ->
         Logger.error "TaskBunny.Worker:(#{state.job}) basic_deliver with invalid (#{inspect error}) payload: (#{inspect payload} on #{inspect self()}"
 
+        # Needs state.runners + 1, because reject_payload does state.runners - 1
         reject_payload(%{state | runners: state.runners + 1}, payload, meta)
     end
   end
