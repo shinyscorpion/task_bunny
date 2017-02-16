@@ -1,7 +1,32 @@
 defmodule TaskBunny.Message do
   @moduledoc """
-  Provides functionalities to access a message and its meta data.
+  Functions to access messages and its meta data.
   """
+
+  def encode_payload(job, argument) do
+    %{
+      "job" => Atom.to_string(job),
+      "argument" => argument,
+      "created_at" => DateTime.utc_now()
+    }
+    |> Poison.encode!
+  end
+
+  def decode_payload(payload) do
+    case Poison.decode(payload) do
+      {:ok, decoded} ->
+        job = String.to_atom(decoded["job"])
+        if Code.ensure_loaded?(job) do
+          {:ok, %{decoded | "job" => job}}
+        else
+          {:error, :job_not_loaded}
+        end
+      error ->
+        {:error, {:poison_decode_error, error}}
+    end
+  rescue
+    error -> {:error, {:decode_exception, error}}
+  end
 
   @doc """
   Retrieves number of count the message was consumed and failed to process
@@ -43,6 +68,8 @@ defmodule TaskBunny.Message do
     if count > 0, do: count, else: failed_count_pre_3_6(tables)
   end
 
+  def failed_count(_), do: 0
+
   # Priort to 3.6, it doesn't contain count information.
   # We need to count it up by ourselves.
   @spec failed_count_pre_3_6(list) :: integer
@@ -78,6 +105,4 @@ defmodule TaskBunny.Message do
     |> Enum.map(fn ({_q, count}) -> count end)
     |> Enum.max
   end
-
-  def failed_count(_), do: 0
 end
