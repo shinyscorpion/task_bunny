@@ -45,7 +45,8 @@ defmodule TaskBunny.Message do
 
   # Priort to 3.6, it doesn't contain count information.
   # We need to count it up by ourselves.
-  def failed_count_pre_3_6(tables) do
+  @spec failed_count_pre_3_6(list) :: integer
+  defp failed_count_pre_3_6(tables) do
     # List up queues
     queues =
       tables
