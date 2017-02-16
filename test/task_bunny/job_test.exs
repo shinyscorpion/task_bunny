@@ -1,7 +1,7 @@
 defmodule TaskBunny.JobTest do
   use ExUnit.Case
-
-  alias TaskBunny.Job
+  import TaskBunny.TestSupport.QueueHelper
+  alias TaskBunny.{Job, TestSupport.QueueHelper}
 
   defmodule JobWithAllDefault do
     use Job
@@ -23,6 +23,17 @@ defmodule TaskBunny.JobTest do
     def perform(_), do: nil
   end
 
+  defmodule TestJob do
+    use Job
+    def perform(_payload), do: :ok
+  end
+
+  setup do
+    clean(TestJob.all_queues())
+
+    :ok
+  end
+
   describe "queue_name" do
     test "has default name" do
       assert JobWithAllDefault.queue_name == "jobs.job_with_all_default"
@@ -38,6 +49,16 @@ defmodule TaskBunny.JobTest do
 
     test "has full namespace" do
       assert JobWithFull.queue_name == "jobs.task_bunny.job_test.job_with_full"
+    end
+  end
+
+  describe "enqueue" do
+    test "enqueues job" do
+      payload = %{"foo" => "bar"}
+      :ok = TestJob.enqueue(payload)
+
+      {received, _} = QueueHelper.pop(TestJob.queue_name())
+      assert Poison.decode!(received) == payload
     end
   end
 end
