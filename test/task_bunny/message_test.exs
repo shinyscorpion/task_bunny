@@ -27,7 +27,12 @@ defmodule TaskBunny.MessageTest do
 
     test "decode invalid job" do
       encoded = Message.encode(InvalidJob, %{"name" => "Joe"})
-      assert {:error, :job_not_loaded} = Message.decode(encoded)
+      assert {:error, :job_not_loaded} == Message.decode(encoded)
+    end
+
+    test "decode invalid atom" do
+      message = "{\"payload\": \"\",\"job\":\"Hello.Message\",\"created_at\":\"2017-02-17T10:14:13.149734Z\"}"
+      assert {:error, :job_not_loaded} == Message.decode(message)
     end
   end
 

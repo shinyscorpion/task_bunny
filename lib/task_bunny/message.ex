@@ -54,7 +54,7 @@ defmodule TaskBunny.Message do
     try do
       String.to_existing_atom(job_name)
     rescue
-      _e in ArgumentError -> nil
+      ArgumentError -> nil
     end
   end
 
