@@ -117,6 +117,20 @@ Then enqueue a job
 
 The worker invokes the job with `SampleJob was invoked with ID=123123` in your logger output.
 
+### Enqueueing job from other system
+
+The message should be encoded in JSON format and set job and payload(argument).
+For example:
+
+```javascript
+{
+  "job": "YourApp.Jobs.SampleJob",
+  "payload": {"id": 123}
+}
+```
+
+Then send the message to the queue for the job.
+
 ## Design topics and features
 
 ### Queues
