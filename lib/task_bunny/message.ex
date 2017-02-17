@@ -9,7 +9,7 @@ defmodule TaskBunny.Message do
   @spec encode(atom, any) :: String.t
   def encode(job, payload) do
     %{
-      "job" => Atom.to_string(job),
+      "job" => encode_job(job),
       "payload" => payload,
       "created_at" => DateTime.utc_now()
     }
@@ -23,8 +23,8 @@ defmodule TaskBunny.Message do
   def decode(message) do
     case Poison.decode(message) do
       {:ok, decoded} ->
-        job = String.to_atom(decoded["job"])
-        if Code.ensure_loaded?(job) do
+        job = decode_job(decoded["job"])
+        if job && Code.ensure_loaded?(job) do
           {:ok, %{decoded | "job" => job}}
         else
           {:error, :job_not_loaded}
@@ -34,6 +34,28 @@ defmodule TaskBunny.Message do
     end
   rescue
     error -> {:error, {:decode_exception, error}}
+  end
+
+  @spec encode_job(atom) :: String.t
+  defp encode_job(job) do
+    job
+    |> Atom.to_string
+    |> String.trim_leading("Elixir.")
+  end
+
+  @spec decode_job(String.t) :: atom | nil
+  defp decode_job(job_name) do
+    job_name = if job_name =~ ~r/^Elixir\./ do
+      job_name
+    else
+      "Elixir.#{job_name}"
+    end
+
+    try do
+      String.to_existing_atom(job_name)
+    rescue
+      _e in ArgumentError -> nil
+    end
   end
 
   @doc """
