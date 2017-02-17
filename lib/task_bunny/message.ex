@@ -9,7 +9,7 @@ defmodule TaskBunny.Message do
   @spec encode(atom, any) :: String.t
   def encode(job, payload) do
     %{
-      "job" => Atom.to_string(job),
+      "job" => job_to_string(job),
       "payload" => payload,
       "created_at" => DateTime.utc_now()
     }
@@ -23,7 +23,7 @@ defmodule TaskBunny.Message do
   def decode(message) do
     case Poison.decode(message) do
       {:ok, decoded} ->
-        job = String.to_atom(decoded["job"])
+        job = string_to_job(decoded["job"])
         if Code.ensure_loaded?(job) do
           {:ok, %{decoded | "job" => job}}
         else
@@ -112,5 +112,37 @@ defmodule TaskBunny.Message do
     |> Map.to_list
     |> Enum.map(fn ({_q, count}) -> count end)
     |> Enum.max
+  end
+
+  # Turns a job(module/atom) into a String
+  #
+  # So:
+  #   Jobs.Example => "Jobs.Example"
+  def job_to_string(job) do
+    job
+    |> Atom.to_string
+    |> String.trim_leading("Elixir.")
+  end
+
+  # Turns Strings into job(module) names
+  #
+  # So:
+  #   "Elixir.Jobs.Example" => Jobs.Example
+  #   "Jobs.Example" => Jobs.Example
+  #   "elixir.jobs.example" => Jobs.Example
+  #   "jobs.example" => Jobs.Example
+  def string_to_job(job) do
+    job
+    |> String.split(".")
+    |> Enum.map(&capitalize/1)
+    |> Enum.map(&String.to_atom/1)
+    |> Module.concat
+  end
+
+  # Capitialize the first letter, but leave other capital letters alone
+  defp capitalize(string) do
+    string
+    |> String.split_at(1)
+    |> (fn {head, tail} -> String.upcase(head) <> tail end).()
   end
 end
