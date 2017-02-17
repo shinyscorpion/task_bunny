@@ -112,7 +112,7 @@ end
 Then enqueue a job
 
 ```elixir
-:ok = TaskBunny.SyncPublisher.push(SampleJob, %{"id" => 123123})
+:ok = SampleJob.enqueue(%{"id" => 123123})
 ```
 
 The worker invokes the job with `SampleJob was invoked with ID=123123` in your logger output.

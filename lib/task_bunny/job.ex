@@ -4,7 +4,7 @@ defmodule TaskBunny.Job do
 
   @callback perform(any) :: :ok | {:error, term}
 
-  alias TaskBunny.{Queue, Job}
+  alias TaskBunny.{Queue, Job, SyncPublisher}
 
   defmacro __using__(job_options \\ []) do
     quote do
@@ -43,6 +43,11 @@ defmodule TaskBunny.Job do
         namespace = Keyword.get(options, :namespace, unquote(@default_job_namespace))
 
         "#{namespace}.#{name}"
+      end
+
+      @spec enqueue(any) :: :ok | :failed
+      def enqueue(host \\ :default, payload) do
+        SyncPublisher.push(host, __MODULE__, payload)
       end
 
       @spec all_queues :: list(String.t)
