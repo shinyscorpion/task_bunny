@@ -116,18 +116,18 @@ defmodule TaskBunny.Worker do
   Called when message was delivered from RabbitMQ.
   Invokes a job here.
   """
-  def handle_info({:basic_deliver, payload, meta}, state) do
-    case Poison.decode(payload) do
-      {:ok, parsed_payload} ->
-        Logger.debug "TaskBunny.Worker:(#{state.job}) basic_deliver with #{inspect payload} on #{inspect self()}"
-        JobRunner.invoke(state.job, parsed_payload, meta)
+  def handle_info({:basic_deliver, body, meta}, state) do
+    case Message.decode(body) do
+      {:ok, decoded} ->
+        Logger.debug "TaskBunny.Worker:(#{state.job}) basic_deliver with #{inspect body} on #{inspect self()}"
+        JobRunner.invoke(state.job, decoded["payload"], {body, meta})
 
         {:noreply, %{state | runners: state.runners + 1}}
       error ->
-        Logger.error "TaskBunny.Worker:(#{state.job}) basic_deliver with invalid (#{inspect error}) payload: (#{inspect payload} on #{inspect self()}"
+        Logger.error "TaskBunny.Worker:(#{state.job}) basic_deliver with invalid (#{inspect error}) payload: (#{inspect body} on #{inspect self()}"
 
         # Needs state.runners + 1, because reject_payload does state.runners - 1
-        reject_payload(%{state | runners: state.runners + 1}, payload, meta)
+        reject_message(%{state | runners: state.runners + 1}, body, meta)
     end
   end
 
@@ -135,34 +135,19 @@ defmodule TaskBunny.Worker do
   Called when job was done.
   Acknowledge to RabbitMQ.
   """
-  def handle_info({:job_finished, result, payload, meta}, state) do
-    Logger.debug "TaskBunny.Worker:(#{state.job}) job_finished with #{inspect payload} on #{inspect self()} with meta #{inspect meta}"
+  def handle_info({:job_finished, result, {body, meta}}, state) do
+    Logger.debug "TaskBunny.Worker:(#{state.job}) job_finished with #{inspect body} on #{inspect self()} with meta #{inspect meta}"
     case succeeded?(result) do
       true ->
         Consumer.ack(state.channel, meta, true)
 
         {:noreply, update_job_stats(state, :succeeded)}
       false ->
-        failed_job(state, meta, payload, result)
+        handle_failed_job(state, body, meta, result)
     end
   end
 
   def handle_info(_msg, state), do: {:noreply, state}
-
-  @spec reject_payload(TaskBunny.Worker.t, any, any) :: {:noreply, TaskBunny.Worker.t}
-  defp reject_payload(state, payload, meta) do
-    rejected_queue = Queue.rejected_queue_name(state.job.queue_name())
-    SyncPublisher.push(state.host, rejected_queue, payload)
-
-    Consumer.ack(state.channel, meta, true)
-
-    {:noreply, update_job_stats(state, :rejected)}
-  end
-
-  @spec pname(job :: atom) :: atom
-  defp pname(job) do
-    String.to_atom("TaskBunny.Worker.#{job}")
-  end
 
   # Retreive worker status
   @spec handle_call(atom, {pid, any}, any) :: {:reply, map, t}
@@ -183,6 +168,11 @@ defmodule TaskBunny.Worker do
     {:reply, status, state}
   end
 
+  @spec pname(job :: atom) :: atom
+  defp pname(job) do
+    String.to_atom("TaskBunny.Worker.#{job}")
+  end
+
   @spec update_job_stats(TaskBunny.Worker.t, :succeeded | :failed | :rejected) :: TaskBunny.Worker.t
   defp update_job_stats(state, success) do
     stats =
@@ -199,22 +189,32 @@ defmodule TaskBunny.Worker do
   defp succeeded?({:ok, _}), do: true
   defp succeeded?(_), do: false
 
-  defp failed_job(state, meta, payload, result) do
+  defp handle_failed_job(state, body, meta, result) do
     failed_count = Message.failed_count(meta)
 
     case failed_count < state.job.max_retry() do
       true ->
-        Logger.warn "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny will retry the job. JOB: #{inspect state.job}. PAYLOAD: #{inspect payload}. ERROR: #{inspect result}"
+        Logger.warn "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny will retry the job. JOB: #{inspect state.job}. MESSAGE: #{inspect body}. ERROR: #{inspect result}"
 
         Consumer.ack(state.channel, meta, false)
 
         {:noreply, update_job_stats(state, :failed)}
       false ->
         # Failed more than X times
-        Logger.error "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny stops retrying the job. JOB: #{inspect state.job}. PAYLOAD: #{inspect payload}. ERROR: #{inspect result}"
+        Logger.error "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny stops retrying the job. JOB: #{inspect state.job}. PAYLOAD: #{inspect body}. ERROR: #{inspect result}"
 
         # Enqueue failed queue
-        reject_payload(state, payload, meta)
+        reject_message(state, body, meta)
     end
+  end
+
+  @spec reject_message(TaskBunny.Worker.t, any, any) :: {:noreply, TaskBunny.Worker.t}
+  defp reject_message(state, body, meta) do
+    rejected_queue = Queue.rejected_queue_name(state.job.queue_name())
+    SyncPublisher.push(state.host, rejected_queue, body)
+
+    Consumer.ack(state.channel, meta, true)
+
+    {:noreply, update_job_stats(state, :rejected)}
   end
 end

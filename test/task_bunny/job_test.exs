@@ -1,7 +1,7 @@
 defmodule TaskBunny.JobTest do
   use ExUnit.Case
   import TaskBunny.TestSupport.QueueHelper
-  alias TaskBunny.{Job, TestSupport.QueueHelper}
+  alias TaskBunny.{Job, Message, TestSupport.QueueHelper}
 
   defmodule JobWithAllDefault do
     use Job
@@ -58,7 +58,8 @@ defmodule TaskBunny.JobTest do
       :ok = TestJob.enqueue(payload)
 
       {received, _} = QueueHelper.pop(TestJob.queue_name())
-      assert Poison.decode!(received) == payload
+      {:ok, %{"payload" => received_payload}} = Message.decode(received)
+      assert received_payload == payload
     end
   end
 end

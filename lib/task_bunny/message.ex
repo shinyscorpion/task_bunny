@@ -1,7 +1,62 @@
 defmodule TaskBunny.Message do
   @moduledoc """
-  Provides functionalities to access a message and its meta data.
+  Functions to access messages and its meta data.
   """
+
+  @doc """
+  Encode message body in JSON with job and arugment.
+  """
+  @spec encode(atom, any) :: String.t
+  def encode(job, payload) do
+    %{
+      "job" => encode_job(job),
+      "payload" => payload,
+      "created_at" => DateTime.utc_now()
+    }
+    |> Poison.encode!
+  end
+
+  @doc """
+  Decode message body in JSON to map
+  """
+  @spec decode(String.t) :: map
+  def decode(message) do
+    case Poison.decode(message) do
+      {:ok, decoded} ->
+        job = decode_job(decoded["job"])
+        if job && Code.ensure_loaded?(job) do
+          {:ok, %{decoded | "job" => job}}
+        else
+          {:error, :job_not_loaded}
+        end
+      error ->
+        {:error, {:poison_decode_error, error}}
+    end
+  rescue
+    error -> {:error, {:decode_exception, error}}
+  end
+
+  @spec encode_job(atom) :: String.t
+  defp encode_job(job) do
+    job
+    |> Atom.to_string
+    |> String.trim_leading("Elixir.")
+  end
+
+  @spec decode_job(String.t) :: atom | nil
+  defp decode_job(job_name) do
+    job_name = if job_name =~ ~r/^Elixir\./ do
+      job_name
+    else
+      "Elixir.#{job_name}"
+    end
+
+    try do
+      String.to_existing_atom(job_name)
+    rescue
+      ArgumentError -> nil
+    end
+  end
 
   @doc """
   Retrieves number of count the message was consumed and failed to process
@@ -43,9 +98,12 @@ defmodule TaskBunny.Message do
     if count > 0, do: count, else: failed_count_pre_3_6(tables)
   end
 
+  def failed_count(_), do: 0
+
   # Priort to 3.6, it doesn't contain count information.
   # We need to count it up by ourselves.
-  def failed_count_pre_3_6(tables) do
+  @spec failed_count_pre_3_6(list) :: integer
+  defp failed_count_pre_3_6(tables) do
     # List up queues
     queues =
       tables
@@ -77,6 +135,4 @@ defmodule TaskBunny.Message do
     |> Enum.map(fn ({_q, count}) -> count end)
     |> Enum.max
   end
-
-  def failed_count(_), do: 0
 end
