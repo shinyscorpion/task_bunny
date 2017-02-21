@@ -128,8 +128,11 @@ defmodule TaskBunny.Worker do
       error ->
         Logger.error "TaskBunny.Worker:(#{state.job}) basic_deliver with invalid (#{inspect error}) payload: (#{inspect body} on #{inspect self()}"
 
+        reject_message(state, body, meta)
+
         # Needs state.runners + 1, because reject_payload does state.runners - 1
-        reject_message(%{state | runners: state.runners + 1}, body, meta)
+        state = %{state | runners: state.runners + 1}
+        {:noreply, update_job_stats(state, :rejected)}
     end
   end
 
@@ -175,7 +178,7 @@ defmodule TaskBunny.Worker do
     String.to_atom("TaskBunny.Worker.#{job}")
   end
 
-  @spec update_job_stats(TaskBunny.Worker.t, :succeeded | :failed | :rejected) :: TaskBunny.Worker.t
+  @spec update_job_stats(Worker.t, :succeeded | :failed | :rejected) :: Worker.t
   defp update_job_stats(state, success) do
     stats =
       case success do
@@ -205,18 +208,28 @@ defmodule TaskBunny.Worker do
         # Failed more than X times
         Logger.error "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny stops retrying the job. JOB: #{inspect state.job}. PAYLOAD: #{inspect body}. ERROR: #{inspect result}"
 
-        # Enqueue failed queue
         reject_message(state, body, meta)
+
+        {:noreply, update_job_stats(state, :rejected)}
     end
   end
 
-  @spec reject_message(TaskBunny.Worker.t, any, any) :: {:noreply, TaskBunny.Worker.t}
+  @spec retry_message(Worker.t, any, any) :: :ok
+  defp retry_message(state, body, meta) do
+    retry_queue = Queue.retry_queue_name(state.job.queue_name())
+    # TODO: set TTL
+    SyncPublisher.push(state.host, retry_queue, body)
+
+    Consumer.ack(state.channel, meta, true)
+    :ok
+  end
+
+  @spec reject_message(Worker.t, any, any) :: :ok
   defp reject_message(state, body, meta) do
     rejected_queue = Queue.rejected_queue_name(state.job.queue_name())
     Publisher.publish(state.host, rejected_queue, body)
 
     Consumer.ack(state.channel, meta, true)
-
-    {:noreply, update_job_stats(state, :rejected)}
+    :ok
   end
 end
