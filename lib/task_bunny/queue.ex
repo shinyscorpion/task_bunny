@@ -3,7 +3,7 @@ defmodule TaskBunny.Queue do
 
   @spec declare_with_retry(%AMQP.Connection{} | atom, String.t) :: {map, map, map}
   def declare_with_retry(host, queue_name) when is_atom(host) do
-    conn = TaskBunny.Connection.get_connection(host)
+    conn = TaskBunny.Connection.get_connection!(host)
     declare_with_retry(conn, queue_name)
   end
 

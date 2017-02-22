@@ -51,7 +51,7 @@ defmodule TaskBunny.SupervisorTest do
       # Close the connection
       conn = Connection.get_connection(@host)
       AMQP.Connection.close(conn)
-      :timer.sleep(10)
+      :timer.sleep(50)
 
       new_conn_pid = Process.whereis(conn_name)
       new_work_pid = Process.whereis(work_name)
