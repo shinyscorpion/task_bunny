@@ -6,7 +6,7 @@ defmodule TaskBunny.Worker do
   use GenServer
   require Logger
   alias TaskBunny.{Connection, Consumer, JobRunner, Queue,
-                   SyncPublisher, Worker, Message}
+                   Publisher, Worker, Message}
 
   @type t ::%__MODULE__{
     job: atom,
@@ -82,6 +82,8 @@ defmodule TaskBunny.Worker do
   """
   @spec terminate(any, TaskBunny.Worker.t) :: :normal
   def terminate(_reason, state) do
+    Logger.info "TaskBunny.Worker termintating: PID: #{inspect self()}"
+
     if state.channel do
       AMQP.Channel.close(state.channel)
     end
@@ -100,7 +102,7 @@ defmodule TaskBunny.Worker do
 
   def handle_info({:connected, connection}, state = %Worker{}) do
     # Declares queue
-    state.job.declare_queue(connection)
+    state.job.declare_queue(state.host)
 
     # Consumes the queue
     case Consumer.consume(connection, state.job.queue_name(), state.concurrency) do
@@ -211,7 +213,7 @@ defmodule TaskBunny.Worker do
   @spec reject_message(TaskBunny.Worker.t, any, any) :: {:noreply, TaskBunny.Worker.t}
   defp reject_message(state, body, meta) do
     rejected_queue = Queue.rejected_queue_name(state.job.queue_name())
-    SyncPublisher.push(state.host, rejected_queue, body)
+    Publisher.publish(state.host, rejected_queue, body)
 
     Consumer.ack(state.channel, meta, true)
 
