@@ -43,6 +43,17 @@ defmodule TaskBunny.Connection do
   end
 
   @doc """
+  Similar to `get_connection/1` but raises an error when connection is not ready.
+  """
+  @spec get_connection!(atom) :: struct
+  def get_connection!(host \\ :default) do
+    case get_connection(host) do
+      nil -> raise "Failed to connect #{host}"
+      conn -> conn
+    end
+  end
+
+  @doc """
   Asks server to send the connection back asynchronously.
   Once connection has been established, it will send a message with {:connected, connection} to the given process.
 

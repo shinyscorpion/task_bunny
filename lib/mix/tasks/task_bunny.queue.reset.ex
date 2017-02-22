@@ -29,9 +29,8 @@ defmodule Mix.Tasks.TaskBunny.Queue.Reset do
   defp reset_queue(job_info) do
     Mix.shell.info "Resetting queues for #{inspect job_info}"
 
-    conn = Connection.get_connection()
     job = job_info[:job]
-    job.delete_queue(conn)
-    job.declare_queue(conn)
+    job.delete_queue()
+    job.declare_queue()
   end
 end

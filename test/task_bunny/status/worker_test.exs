@@ -2,7 +2,7 @@ defmodule TaskBunny.Status.WorkerTest do
   use ExUnit.Case, async: false
 
   import TaskBunny.TestSupport.QueueHelper
-  alias TaskBunny.{SyncPublisher, Config}
+  alias TaskBunny.Config
   alias TaskBunny.TestSupport.JobTestHelper
   alias TaskBunny.TestSupport.JobTestHelper.TestJob
 
@@ -73,8 +73,8 @@ defmodule TaskBunny.Status.WorkerTest do
 
       Process.sleep(10)
 
-      SyncPublisher.push :foo, TestJob, payload
-      SyncPublisher.push :foo, TestJob, payload
+      TestJob.enqueue(payload, host: :foo)
+      TestJob.enqueue(payload, host: :foo)
 
       JobTestHelper.wait_for_perform(2)
 
@@ -90,8 +90,7 @@ defmodule TaskBunny.Status.WorkerTest do
     test "jobs succeeded" do
       payload = %{"hello" => "world1"}
 
-      SyncPublisher.push TestJob, payload
-
+      TestJob.enqueue(payload)
       JobTestHelper.wait_for_perform()
 
       %{workers: workers} = TaskBunny.Status.overview(:foo_supervisor)
@@ -104,8 +103,7 @@ defmodule TaskBunny.Status.WorkerTest do
     test "jobs failed" do
       payload = %{"fail" => "fail"}
 
-      SyncPublisher.push TestJob, payload
-
+      TestJob.enqueue(payload)
       JobTestHelper.wait_for_perform()
 
       %{workers: workers} = TaskBunny.Status.overview(:foo_supervisor)
@@ -118,8 +116,7 @@ defmodule TaskBunny.Status.WorkerTest do
     test "jobs rejected" do
       payload = %{"fail" => "fail"}
 
-      SyncPublisher.push TaskBunny.Status.WorkerTest.RejectJob, payload
-
+      RejectJob.enqueue(payload)
       JobTestHelper.wait_for_perform()
 
       %{workers: workers} = TaskBunny.Status.overview(:foo_supervisor)

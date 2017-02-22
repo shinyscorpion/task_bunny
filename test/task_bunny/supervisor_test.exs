@@ -3,7 +3,7 @@ defmodule TaskBunny.SupervisorTest do
   import TaskBunny.TestSupport.QueueHelper
   alias TaskBunny.TestSupport.JobTestHelper
   alias TaskBunny.TestSupport.JobTestHelper.TestJob
-  alias TaskBunny.{Config, Connection, SyncPublisher}
+  alias TaskBunny.{Config, Connection}
 
   setup do
     clean(TestJob.all_queues())
@@ -33,7 +33,7 @@ defmodule TaskBunny.SupervisorTest do
 
   test "starts connection and worker" do
     payload = %{"hello" => "world"}
-    SyncPublisher.push :foo, TestJob, payload
+    TestJob.enqueue(payload, host: :foo)
 
     JobTestHelper.wait_for_perform
     assert List.first(JobTestHelper.performed_payloads) == payload
@@ -60,7 +60,7 @@ defmodule TaskBunny.SupervisorTest do
 
       # Make sure worker handles the job
       payload = %{"hello" => "world"}
-      SyncPublisher.push :foo, TestJob, payload
+      TestJob.enqueue(payload, host: :foo)
 
       JobTestHelper.wait_for_perform
       assert List.first(JobTestHelper.performed_payloads) == payload

@@ -1,7 +1,7 @@
 defmodule TaskBunny.WorkerTest do
   use ExUnit.Case, async: false
   import TaskBunny.TestSupport.QueueHelper
-  alias TaskBunny.{SyncPublisher, Connection, Worker, Queue}
+  alias TaskBunny.{Connection, Worker, Queue}
   alias TaskBunny.TestSupport.{
     JobTestHelper,
     JobTestHelper.TestJob
@@ -24,8 +24,19 @@ defmodule TaskBunny.WorkerTest do
       {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"hello" => "world1"}
 
-      SyncPublisher.push TestJob, payload
+      TestJob.enqueue(payload)
+      JobTestHelper.wait_for_perform()
 
+      assert List.first(JobTestHelper.performed_payloads) == payload
+
+      GenServer.stop worker
+    end
+
+    test "invokes a job with the payload 2" do
+      {:ok, worker} = Worker.start_link({TestJob, 1})
+      payload = %{"hello" => "world2"}
+
+      TestJob.enqueue(payload)
       JobTestHelper.wait_for_perform()
 
       assert List.first(JobTestHelper.performed_payloads) == payload
@@ -39,7 +50,7 @@ defmodule TaskBunny.WorkerTest do
 
       # Run 10 jobs and each would take 10 seconds to finish
       Enum.each 1..10, fn (_) ->
-        SyncPublisher.push TestJob, payload
+        TestJob.enqueue(payload)
       end
 
       # This waits for up to 1 second
@@ -72,7 +83,7 @@ defmodule TaskBunny.WorkerTest do
       {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"hello" => "world"}
 
-      SyncPublisher.push TestJob, payload
+      TestJob.enqueue(payload)
       JobTestHelper.wait_for_perform()
 
       ack_args = get_ack_args()
@@ -88,7 +99,7 @@ defmodule TaskBunny.WorkerTest do
       {:ok, worker} = Worker.start_link({TestJob, 1})
       payload = %{"fail" => true}
 
-      SyncPublisher.push TestJob, payload
+      TestJob.enqueue(payload)
       JobTestHelper.wait_for_perform()
 
       ack_args = get_ack_args()
@@ -107,7 +118,7 @@ defmodule TaskBunny.WorkerTest do
       [main, retry, rejected] = TestJob.all_queues()
       payload = %{"fail" => true}
 
-      SyncPublisher.push(TestJob, payload)
+      TestJob.enqueue(payload)
       JobTestHelper.wait_for_perform()
 
       conn = Connection.get_connection()
@@ -136,7 +147,7 @@ defmodule TaskBunny.WorkerTest do
       [main, retry, rejected] = TestJob.all_queues()
       payload = %{"fail" => true}
 
-      SyncPublisher.push(TestJob, payload)
+      TestJob.enqueue(payload)
       JobTestHelper.wait_for_perform(11)
 
       # 1 normal + 10 retries = 11
@@ -172,7 +183,7 @@ defmodule TaskBunny.WorkerTest do
       %{
         channel: nil,
         host: :default,
-        job: TaskBunny.TestSupport.JobTestHelper.TestJob,
+        job: TestJob,
         runners: 0,
         job_stats: %{failed: 0, rejected: 1, succeeded: 0},
       }

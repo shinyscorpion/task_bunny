@@ -21,17 +21,6 @@ defmodule TaskBunny.TestSupport.QueueHelper do
     {:ok, _channel} = AMQP.Channel.open(conn)
   end
 
-  def push_when_server_back(queue, payload, host \\ :default) do
-    case TaskBunny.SyncPublisher.push(host, queue, payload) do
-      :ok ->
-        :ok
-      :failed ->
-        Process.sleep(100)
-
-        push_when_server_back(queue, payload, host)
-    end
-  end
-
   def declare(queue, host \\ :default) do
     {:ok, channel} = open_channel(host)
     {:ok, _state} = AMQP.Queue.declare(channel, queue, durable: true)

@@ -2,7 +2,7 @@ defmodule TaskBunny.WorkerSupervisorTest do
   use ExUnit.Case
 
   import TaskBunny.TestSupport.QueueHelper
-  alias TaskBunny.{SyncPublisher, WorkerSupervisor}
+  alias TaskBunny.WorkerSupervisor
   alias TaskBunny.TestSupport.JobTestHelper
   alias TaskBunny.TestSupport.JobTestHelper.TestJob
 
@@ -25,7 +25,7 @@ defmodule TaskBunny.WorkerSupervisorTest do
     assert active == 1
 
     payload = %{"hello" => "world"}
-    SyncPublisher.push TestJob, payload
+    TestJob.enqueue(payload)
 
     JobTestHelper.wait_for_perform
     assert List.first(JobTestHelper.performed_payloads) == payload

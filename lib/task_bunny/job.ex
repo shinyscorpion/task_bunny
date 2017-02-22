@@ -4,7 +4,7 @@ defmodule TaskBunny.Job do
 
   @callback perform(any) :: :ok | {:error, term}
 
-  alias TaskBunny.{Queue, Job, SyncPublisher}
+  alias TaskBunny.{Queue, Job, Message, Publisher}
 
   defmacro __using__(job_options \\ []) do
     quote do
@@ -45,9 +45,14 @@ defmodule TaskBunny.Job do
         "#{namespace}.#{name}"
       end
 
-      @spec enqueue(any) :: :ok | :failed
-      def enqueue(host \\ :default, payload) do
-        SyncPublisher.push(host, __MODULE__, payload)
+      @spec enqueue(any, keyword) :: :ok | {:error, any}
+      def enqueue(payload, options \\ []) do
+        host = options[:host] || :default
+        queue = queue_name()
+        message = Message.encode(__MODULE__, payload)
+
+        declare_queue(host)
+        Publisher.publish(host, queue, message)
       end
 
       @spec all_queues :: list(String.t)
@@ -59,10 +64,10 @@ defmodule TaskBunny.Job do
         ]
       end
 
-      @spec declare_queue(%AMQP.Connection{}) :: :ok
-      def declare_queue(connection) do
+      @spec declare_queue(atom) :: :ok
+      def declare_queue(host \\ :default) do
         Queue.declare_with_retry(
-          connection, queue_name(), retry_interval: retry_interval()
+          host, queue_name(), retry_interval: retry_interval()
         )
         :ok
       catch
@@ -76,9 +81,9 @@ defmodule TaskBunny.Job do
           {:error, {:exit, e}}
       end
 
-      @spec delete_queue(%AMQP.Connection{}) :: :ok
-      def delete_queue(connection) do
-        Queue.delete_with_retry(connection, queue_name())
+      @spec delete_queue(atom) :: :ok
+      def delete_queue(host \\ :default) do
+        Queue.delete_with_retry(host, queue_name())
       end
 
       @doc false

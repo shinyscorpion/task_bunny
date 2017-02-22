@@ -1,7 +1,12 @@
 defmodule TaskBunny.Queue do
   @moduledoc false
 
-  @spec declare_with_retry(%AMQP.Connection{}, String.t, list) :: {map, map, map}
+  @spec declare_with_retry(%AMQP.Connection{} | atom, String.t, list) :: {map, map, map}
+  def declare_with_retry(host, queue_name, options) when is_atom(host) do
+    conn = TaskBunny.Connection.get_connection(host)
+    declare_with_retry(conn, queue_name, options)
+  end
+
   def declare_with_retry(connection, queue_name, options) do
     {:ok, channel} = AMQP.Channel.open(connection)
 
@@ -39,7 +44,12 @@ defmodule TaskBunny.Queue do
     {work, retry, rejected}
   end
 
-  @spec delete_with_retry(%AMQP.Connection{}, String.t) :: :ok
+  @spec delete_with_retry(%AMQP.Connection{} | atom, String.t) :: :ok
+  def declare_with_retry(host, queue_name) when is_atom(host) do
+    conn = TaskBunny.Connection.get_connection(host)
+    delete_with_retry(conn, queue_name)
+  end
+
   def delete_with_retry(connection, queue_name) do
     {:ok, channel} = AMQP.Channel.open(connection)
 
