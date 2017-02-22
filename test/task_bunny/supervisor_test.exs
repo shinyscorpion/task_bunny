@@ -5,23 +5,25 @@ defmodule TaskBunny.SupervisorTest do
   alias TaskBunny.TestSupport.JobTestHelper.TestJob
   alias TaskBunny.{Config, Connection}
 
+  @host :sv_test
+
   setup do
     clean(TestJob.all_queues())
 
     job = [
       job: TaskBunny.TestSupport.JobTestHelper.TestJob,
       concurrency: 1,
-      host: :foo
+      host: @host
     ]
 
     :meck.new Config, [:passthrough]
-    :meck.expect Config, :hosts, fn -> [:foo] end
-    :meck.expect Config, :connect_options, fn (:foo) -> "amqp://localhost" end
+    :meck.expect Config, :hosts, fn -> [@host] end
+    :meck.expect Config, :connect_options, fn (@host) -> "amqp://localhost" end
     :meck.expect Config, :jobs, fn -> [job] end
 
     JobTestHelper.setup
 
-    {:ok, pid} = TaskBunny.Supervisor.start_link(:foo_supervisor)
+    {:ok, pid} = TaskBunny.Supervisor.start_link(:supevisor_test)
 
     on_exit fn ->
       :meck.unload
@@ -33,7 +35,7 @@ defmodule TaskBunny.SupervisorTest do
 
   test "starts connection and worker" do
     payload = %{"hello" => "world"}
-    TestJob.enqueue(payload, host: :foo)
+    TestJob.enqueue(payload, host: @host)
 
     JobTestHelper.wait_for_perform
     assert List.first(JobTestHelper.performed_payloads) == payload
@@ -41,13 +43,13 @@ defmodule TaskBunny.SupervisorTest do
 
   describe "AMQP connection is lost" do
     test "recovers by restarting connection and all workers" do
-      conn_name = :"TaskBunny.Connection.foo"
+      conn_name = :"TaskBunny.Connection.#{@host}"
       work_name = :"TaskBunny.Worker.Elixir.TaskBunny.TestSupport.JobTestHelper.TestJob"
       conn_pid = Process.whereis(conn_name)
       work_pid = Process.whereis(work_name)
 
       # Close the connection
-      conn = Connection.get_connection(:foo)
+      conn = Connection.get_connection(@host)
       AMQP.Connection.close(conn)
       :timer.sleep(10)
 
@@ -60,16 +62,16 @@ defmodule TaskBunny.SupervisorTest do
 
       # Make sure worker handles the job
       payload = %{"hello" => "world"}
-      TestJob.enqueue(payload, host: :foo)
+      TestJob.enqueue(payload, host: @host)
 
-      JobTestHelper.wait_for_perform
+      JobTestHelper.wait_for_perform()
       assert List.first(JobTestHelper.performed_payloads) == payload
     end
   end
 
   describe "a worker crashes" do
     test "restarts the worker but connection stays" do
-      conn_name = :"TaskBunny.Connection.foo"
+      conn_name = :"TaskBunny.Connection.#{@host}"
       work_name = :"TaskBunny.Worker.Elixir.TaskBunny.TestSupport.JobTestHelper.TestJob"
       conn_pid = Process.whereis(conn_name)
       work_pid = Process.whereis(work_name)

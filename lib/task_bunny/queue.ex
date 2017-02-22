@@ -1,14 +1,13 @@
 defmodule TaskBunny.Queue do
   @moduledoc false
-  @default_retry_interval 120_000
 
-  @spec declare_with_retry(%AMQP.Connection{} | atom, String.t, list) :: {map, map, map}
-  def declare_with_retry(host, queue_name, options) when is_atom(host) do
+  @spec declare_with_retry(%AMQP.Connection{} | atom, String.t) :: {map, map, map}
+  def declare_with_retry(host, queue_name) when is_atom(host) do
     conn = TaskBunny.Connection.get_connection(host)
-    declare_with_retry(conn, queue_name, options)
+    declare_with_retry(conn, queue_name)
   end
 
-  def declare_with_retry(connection, queue_name, options) do
+  def declare_with_retry(connection, queue_name) do
     {:ok, channel} = AMQP.Channel.open(connection)
 
     retry_queue = retry_queue_name(queue_name)
@@ -22,8 +21,7 @@ defmodule TaskBunny.Queue do
     retry_options = [
       arguments: [
         {"x-dead-letter-exchange", :longstr, ""},
-        {"x-dead-letter-routing-key", :longstr, queue_name},
-        {"x-message-ttl", :long, @default_retry_interval}
+        {"x-dead-letter-routing-key", :longstr, queue_name}
       ],
       durable: true
     ]

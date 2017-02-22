@@ -66,9 +66,7 @@ defmodule TaskBunny.Job do
 
       @spec declare_queue(atom) :: :ok
       def declare_queue(host \\ :default) do
-        Queue.declare_with_retry(
-          host, queue_name(), retry_interval: retry_interval()
-        )
+        Queue.declare_with_retry(host, queue_name())
         :ok
       catch
         :exit, e ->

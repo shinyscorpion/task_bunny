@@ -32,14 +32,22 @@ defmodule TaskBunny.WorkerTest do
       GenServer.stop worker
     end
 
-    test "invokes a job with the payload 2" do
+    test "consumes the message" do
       {:ok, worker} = Worker.start_link({TestJob, 1})
-      payload = %{"hello" => "world2"}
+      [main, retry, rejected] = TestJob.all_queues()
+      payload = %{"hello" => "world1"}
 
       TestJob.enqueue(payload)
       JobTestHelper.wait_for_perform()
 
-      assert List.first(JobTestHelper.performed_payloads) == payload
+      conn = Connection.get_connection()
+      %{message_count: main_count} = Queue.state(conn, main)
+      %{message_count: retry_count} = Queue.state(conn, retry)
+      %{message_count: rejected_count} = Queue.state(conn, rejected)
+
+      assert main_count == 0
+      assert retry_count == 0
+      assert rejected_count == 0
 
       GenServer.stop worker
     end
@@ -58,55 +66,6 @@ defmodule TaskBunny.WorkerTest do
 
       # Make sure more than specified number of jobs were not invoked
       assert JobTestHelper.performed_count == 5
-
-      GenServer.stop worker
-    end
-  end
-
-  describe "message ack" do
-    setup do
-      :meck.new TaskBunny.Consumer, [:passthrough]
-
-      on_exit fn ->
-        :meck.unload
-      end
-    end
-
-    def get_ack_args do
-      :meck.history(TaskBunny.Consumer)
-      |> Enum.find_value(fn ({_pid, {_module, method, args}, _ret}) ->
-        if method==:ack, do: args
-      end)
-    end
-
-    test "acknowledges with true in succeeded when job is succeeded" do
-      {:ok, worker} = Worker.start_link({TestJob, 1})
-      payload = %{"hello" => "world"}
-
-      TestJob.enqueue(payload)
-      JobTestHelper.wait_for_perform()
-
-      ack_args = get_ack_args()
-
-      assert ack_args
-      [_, _, succeeded] = ack_args
-      assert succeeded
-
-      GenServer.stop worker
-    end
-
-    test "acknowledges with false in succeeded when job is failed" do
-      {:ok, worker} = Worker.start_link({TestJob, 1})
-      payload = %{"fail" => true}
-
-      TestJob.enqueue(payload)
-      JobTestHelper.wait_for_perform()
-
-      ack_args = get_ack_args()
-
-      assert ack_args
-      [_, _, succeeded] = ack_args
-      refute succeeded
 
       GenServer.stop worker
     end

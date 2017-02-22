@@ -27,7 +27,7 @@ defmodule TaskBunny.Publisher do
   defp do_publish(nil, _, _, _, _), do: {:error, "Failed to connect to AMQP host"}
 
   defp do_publish(conn, exchange, routing_key, message, options) do
-    Logger.debug "TaskBunny.Publisher: publish:\r\n #{exchange} - #{routing_key}: #{inspect message}"
+    Logger.debug "TaskBunny.Publisher: publish:\r\n #{exchange} - #{routing_key}: #{inspect message}. options = #{inspect options}"
 
     {:ok, channel} = AMQP.Channel.open(conn)
     :ok = AMQP.Basic.publish(channel, exchange, routing_key, message, options)

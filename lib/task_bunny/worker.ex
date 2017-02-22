@@ -201,7 +201,7 @@ defmodule TaskBunny.Worker do
       true ->
         Logger.warn "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny will retry the job. JOB: #{inspect state.job}. MESSAGE: #{inspect body}. ERROR: #{inspect result}"
 
-        Consumer.ack(state.channel, meta, false)
+        retry_message(state, body, meta)
 
         {:noreply, update_job_stats(state, :failed)}
       false ->
@@ -216,9 +216,12 @@ defmodule TaskBunny.Worker do
 
   @spec retry_message(Worker.t, any, any) :: :ok
   defp retry_message(state, body, meta) do
-    retry_queue = Queue.retry_queue_name(state.job.queue_name())
-    # TODO: set TTL
-    SyncPublisher.push(state.host, retry_queue, body)
+    job = state.job
+    retry_queue = Queue.retry_queue_name(job.queue_name())
+    options = [
+      expiration: "#{job.retry_interval()}"
+    ]
+    Publisher.publish(state.host, retry_queue, body, options)
 
     Consumer.ack(state.channel, meta, true)
     :ok
