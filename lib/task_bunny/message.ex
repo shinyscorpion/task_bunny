@@ -66,6 +66,7 @@ defmodule TaskBunny.Message do
     error = %{
       "result" => inspect(error),
       "failed_at" => DateTime.utc_now(),
+      "host" => host(),
       "pid" => inspect(self())
     }
     errors = (message["errors"] || []) |> List.insert_at(-1, error)
@@ -77,6 +78,11 @@ defmodule TaskBunny.Message do
     |> Poison.decode!()
     |> add_error_log(error)
     |> Poison.encode!(pretty: true)
+  end
+
+  defp host() do
+    {:ok, host} = :inet.gethostname()
+    List.to_string(host)
   end
 
   @doc """
