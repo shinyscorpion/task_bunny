@@ -57,4 +57,21 @@ defmodule TaskBunny.TestSupport.JobTestHelper do
   def teardown do
     :meck.unload
   end
+
+  def wait_for_connection(host) do
+    Enum.find_value 1..100, fn (_) ->
+      case TaskBunny.Connection.monitor_connection(host, self()) do
+        :ok -> true
+        _ ->
+          :timer.sleep(10)
+          false
+      end
+    end || raise "connection process is not up"
+
+    receive do
+      {:connected, conn} -> conn
+    after
+      1_000 -> raise "failed to connect to #{host}"
+    end
+  end
 end

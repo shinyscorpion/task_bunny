@@ -128,8 +128,11 @@ defmodule TaskBunny.Worker do
       error ->
         Logger.error "TaskBunny.Worker:(#{state.job}) basic_deliver with invalid (#{inspect error}) payload: (#{inspect body} on #{inspect self()}"
 
+        reject_message(state, body, meta)
+
         # Needs state.runners + 1, because reject_payload does state.runners - 1
-        reject_message(%{state | runners: state.runners + 1}, body, meta)
+        state = %{state | runners: state.runners + 1}
+        {:noreply, update_job_stats(state, :rejected)}
     end
   end
 
@@ -175,7 +178,7 @@ defmodule TaskBunny.Worker do
     String.to_atom("TaskBunny.Worker.#{job}")
   end
 
-  @spec update_job_stats(TaskBunny.Worker.t, :succeeded | :failed | :rejected) :: TaskBunny.Worker.t
+  @spec update_job_stats(Worker.t, :succeeded | :failed | :rejected) :: Worker.t
   defp update_job_stats(state, success) do
     stats =
       case success do
@@ -192,31 +195,45 @@ defmodule TaskBunny.Worker do
   defp succeeded?(_), do: false
 
   defp handle_failed_job(state, body, meta, result) do
-    failed_count = Message.failed_count(meta)
+    failed_count = Message.failed_count(body)
+    new_body = Message.add_error_log(body, result)
 
     case failed_count < state.job.max_retry() do
       true ->
         Logger.warn "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny will retry the job. JOB: #{inspect state.job}. MESSAGE: #{inspect body}. ERROR: #{inspect result}"
 
-        Consumer.ack(state.channel, meta, false)
+        retry_message(state, new_body, meta)
 
         {:noreply, update_job_stats(state, :failed)}
       false ->
         # Failed more than X times
         Logger.error "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny stops retrying the job. JOB: #{inspect state.job}. PAYLOAD: #{inspect body}. ERROR: #{inspect result}"
 
-        # Enqueue failed queue
-        reject_message(state, body, meta)
+        reject_message(state, new_body, meta)
+
+        {:noreply, update_job_stats(state, :rejected)}
     end
   end
 
-  @spec reject_message(TaskBunny.Worker.t, any, any) :: {:noreply, TaskBunny.Worker.t}
+  @spec retry_message(Worker.t, any, any) :: :ok
+  defp retry_message(state, body, meta) do
+    job = state.job
+    retry_queue = Queue.retry_queue_name(job.queue_name())
+    options = [
+      expiration: "#{job.retry_interval()}"
+    ]
+    Publisher.publish(state.host, retry_queue, body, options)
+
+    Consumer.ack(state.channel, meta, true)
+    :ok
+  end
+
+  @spec reject_message(Worker.t, any, any) :: :ok
   defp reject_message(state, body, meta) do
     rejected_queue = Queue.rejected_queue_name(state.job.queue_name())
     Publisher.publish(state.host, rejected_queue, body)
 
     Consumer.ack(state.channel, meta, true)
-
-    {:noreply, update_job_stats(state, :rejected)}
+    :ok
   end
 end
