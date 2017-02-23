@@ -33,7 +33,7 @@ defmodule TaskBunny.Queue do
   end
 
   @spec delete_with_retry(%AMQP.Connection{} | atom, String.t) :: :ok
-  def declare_with_retry(host, queue_name) when is_atom(host) do
+  def delete_with_retry(host, queue_name) when is_atom(host) do
     conn = TaskBunny.Connection.get_connection(host)
     delete_with_retry(conn, queue_name)
   end
