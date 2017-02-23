@@ -1,4 +1,4 @@
-%{"amqp": {:hex, :amqp, "0.2.0-pre.1", "55b7755ea840ee0beb194f891736323ef7059e8beda2c240ee07730338157114", [:mix], [{:amqp_client, "~> 3.6.7-pre.1", [hex: :amqp_client, optional: false]}]},
+%{"amqp": {:hex, :amqp, "0.2.0-pre.2", "01863a61a5db3a370a5d1668e4730669962f204de19f6e915a07550f16c3d3f9", [:mix], [{:amqp_client, "~> 3.6.7-pre.1", [hex: :amqp_client, optional: false]}, {:rabbit_common, "~> 3.6.7-pre.1", [hex: :rabbit_common, optional: false]}]},
   "amqp_client": {:hex, :amqp_client, "3.6.7-pre.1", "5d689656443cf652a0114806e7e2f5c63ceac4d768382ffa08570a246f0e8eaf", [:make, :rebar3], [{:rabbit_common, "3.6.7-pre.1", [hex: :rabbit_common, optional: false]}]},
   "bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], []},
   "certifi": {:hex, :certifi, "0.7.0", "861a57f3808f7eb0c2d1802afeaae0fa5de813b0df0979153cbafcd853ababaf", [:rebar3], []},
