@@ -2,6 +2,13 @@
 
 We are still discussing backward incompatible changes. Please see [Gihub issues](https://github.com/shinyscorpion/task_bunny/issues) for the details.
 
+## 0.0.1-dev.5
+
+**Please reset your queues after upgrading TaskBunny. This updated queue configuration**
+
+* Rename SyncPublisher module to Publisher and clean up the interface. [#18](https://github.com/shinyscorpion/task_bunny/pull/18)
+* Add error logs to message body when retrying. Updated the logic how TaskBunny retries [#17](https://github.com/shinyscorpion/task_bunny/pull/17)
+
 ## 0.0.1-dev.4
 
 * New API: Job.enqueue/2 [#14](https://github.com/shinyscorpion/task_bunny/pull/14)

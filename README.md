@@ -57,7 +57,7 @@ TaskBunny heavily relies on [amqp](https://github.com/pma/amqp) by Paulo Almeida
   1. Add `task_bunny` to your list of dependencies in `mix.exs`:
 
         def deps do
-          [{:task_bunny, "~> 0.0.1-dev.4"}]
+          [{:task_bunny, "~> 0.0.1-dev.5"}]
         end
 
   1. Start `task_bunny` before your application (required Elixir 1.3 and before):
@@ -142,7 +142,8 @@ If you define `SampleJob` module like above, TaskBunny will define those three q
 - jobs.sample_job.retry: queue for retry
 - jobs.sample_job.rejected: queue that stores jobs failed more than allowed times
 
-**We are discussing the design decision about queues and workers being tied strongly with a job.**
+**We are discussing the design decision about queues and workers being tied
+strongly with a job. See this [github issue](https://github.com/shinyscorpion/task_bunny/issues/4) for the details.**
 
 ### Concurrency
 
@@ -177,7 +178,6 @@ end
 In this example, it will retry 100 times for every 10 seconds.
 
 If a job fails more than `max_retry` times, the payload is sent to `jobs.[job_name].rejected` queue.
-At the moment, TaskBunny doesn't provide any feature for accessing this queue.
 
 Under the hood, TaskBunny uses [dead letter exchanges](https://www.rabbitmq.com/dlx.html) to support retry.
 
