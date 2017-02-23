@@ -79,5 +79,20 @@ defmodule TaskBunny.Message do
     |> Poison.encode!(pretty: true)
   end
 
-  def failed_count(_), do: 0
+  @doc """
+  Returns a number of errors occurred for the message
+  """
+  @spec failed_count(String.t|map) :: integer
+  def failed_count(message) when is_map(message) do
+    case message["errors"] do
+      nil -> 0
+      errors -> length(errors)
+    end
+  end
+
+  def failed_count(raw_message) do
+    raw_message
+    |> Poison.decode!()
+    |> failed_count()
+  end
 end

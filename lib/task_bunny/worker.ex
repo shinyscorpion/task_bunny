@@ -195,20 +195,21 @@ defmodule TaskBunny.Worker do
   defp succeeded?(_), do: false
 
   defp handle_failed_job(state, body, meta, result) do
-    failed_count = Message.failed_count(meta)
+    failed_count = Message.failed_count(body)
+    new_body = Message.add_error_log(body, result)
 
     case failed_count < state.job.max_retry() do
       true ->
         Logger.warn "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny will retry the job. JOB: #{inspect state.job}. MESSAGE: #{inspect body}. ERROR: #{inspect result}"
 
-        retry_message(state, body, meta)
+        retry_message(state, new_body, meta)
 
         {:noreply, update_job_stats(state, :failed)}
       false ->
         # Failed more than X times
         Logger.error "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny stops retrying the job. JOB: #{inspect state.job}. PAYLOAD: #{inspect body}. ERROR: #{inspect result}"
 
-        reject_message(state, body, meta)
+        reject_message(state, new_body, meta)
 
         {:noreply, update_job_stats(state, :rejected)}
     end
