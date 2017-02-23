@@ -24,6 +24,7 @@ defmodule TaskBunny.SupervisorTest do
     JobTestHelper.setup
 
     {:ok, pid} = TaskBunny.Supervisor.start_link(:supevisor_test)
+    :timer.sleep(50)
 
     on_exit fn ->
       :meck.unload
