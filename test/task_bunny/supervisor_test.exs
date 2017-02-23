@@ -7,9 +7,7 @@ defmodule TaskBunny.SupervisorTest do
 
   @host :sv_test
 
-  setup do
-    clean(TestJob.all_queues())
-
+  defp setup_config do
     job = [
       job: TaskBunny.TestSupport.JobTestHelper.TestJob,
       concurrency: 1,
@@ -20,15 +18,41 @@ defmodule TaskBunny.SupervisorTest do
     :meck.expect Config, :hosts, fn -> [@host] end
     :meck.expect Config, :connect_options, fn (@host) -> "amqp://localhost" end
     :meck.expect Config, :jobs, fn -> [job] end
+  end
 
-    JobTestHelper.setup
+  defp wait_for_process_died(pid) do
+    Enum.find_value 1..100, fn (_) ->
+      unless Process.alive?(pid) do
+        true
+      else
+        :timer.sleep(10)
+        false
+      end
+    end
+  end
 
-    {:ok, pid} = TaskBunny.Supervisor.start_link(:supevisor_test)
-    :timer.sleep(50)
+  defp wait_for_process_up(name) do
+    Enum.find_value 1..100, fn (_) ->
+      if Process.whereis(name) do
+        true
+      else
+        :timer.sleep(10)
+        false
+      end
+    end
+  end
+
+  setup do
+    clean(TestJob.all_queues())
+
+    setup_config()
+    JobTestHelper.setup()
+
+    TaskBunny.Supervisor.start_link(:supevisor_test)
+    JobTestHelper.wait_for_connection(@host)
 
     on_exit fn ->
       :meck.unload
-      if Process.alive?(pid), do: Supervisor.stop(pid)
     end
 
     :ok
@@ -52,7 +76,8 @@ defmodule TaskBunny.SupervisorTest do
       # Close the connection
       conn = Connection.get_connection(@host)
       AMQP.Connection.close(conn)
-      :timer.sleep(50)
+      wait_for_process_died(conn_pid)
+      JobTestHelper.wait_for_connection(@host)
 
       new_conn_pid = Process.whereis(conn_name)
       new_work_pid = Process.whereis(work_name)
@@ -79,7 +104,8 @@ defmodule TaskBunny.SupervisorTest do
 
       # Kill worker
       Process.exit(work_pid, :kill)
-      :timer.sleep(50)
+      wait_for_process_died(work_pid)
+      wait_for_process_up(work_name)
 
       new_conn_pid = Process.whereis(conn_name)
       new_work_pid = Process.whereis(work_name)

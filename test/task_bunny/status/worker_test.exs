@@ -6,6 +6,9 @@ defmodule TaskBunny.Status.WorkerTest do
   alias TaskBunny.TestSupport.JobTestHelper
   alias TaskBunny.TestSupport.JobTestHelper.TestJob
 
+  @host :worker_test
+  @supervisor :worker_test_supervisor
+
   defmodule RejectJob do
     use TaskBunny.Job
 
@@ -23,37 +26,38 @@ defmodule TaskBunny.Status.WorkerTest do
     Enum.find(workers, fn %{job: job} -> job == job_search end)
   end
 
-  setup do
-    clean(TestJob.all_queues())
-
+  defp setup_config do
     jobs = [
       [
-        job: TaskBunny.TestSupport.JobTestHelper.TestJob,
+        job: TestJob,
         concurrency: 3,
-        host: :foo,
+        host: @host,
       ],
       [
-        job: TaskBunny.Status.WorkerTest.RejectJob,
+        job: RejectJob,
         concurrency: 3,
-        host: :foo,
+        host: @host,
       ],
     ]
 
     :meck.new Config, [:passthrough]
-    :meck.expect Config, :hosts, fn -> [:foo] end
-    :meck.expect Config, :connect_options, fn (:foo) -> "amqp://localhost" end
+    :meck.expect Config, :hosts, fn -> [@host] end
+    :meck.expect Config, :connect_options, fn (@host) -> "amqp://localhost" end
     :meck.expect Config, :jobs, fn -> jobs end
+  end
 
-    JobTestHelper.setup
+  setup do
+    clean(TestJob.all_queues())
 
-    {:ok, pid} = TaskBunny.Supervisor.start_link(:foo_supervisor)
+    setup_config()
+    JobTestHelper.setup()
+
+    TaskBunny.Supervisor.start_link(:worker_test_supervisor)
+    JobTestHelper.wait_for_connection(@host)
 
     on_exit fn ->
       :meck.unload
-
       JobTestHelper.teardown
-
-      if Process.alive?(pid), do: Supervisor.stop(pid)
     end
 
     :ok
@@ -61,8 +65,7 @@ defmodule TaskBunny.Status.WorkerTest do
 
   describe "runners" do
     test "running with no jobs being performed" do
-      %{workers: workers} = TaskBunny.Status.overview(:foo_supervisor)
-
+      %{workers: workers} = TaskBunny.Status.overview(@supervisor)
       %{runners: runner_count} = List.first(workers)
 
       assert runner_count == 0
@@ -71,16 +74,13 @@ defmodule TaskBunny.Status.WorkerTest do
     test "running with jobs being performed" do
       payload = %{"sleep" => 10_000}
 
-      Process.sleep(10)
-
-      TestJob.enqueue(payload, host: :foo)
-      TestJob.enqueue(payload, host: :foo)
+      TestJob.enqueue(payload, host: @host)
+      TestJob.enqueue(payload, host: @host)
 
       JobTestHelper.wait_for_perform(2)
 
-      %{workers: workers} = TaskBunny.Status.overview(:foo_supervisor)
-
-      %{runners: runner_count} = find_worker(workers, TaskBunny.TestSupport.JobTestHelper.TestJob)
+      %{workers: workers} = TaskBunny.Status.overview(@supervisor)
+      %{runners: runner_count} = find_worker(workers, TestJob)
 
       assert runner_count == 2
     end
@@ -93,9 +93,8 @@ defmodule TaskBunny.Status.WorkerTest do
       TestJob.enqueue(payload)
       JobTestHelper.wait_for_perform()
 
-      %{workers: workers} = TaskBunny.Status.overview(:foo_supervisor)
-
-      %{stats: stats} = find_worker(workers, TaskBunny.TestSupport.JobTestHelper.TestJob)
+      %{workers: workers} = TaskBunny.Status.overview(@supervisor)
+      %{stats: stats} = find_worker(workers, TestJob)
 
       assert stats.succeeded == 1
     end
@@ -106,9 +105,8 @@ defmodule TaskBunny.Status.WorkerTest do
       TestJob.enqueue(payload)
       JobTestHelper.wait_for_perform()
 
-      %{workers: workers} = TaskBunny.Status.overview(:foo_supervisor)
-
-      %{stats: stats} = find_worker(workers, TaskBunny.TestSupport.JobTestHelper.TestJob)
+      %{workers: workers} = TaskBunny.Status.overview(@supervisor)
+      %{stats: stats} = find_worker(workers, TestJob)
 
       assert stats.failed == 1
     end
@@ -119,9 +117,8 @@ defmodule TaskBunny.Status.WorkerTest do
       RejectJob.enqueue(payload)
       JobTestHelper.wait_for_perform()
 
-      %{workers: workers} = TaskBunny.Status.overview(:foo_supervisor)
-
-      %{stats: stats} = find_worker(workers, TaskBunny.Status.WorkerTest.RejectJob)
+      %{workers: workers} = TaskBunny.Status.overview(@supervisor)
+      %{stats: stats} = find_worker(workers, RejectJob)
 
       assert stats.rejected == 1
     end
