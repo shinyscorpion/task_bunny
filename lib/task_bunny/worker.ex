@@ -92,6 +92,17 @@ defmodule TaskBunny.Worker do
   end
 
   @doc """
+  Stops consuming messages from queue.
+  Note this doesn't terminate the process and the jobs currently running will continue so.
+  """
+  @spec stop_consumer(pid) :: :ok
+  def stop_consumer(pid) do
+    if Process.alive?(pid), do: send(pid, {:stop_consumer})
+
+    :ok
+  end
+
+  @doc """
   Called when connection to RabbitMQ was established.
   Start consumer loop
   """
@@ -99,6 +110,17 @@ defmodule TaskBunny.Worker do
     {:noreply, t} |
     {:stop, reason :: term, t}
   def handle_info(message, state)
+
+  def handle_info({:stop_consumer}, state = %Worker{}) do
+    if state.channel && state.consumer_tag do
+      Logger.info "Stop consuming #{inspect state.job} - #{inspect self()}"
+      Consumer.cancel(state.channel, state.consumer_tag)
+      {:noreply, %{state | consumer_tag: nil}}
+    else
+      Logger.info "Received stop_consumer message but consumer is not running"
+      {:noreply, state}
+    end
+  end
 
   def handle_info({:connected, connection}, state = %Worker{}) do
     # Declares queue
@@ -168,6 +190,7 @@ defmodule TaskBunny.Worker do
       runners: state.runners,
       channel: channel,
       stats: state.job_stats,
+      consuming: !is_nil(state.consumer_tag)
     }
 
     {:reply, status, state}

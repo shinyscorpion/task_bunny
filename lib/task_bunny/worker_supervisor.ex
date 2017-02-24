@@ -13,9 +13,9 @@ defmodule TaskBunny.WorkerSupervisor do
 
   @type jobs :: list({host :: atom, job :: atom, concurrenct :: integer})
 
-  @spec start_link(jobs) :: {:ok, pid} | {:error, term}
-  def start_link(jobs) do
-    Supervisor.start_link(__MODULE__, jobs)
+  @spec start_link(jobs, atom) :: {:ok, pid} | {:error, term}
+  def start_link(jobs, name \\ __MODULE__) do
+    Supervisor.start_link(__MODULE__, jobs, name: name)
   end
 
   @spec init(jobs) :: {:ok, {:supervisor.sup_flags, [Supervisor.Spec.spec]}} | :ignore
@@ -31,4 +31,65 @@ defmodule TaskBunny.WorkerSupervisor do
        end)
     |> supervise(strategy: :one_for_one)
   end
+
+  @doc """
+  Halts the job pocessing on workers gracefully.
+  It makes workers to stop processing new jobs and waits for jobs currently running to finish.
+
+  Note it doesn't terminate any worker processes.
+  The worker and worker supervisor processes will continue existing but won't consume any new messages.
+  To resume it, terminate the worker supervisor then main supervisor will start new processes.
+  """
+  @spec graceful_halt(pid|nil, integer) :: :ok | {:error, any}
+
+  # When pid is not found. Assume it's already gone.
+  def graceful_halt(nil, _timeout), do: :ok
+
+  def graceful_halt(pid, timeout) do
+    workers = pid
+              |> Supervisor.which_children()
+              |> Enum.map(fn ({_, child, _, _}) -> child end)
+              |> Enum.filter(fn (child) -> is_pid(child) end)
+
+    Enum.each(workers, fn (worker) ->
+      Worker.stop_consumer(worker)
+    end)
+
+    case wait_for_all_jobs_done(workers, timeout) do
+      true -> :ok
+      false -> {:error, "Worker is busy"}
+    end
+  end
+
+  @doc """
+  Similar to graceful_halt/2 but gets pid from module name.
+  """
+  @spec graceful_halt(pid, integer) :: :ok | {:error, any}
+  def graceful_halt(timeout) do
+    pid = Process.whereis(__MODULE__)
+    graceful_halt(pid, timeout)
+  end
+
+  defp wait_for_all_jobs_done(workers, timeout) do
+    Enum.find_value(0..round(timeout/50), fn (_) ->
+      if workers_running?(workers) do
+        :timer.sleep(50)
+        false
+      else
+        true
+      end
+    end) || false
+  end
+
+  defp workers_running?(workers) do
+    workers
+    |> Enum.any?(fn (pid) -> worker_running?(pid) end)
+  end
+
+  defp worker_running?(pid) when is_pid(pid) do
+    %{runners: runners, consuming: consuming} = GenServer.call(pid, :status)
+    runners > 0 || consuming
+  end
+
+  defp worker_running?(_), do: false
 end

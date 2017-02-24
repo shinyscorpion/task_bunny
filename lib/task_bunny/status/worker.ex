@@ -14,6 +14,7 @@ defmodule TaskBunny.Status.Worker do
     job: atom,
     runners: integer,
     channel: false | String.t,
+    consuming: boolean,
     stats: %{
       failed: integer,
       succeeded: integer,
@@ -26,6 +27,7 @@ defmodule TaskBunny.Status.Worker do
     :job,
     runners: 0,
     channel: false,
+    consuming: false,
     stats: %{
       failed: 0,
       succeeded: 0,
