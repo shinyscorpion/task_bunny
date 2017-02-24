@@ -2,6 +2,11 @@
 
 We are still discussing backward incompatible changes. Please see [Gihub issues](https://github.com/shinyscorpion/task_bunny/issues) for the details.
 
+## 0.0.1-dev.6
+
+* `TaskBunny.WorkerSupervisor/1` and `TaskBunny.WorkerSupervisor/2` to shut down
+ all workers gracefully. [#20](https://github.com/shinyscorpion/task_bunny/pull/20)
+
 ## 0.0.1-dev.5
 
 **Please reset your queues after upgrading TaskBunny. This updated queue configuration**
