@@ -23,6 +23,14 @@ defmodule TaskBunny.Consumer do
   end
 
   @doc """
+  Cancel consumer to stop receiving messages.
+  """
+  @spec cancel(AMQP.Channel.t, String.t) :: {:ok, String.t}
+  def cancel(channel, consumer_tag) do
+    AMQP.Basic.cancel(channel, consumer_tag)
+  end
+
+  @doc """
   Acknowledges to the message.
   """
   @spec ack(%AMQP.Channel{}, map, boolean) :: :ok

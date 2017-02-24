@@ -8,6 +8,7 @@ defmodule TaskBunny.Status.WorkerTest do
 
   @host :worker_test
   @supervisor :worker_test_supervisor
+  @worker_supervisor :worker_test_worker_supervisor
 
   defmodule RejectJob do
     use TaskBunny.Job
@@ -52,7 +53,7 @@ defmodule TaskBunny.Status.WorkerTest do
     setup_config()
     JobTestHelper.setup()
 
-    TaskBunny.Supervisor.start_link(:worker_test_supervisor)
+    TaskBunny.Supervisor.start_link(@supervisor, @worker_supervisor)
     JobTestHelper.wait_for_connection(@host)
 
     on_exit fn ->

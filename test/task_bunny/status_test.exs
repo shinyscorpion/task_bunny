@@ -22,7 +22,7 @@ defmodule TaskBunny.StatusTest do
 
     JobTestHelper.setup
 
-    {:ok, pid} = TaskBunny.Supervisor.start_link(:foo_supervisor)
+    {:ok, pid} = TaskBunny.Supervisor.start_link(:foo_supervisor, :bar_supervisor)
 
     on_exit fn ->
       :meck.unload

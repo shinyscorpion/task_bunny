@@ -48,7 +48,7 @@ defmodule TaskBunny.SupervisorTest do
     setup_config()
     JobTestHelper.setup()
 
-    TaskBunny.Supervisor.start_link(:supevisor_test)
+    TaskBunny.Supervisor.start_link(:supevisor_test, :wsv_supervisor_test)
     JobTestHelper.wait_for_connection(@host)
 
     on_exit fn ->
