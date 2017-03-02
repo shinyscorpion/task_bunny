@@ -48,10 +48,10 @@ defmodule TaskBunny.Job do
       @spec enqueue(any, keyword) :: :ok | {:error, any}
       def enqueue(payload, options \\ []) do
         host = options[:host] || :default
-        queue = queue_name()
+        queue = options[:queue] || queue_name()
         message = Message.encode(__MODULE__, payload)
 
-        declare_queue(host)
+        declare_queue(host, queue)
         Publisher.publish(host, queue, message)
       end
 
@@ -64,9 +64,9 @@ defmodule TaskBunny.Job do
         ]
       end
 
-      @spec declare_queue(atom) :: :ok
-      def declare_queue(host \\ :default) do
-        Queue.declare_with_retry(host, queue_name())
+      @spec declare_queue(atom, String.t) :: :ok
+      def declare_queue(host, queue) do
+        Queue.declare_with_retry(host, queue)
         :ok
       catch
         :exit, e ->
@@ -74,11 +74,12 @@ defmodule TaskBunny.Job do
           # It's highly likely caused by the options on queue declare don't match.
           # e.g. retry interbval a.k.a message ttl in retry queue
           # We carry on with error log.
-          Logger.error "failed to declare queue for #{queue_name()}. If you have changed the queue configuration, you have to delete the queue and create it again. Error: #{inspect e}"
+          Logger.error "failed to declare queue for #{queue}. If you have changed the queue configuration, you have to delete the queue and create it again. Error: #{inspect e}"
 
           {:error, {:exit, e}}
       end
 
+      # FIXME: Maybe we need to remove this?
       @spec delete_queue(atom) :: :ok
       def delete_queue(host \\ :default) do
         Queue.delete_with_retry(host, queue_name())

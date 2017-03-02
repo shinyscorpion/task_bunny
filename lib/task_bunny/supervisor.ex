@@ -30,18 +30,11 @@ defmodule TaskBunny.Supervisor do
     children =
       case Config.auto_start?() do
         true ->
-          connections ++ [supervisor(WorkerSupervisor, [get_jobs(), wsv_name])]
+          connections ++ [supervisor(WorkerSupervisor, [wsv_name])]
         false ->
           []
       end
 
     supervise(children, strategy: :one_for_all)
-  end
-
-  defp get_jobs do
-    Config.jobs()
-    |> Enum.map(fn (job) ->
-      {job[:host] || :default, job[:job], job[:concurrency]}
-    end)
   end
 end

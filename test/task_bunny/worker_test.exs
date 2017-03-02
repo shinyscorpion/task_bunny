@@ -7,8 +7,10 @@ defmodule TaskBunny.WorkerTest do
     JobTestHelper.TestJob
   }
 
+  @queue "task_bunny.worker_test"
+
   setup do
-    clean(TestJob.all_queues())
+    clean(all_queues())
 
     JobTestHelper.setup
 
@@ -19,12 +21,21 @@ defmodule TaskBunny.WorkerTest do
     :ok
   end
 
+  defp all_queues do
+    [@queue] ++ Queue.sub_queues(@queue)
+  end
+
+  defp start_worker(concurrency \\ 1) do
+    {:ok, worker} = Worker.start_link(queue: @queue, concurrency: concurrency)
+    worker
+  end
+
   describe "worker" do
     test "invokes a job with the payload" do
-      {:ok, worker} = Worker.start_link({TestJob, 1})
+      worker = start_worker()
       payload = %{"hello" => "world1"}
 
-      TestJob.enqueue(payload)
+      TestJob.enqueue(payload, queue: @queue)
       JobTestHelper.wait_for_perform()
 
       assert List.first(JobTestHelper.performed_payloads) == payload
@@ -33,11 +44,11 @@ defmodule TaskBunny.WorkerTest do
     end
 
     test "consumes the message" do
-      {:ok, worker} = Worker.start_link({TestJob, 1})
-      [main, retry, rejected] = TestJob.all_queues()
+      worker = start_worker()
+      [main, retry, rejected] = all_queues()
       payload = %{"hello" => "world1"}
 
-      TestJob.enqueue(payload)
+      TestJob.enqueue(payload, queue: @queue)
       JobTestHelper.wait_for_perform()
 
       conn = Connection.get_connection()
@@ -53,12 +64,12 @@ defmodule TaskBunny.WorkerTest do
     end
 
     test "concurrency" do
-      {:ok, worker} = Worker.start_link({TestJob, 5})
+      worker = start_worker(5)
       payload = %{"sleep" => 10_000}
 
       # Run 10 jobs and each would take 10 seconds to finish
       Enum.each 1..10, fn (_) ->
-        TestJob.enqueue(payload)
+        TestJob.enqueue(payload, queue: @queue)
       end
 
       # This waits for up to 1 second
@@ -73,11 +84,11 @@ defmodule TaskBunny.WorkerTest do
 
   describe "retry" do
     test "sends failed job to retry queue" do
-      {:ok, worker} = Worker.start_link({TestJob, 1})
-      [main, retry, rejected] = TestJob.all_queues()
+      worker = start_worker()
+      [main, retry, rejected] = all_queues()
       payload = %{"fail" => true}
 
-      TestJob.enqueue(payload)
+      TestJob.enqueue(payload, queue: @queue)
       JobTestHelper.wait_for_perform()
 
       conn = Connection.get_connection()
@@ -95,18 +106,17 @@ defmodule TaskBunny.WorkerTest do
     def reset_test_job_retry_interval(interval) do
       :meck.new(JobTestHelper.RetryInterval, [:passthrough])
       :meck.expect(JobTestHelper.RetryInterval, :interval, fn () -> interval end)
-      TestJob.declare_queue(Connection.get_connection())
     end
 
     test "retries max_retry times then sends to rejected queue" do
       # Sets up TestJob to retry shortly
       reset_test_job_retry_interval(5)
 
-      {:ok, worker} = Worker.start_link({TestJob, 1})
-      [main, retry, rejected] = TestJob.all_queues()
+      worker = start_worker()
+      [main, retry, rejected] = all_queues()
       payload = %{"fail" => true}
 
-      TestJob.enqueue(payload)
+      TestJob.enqueue(payload, queue: @queue)
       JobTestHelper.wait_for_perform(11)
 
       # 1 normal + 10 retries = 11
@@ -129,10 +139,11 @@ defmodule TaskBunny.WorkerTest do
     :meck.expect TaskBunny.Consumer, :ack, fn (_, _, _) -> nil end
 
     assert Worker.handle_info({:basic_deliver, "}", %{}}, %{
-      job: TestJob,
-      runners: 0,
       host: :default,
+      queue: @queue,
+      concurrency: 1,
       channel: nil,
+      runners: 0,
       job_stats: %{
         failed: 0,
         succeeded: 0,
@@ -140,9 +151,10 @@ defmodule TaskBunny.WorkerTest do
       },
     }) == {:noreply,
       %{
-        channel: nil,
         host: :default,
-        job: TestJob,
+        queue: @queue,
+        concurrency: 1,
+        channel: nil,
         runners: 0,
         job_stats: %{failed: 0, rejected: 1, succeeded: 0},
       }

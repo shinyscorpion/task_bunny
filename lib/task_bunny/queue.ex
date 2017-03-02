@@ -66,6 +66,17 @@ defmodule TaskBunny.Queue do
     state
   end
 
+  @doc """
+  Returns all sub queues for the work queue.
+  """
+  @spec sub_queues(String.t) :: [String.t]
+  def sub_queues(queue) do
+    [
+      retry_queue_name(queue),
+      rejected_queue_name(queue)
+    ]
+  end
+
   @spec retry_queue_name(String.t) :: String.t
   def retry_queue_name(queue_name) do
     queue_name <> ".retry"

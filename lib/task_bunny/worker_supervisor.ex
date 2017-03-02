@@ -8,25 +8,23 @@ defmodule TaskBunny.WorkerSupervisor do
   """
 
   use Supervisor
-
-  alias TaskBunny.Worker
+  alias TaskBunny.{Config, Worker}
 
   @type jobs :: list({host :: atom, job :: atom, concurrenct :: integer})
 
-  @spec start_link(jobs, atom) :: {:ok, pid} | {:error, term}
-  def start_link(jobs, name \\ __MODULE__) do
-    Supervisor.start_link(__MODULE__, jobs, name: name)
+  @spec start_link(atom) :: {:ok, pid} | {:error, term}
+  def start_link(name \\ __MODULE__) do
+    Supervisor.start_link(__MODULE__, [], name: name)
   end
 
-  @spec init(jobs) :: {:ok, {:supervisor.sup_flags, [Supervisor.Spec.spec]}} | :ignore
-  def init(jobs) do
-    jobs
-    |> Enum.filter(fn ({_, job, _}) -> Code.ensure_loaded?(job) end)
-    |> Enum.map(fn ({host, job, concurrency}) ->
+  @spec init(list) :: {:ok, {:supervisor.sup_flags, [Supervisor.Spec.spec]}} | :ignore
+  def init([]) do
+    Config.workers
+    |> Enum.map(fn (config) ->
          worker(
           Worker,
-          [{host, job, concurrency}],
-          id: "task_bunny.worker.#{job.queue_name}"
+          [config],
+          id: "task_bunny.worker.#{config[:queue]}"
         )
        end)
     |> supervise(strategy: :one_for_one)
