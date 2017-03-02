@@ -2,31 +2,39 @@ defmodule TaskBunny.StatusTest do
   use ExUnit.Case, async: false
 
   import TaskBunny.TestSupport.QueueHelper
-  alias TaskBunny.Config
+  alias TaskBunny.{Config, Queue}
   alias TaskBunny.TestSupport.JobTestHelper
-  alias TaskBunny.TestSupport.JobTestHelper.TestJob
 
-  setup do
-    clean [TestJob.queue_name]
+  @host :status_test
+  @queue "task_bunny.status_test"
 
-    job = [
-      job: TaskBunny.TestSupport.JobTestHelper.TestJob,
-      concurrency: 3,
-      host: :foo
-    ]
+  @supervisor :status_test_supervisor
+  @worker_supervisor :status_test_worker_supervisor
+
+  defp all_queues do
+    [@queue] ++ Queue.sub_queues(@queue)
+  end
+
+  defp mock_config do
+    worker = [host: @host, queue: @queue, concurrency: 1]
 
     :meck.new Config, [:passthrough]
-    :meck.expect Config, :hosts, fn -> [:foo] end
-    :meck.expect Config, :connect_options, fn (:foo) -> "amqp://localhost" end
-    :meck.expect Config, :jobs, fn -> [job] end
+    :meck.expect Config, :hosts, fn -> [@host] end
+    :meck.expect Config, :connect_options, fn (@host) -> "amqp://localhost" end
+    :meck.expect Config, :workers, fn -> [worker] end
+  end
+
+  setup do
+    clean(all_queues())
+
+    mock_config()
 
     JobTestHelper.setup
 
-    {:ok, pid} = TaskBunny.Supervisor.start_link(:foo_supervisor, :bar_supervisor)
+    TaskBunny.Supervisor.start_link(@supervisor, @worker_supervisor)
 
     on_exit fn ->
       :meck.unload
-      if Process.alive?(pid), do: Supervisor.stop(pid)
     end
 
     :ok
@@ -34,7 +42,7 @@ defmodule TaskBunny.StatusTest do
 
   describe "status" do
     test "overview system up" do
-      %{up: up} = TaskBunny.Status.overview(:foo_supervisor)
+      %{up: up} = TaskBunny.Status.overview(@supervisor)
 
       assert up
     end
@@ -46,7 +54,7 @@ defmodule TaskBunny.StatusTest do
     end
 
     test "overview workers" do
-      %{workers: workers} = TaskBunny.Status.overview(:foo_supervisor)
+      %{workers: workers} = TaskBunny.Status.overview(@supervisor)
 
       assert length(workers) == 1
     end

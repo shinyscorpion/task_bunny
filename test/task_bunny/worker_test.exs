@@ -9,6 +9,15 @@ defmodule TaskBunny.WorkerTest do
 
   @queue "task_bunny.worker_test"
 
+  defp all_queues do
+    [@queue] ++ Queue.sub_queues(@queue)
+  end
+
+  defp start_worker(concurrency \\ 1) do
+    {:ok, worker} = Worker.start_link(queue: @queue, concurrency: concurrency)
+    worker
+  end
+
   setup do
     clean(all_queues())
 
@@ -19,15 +28,6 @@ defmodule TaskBunny.WorkerTest do
     end
 
     :ok
-  end
-
-  defp all_queues do
-    [@queue] ++ Queue.sub_queues(@queue)
-  end
-
-  defp start_worker(concurrency \\ 1) do
-    {:ok, worker} = Worker.start_link(queue: @queue, concurrency: concurrency)
-    worker
   end
 
   describe "worker" do
