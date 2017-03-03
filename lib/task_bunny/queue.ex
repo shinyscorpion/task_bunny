@@ -1,5 +1,5 @@
 defmodule TaskBunny.Queue do
-  @doc """
+  @moduledoc """
   Conviniences for accessing TaskBunny queues.
 
   When you have a worker queue called "task_bunny", TaskBunny defines the following sub queues with it.

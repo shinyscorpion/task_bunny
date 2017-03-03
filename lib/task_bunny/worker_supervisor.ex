@@ -62,7 +62,7 @@ defmodule TaskBunny.WorkerSupervisor do
   @doc """
   Similar to graceful_halt/2 but gets pid from module name.
   """
-  @spec graceful_halt(pid, integer) :: :ok | {:error, any}
+  @spec graceful_halt(integer) :: :ok | {:error, any}
   def graceful_halt(timeout) do
     pid = Process.whereis(__MODULE__)
     graceful_halt(pid, timeout)

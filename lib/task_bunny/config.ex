@@ -33,7 +33,7 @@ defmodule TaskBunny.Config do
          is_atom(key) && Atom.to_string(key) =~ ~r/queue$/
        end)
     |> Enum.map(fn ({_, queue_config}) -> parse_queue_config(queue_config) end)
-    |> Enum.flat_map(fn (queues) -> queues end)
+    |> Enum.flat_map(fn (queue_list) -> queue_list end)
   end
 
   # Get queue config and returns list of queues with namespace
@@ -78,12 +78,11 @@ defmodule TaskBunny.Config do
       match_job?(job, queue[:jobs])
     end) || default_queue()
 
-
     if queue, do: queue[:name], else: nil
   end
 
   @spec default_queue :: keyword | nil
-  defp default_queue() do
+  defp default_queue do
     Enum.find(queues(), fn (queue) ->
       queue[:jobs] == :default
     end)
@@ -122,19 +121,6 @@ defmodule TaskBunny.Config do
 
   defp match_job?(job, jobs) when is_list(jobs) do
     Enum.any?(jobs, fn (pattern) -> match_job?(job, pattern) end)
-  end
-
-  @doc """
-  Returns jobs in config.
-  """
-  @spec jobs :: [keyword]
-  def jobs do
-    :task_bunny
-    |> Application.get_all_env
-    |> Enum.filter(fn ({key, _}) ->
-         is_atom(key) && Atom.to_string(key) =~ ~r/jobs$/
-       end)
-    |> Enum.flat_map(fn ({_, job_list}) -> job_list end)
   end
 
   @doc """

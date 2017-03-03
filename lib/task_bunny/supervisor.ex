@@ -12,7 +12,7 @@ defmodule TaskBunny.Supervisor do
   use Supervisor
   alias TaskBunny.{Connection, Config, WorkerSupervisor}
 
-  @spec start_link(atom) :: {:ok, pid} | {:error, term}
+  @spec start_link(atom, atom) :: {:ok, pid} | {:error, term}
   def start_link(name \\ __MODULE__, wsv_name \\ WorkerSupervisor) do
     Supervisor.start_link(__MODULE__, [wsv_name], name: name)
   end
