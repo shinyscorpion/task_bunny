@@ -1,4 +1,4 @@
-defmodule TaskBunny.TestSupport.JobTestHelper do
+defmodule TaskBunny.JobTestHelper do
   defmodule Tracer do
     def performed(_), do: nil
   end

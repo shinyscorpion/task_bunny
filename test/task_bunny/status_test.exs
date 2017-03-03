@@ -1,9 +1,8 @@
 defmodule TaskBunny.StatusTest do
   use ExUnit.Case, async: false
 
-  import TaskBunny.TestSupport.QueueHelper
-  alias TaskBunny.{Config, Queue}
-  alias TaskBunny.TestSupport.JobTestHelper
+  import TaskBunny.QueueTestHelper
+  alias TaskBunny.{Config, Queue, JobTestHelper}
 
   @host :status_test
   @queue "task_bunny.status_test"
@@ -24,9 +23,7 @@ defmodule TaskBunny.StatusTest do
     clean(Queue.queue_with_subqueues(@queue))
 
     mock_config()
-
     JobTestHelper.setup
-
     TaskBunny.Supervisor.start_link(@supervisor, @worker_supervisor)
 
     on_exit fn ->

@@ -1,10 +1,9 @@
 defmodule TaskBunny.Status.WorkerTest do
   use ExUnit.Case, async: false
 
-  import TaskBunny.TestSupport.QueueHelper
-  alias TaskBunny.{Config, Queue}
-  alias TaskBunny.TestSupport.JobTestHelper
-  alias TaskBunny.TestSupport.JobTestHelper.TestJob
+  import TaskBunny.QueueTestHelper
+  alias TaskBunny.{Config, Queue, JobTestHelper}
+  alias JobTestHelper.TestJob
 
   @host :worker_test
   @supervisor :worker_test_supervisor

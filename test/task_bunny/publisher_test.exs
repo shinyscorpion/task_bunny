@@ -1,7 +1,7 @@
 defmodule TaskBunny.PublisherTest do
   use ExUnit.Case, async: false
-  import TaskBunny.TestSupport.QueueHelper
-  alias TaskBunny.{Publisher,TestSupport.QueueHelper}
+  import TaskBunny.QueueTestHelper
+  alias TaskBunny.{Publisher, QueueTestHelper}
 
   @queue_name "task_bunny.test_queue"
 
@@ -13,10 +13,10 @@ defmodule TaskBunny.PublisherTest do
 
   describe "publish" do
     test "publishes a message to a queue" do
-      QueueHelper.declare(@queue_name)
+      QueueTestHelper.declare(@queue_name)
       Publisher.publish(:default, @queue_name, "Hello Queue")
 
-      {message, _} = QueueHelper.pop(@queue_name)
+      {message, _} = QueueTestHelper.pop(@queue_name)
       assert message == "Hello Queue"
     end
   end
