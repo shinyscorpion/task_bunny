@@ -66,30 +66,32 @@ TaskBunny heavily relies on [amqp](https://github.com/pma/amqp) by Paulo Almeida
           [applications: [:task_bunny]]
         end
 
-  1. Configure hosts and jobs(workers)
+  1. Configure hosts and queues
 
         config :task_bunny, hosts: [
           default: [
             # See more options on
             # https://github.com/pma/amqp/blob/master/lib/amqp/connection.ex
-            connect_options: "amqp://localhost"
+            connect_options: "amqp://localhost?heartbeat=30"
           ]
         ]
 
-        config :task_bunny, jobs: [
-          [job: YourApp.HelloJob, concurrency: 5],
-          [job: YourApp.HolaJob, concurrency: 2]
+        config :task_bunny, queue: [
+          namespace: "task_bunny." # common prefix for queue name
+          queues: [
+            [name: "normal", jobs: :default],
+            [name: "high", worker: [concurrency: 5], jobs: [EmergentJob, "Emergent.*"]]
+          ]
         ]
 
-        # When you use TaskBunny under an umbrella app and each app needs a different job
-        # definition, you can prefix jobs like below.
+        # When you use TaskBunny under an umbrella app and each apps needs a different queue definition, you can prefix config key like below so that it doesn't ovewrwrite the other configuration.
 
-        config :task_bunny, app_a_jobs: [
-          [job: AppA.HelloJob, concurrency: 5]
+        config :task_bunny, app_a_queue: [
+          [name: "normal", jobs: ["AppA.*"]]
         ]
 
-        config :task_bunny, app_b_jobs: [
-          [job: AppB.HolaJob, concurrency: 5]
+        config :task_bunny, app_b_queue: [
+          [name: "normal", jobs: ["AppB.*"]]
         ]
 
 ### Define job module
@@ -135,15 +137,22 @@ Then send the message to the queue for the job.
 
 ### Queues
 
-TaskBunny declares three queues for a job on RabbitMQ.
-If you define `SampleJob` module like above, TaskBunny will define those three queues:
+TaskBunny declares three queues for each worker queue on RabbitMQ.
 
-- jobs.sample_job: main worker queue
-- jobs.sample_job.retry: queue for retry
-- jobs.sample_job.rejected: queue that stores jobs failed more than allowed times
+```elixir
+config :task_bunny, queue: [
+  namespace: "task_bunny."
+  queues: [
+    [name: "normal", jobs: :default],
+  ]
+]
+```
 
-**We are discussing the design decision about queues and workers being tied
-strongly with a job. See this [github issue](https://github.com/shinyscorpion/task_bunny/issues/4) for the details.**
+If have a config like above, TaskBunny will define those three queues:
+
+- task_bunny.normal: main worker queue
+- task_bunny.normal.retry: queue for retry
+- task_bunny.normal.rejected: queue that stores jobs failed more than allowed times
 
 ### Concurrency
 
