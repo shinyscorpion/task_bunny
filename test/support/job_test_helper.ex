@@ -1,4 +1,4 @@
-defmodule TaskBunny.TestSupport.JobTestHelper do
+defmodule TaskBunny.JobTestHelper do
   defmodule Tracer do
     def performed(_), do: nil
   end
@@ -22,7 +22,7 @@ defmodule TaskBunny.TestSupport.JobTestHelper do
       end
     end
 
-    def retry_interval, do: RetryInterval.interval()
+    def retry_interval(_), do: RetryInterval.interval()
   end
 
   def wait_for_perform(number \\ 1) do

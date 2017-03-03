@@ -217,20 +217,20 @@ defmodule TaskBunny.Worker do
 
   defp handle_failed_job(state, body, meta, result) do
     {:ok, decoded} = Message.decode(body)
-    failed_count = Message.failed_count(decoded)
+    failed_count = Message.failed_count(decoded) + 1
     job = decoded["job"]
     new_body = Message.add_error_log(body, result)
 
-    case failed_count < job.max_retry() do
+    case failed_count <= job.max_retry() do
       true ->
-        Logger.warn log_msg("job failed #{failed_count + 1} times.", state, [body: body, will_be_retried: true])
+        Logger.warn log_msg("job failed #{failed_count} times.", state, [body: body, will_be_retried: true])
 
-        retry_message(job, state, new_body, meta)
+        retry_message(job, state, new_body, meta, failed_count)
 
         {:noreply, update_job_stats(state, :failed)}
       false ->
         # Failed more than X times
-        Logger.error log_msg("job failed #{failed_count + 1} times.", state, [body: body, will_be_retried: false])
+        Logger.error log_msg("job failed #{failed_count} times.", state, [body: body, will_be_retried: false])
 
         reject_message(state, new_body, meta)
 
@@ -238,11 +238,11 @@ defmodule TaskBunny.Worker do
     end
   end
 
-  @spec retry_message(atom, Worker.t, any, any) :: :ok
-  defp retry_message(job, state, body, meta) do
+  @spec retry_message(atom, Worker.t, any, any, integer) :: :ok
+  defp retry_message(job, state, body, meta, failed_count) do
     retry_queue = Queue.retry_queue(state.queue)
     options = [
-      expiration: "#{job.retry_interval()}"
+      expiration: "#{job.retry_interval(failed_count)}"
     ]
     Publisher.publish(state.host, retry_queue, body, options)
 

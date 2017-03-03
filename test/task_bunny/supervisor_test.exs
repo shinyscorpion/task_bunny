@@ -1,9 +1,8 @@
 defmodule TaskBunny.SupervisorTest do
   use ExUnit.Case, async: false
-  import TaskBunny.TestSupport.QueueHelper
-  alias TaskBunny.TestSupport.JobTestHelper
-  alias TaskBunny.TestSupport.JobTestHelper.TestJob
-  alias TaskBunny.{Config, Connection, Queue}
+  import TaskBunny.QueueTestHelper
+  alias TaskBunny.{Config, Connection, Queue, JobTestHelper}
+  alias JobTestHelper.TestJob
 
   @host :sv_test
   @queue "task_bunny.supervisor_test"
