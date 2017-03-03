@@ -179,7 +179,7 @@ defmodule SampleJob do
   end
 
   def max_retry, do: 100
-  def retry_interval, do: 10_000
+  def retry_interval(_), do: 10_000
 end
 
 ```
@@ -189,6 +189,20 @@ In this example, it will retry 100 times for every 10 seconds.
 If a job fails more than `max_retry` times, the payload is sent to `jobs.[job_name].rejected` queue.
 
 Under the hood, TaskBunny uses [dead letter exchanges](https://www.rabbitmq.com/dlx.html) to support retry.
+
+You can also change the retry_interval by the number of failures.
+
+```elixir
+  def max_retry, do: 5
+
+  def retry_interval(failed_count) do
+    # failed_count will be between 1 and 5.
+    # Gradually have longer retry interval
+    [10, 60, 300, 3_600, 7_200]
+    |> Enum.map(&(&1 * 1000))
+    |> Enum.at(failed_count - 1, 1000)
+  end
+```
 
 ### Timeout
 
