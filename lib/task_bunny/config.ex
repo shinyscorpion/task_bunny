@@ -3,6 +3,8 @@ defmodule TaskBunny.Config do
   Modules that help you access to TaskBunny config values
   """
 
+  @default_concurrency 2
+
   @doc """
   Returns list of hosts in config.
   """
@@ -21,16 +23,104 @@ defmodule TaskBunny.Config do
   end
 
   @doc """
-  Returns jobs in config.
+  Returns queues in config.
   """
-  @spec jobs :: [keyword]
-  def jobs do
+  @spec queues :: [keyword]
+  def queues do
     :task_bunny
     |> Application.get_all_env
     |> Enum.filter(fn ({key, _}) ->
-         is_atom(key) && Atom.to_string(key) =~ ~r/jobs$/
+         is_atom(key) && Atom.to_string(key) =~ ~r/queue$/
        end)
-    |> Enum.flat_map(fn ({_, job_list}) -> job_list end)
+    |> Enum.map(fn ({_, queue_config}) -> parse_queue_config(queue_config) end)
+    |> Enum.flat_map(fn (queue_list) -> queue_list end)
+  end
+
+  # Get queue config and returns list of queues with namespace
+  defp parse_queue_config(queue_config) do
+    namespace = queue_config[:namespace] || ""
+
+    queue_config[:queues]
+    |> Enum.map(fn (queue) ->
+      Keyword.merge(queue, [name: namespace <> queue[:name]])
+    end)
+  end
+
+  @doc """
+  Returns workers in config.
+  """
+  @spec workers :: [keyword]
+  def workers do
+    queues()
+    |> Enum.filter(fn (queue) -> queue[:worker] != false end)
+    |> Enum.map(fn (queue) ->
+      concurrency =
+        if queue[:worker] && queue[:worker][:concurrency] do
+          queue[:worker][:concurrency]
+        else
+          @default_concurrency
+        end
+
+      [
+        queue: queue[:name],
+        concurrency: concurrency,
+        host: queue[:host] || :default
+      ]
+    end)
+  end
+
+  @doc """
+  Returns queue for the given job
+  """
+  @spec queue_for_job(atom) :: String.t
+  def queue_for_job(job) do
+    queue = Enum.find(queues(), fn (queue) ->
+      match_job?(job, queue[:jobs])
+    end) || default_queue()
+
+    if queue, do: queue[:name], else: nil
+  end
+
+  @spec default_queue :: keyword | nil
+  defp default_queue do
+    Enum.find(queues(), fn (queue) ->
+      queue[:jobs] == :default
+    end)
+  end
+
+  @spec match_job?(atom, atom|String.t|list) :: boolean
+  defp match_job?(job, condition)
+
+  # e.g.
+  # match_job?(TestJob, TestJob)
+  # => true
+  # match_job?(TestJob, SampleJob)
+  # => false
+  defp match_job?(job, condition) when is_atom(condition), do: job == condition
+
+  # e.g.
+  # match_job?(TestJob, "TestJob")
+  # => true
+  # match_job?(TB.TestJob, "TB.*")
+  # => true
+  # match_job?(Elixir.TB.TestJob, "TB.*")
+  # => true
+  # match_job?(TestJob, "SampleJob")
+  # => false
+  defp match_job?(job, pattern) when is_binary(pattern) do
+    job_name = job |> Atom.to_string() |> String.trim_leading("Elixir.")
+
+    pattern = pattern
+            |> Regex.escape()
+            |> String.replace("\\*", ".*")
+
+    regex = "^#{pattern}$" |> Regex.compile!
+
+    String.match?(job_name, regex)
+  end
+
+  defp match_job?(job, jobs) when is_list(jobs) do
+    Enum.any?(jobs, fn (pattern) -> match_job?(job, pattern) end)
   end
 
   @doc """

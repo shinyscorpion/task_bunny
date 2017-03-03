@@ -123,7 +123,7 @@ defmodule TaskBunny.Status do
     supervisor
     |> get_workers_status()
     |> Enum.map(fn worker -> %{
-          job: worker.job,
+          queue: worker.queue,
           runners: worker.runners,
           channel: worker.channel,
           succeeded: worker.stats.succeeded,
@@ -136,10 +136,10 @@ defmodule TaskBunny.Status do
   @spec get_worker_metrics(Worker.t, {list, list, list, list}) :: {list, list, list, list}
   defp get_worker_metrics(worker, {runners, succeeded, failed, rejected}) do
     {
-      [{worker.runners, [job: worker.job]} | runners],
-      [{worker.stats.succeeded, [job: worker.job]} | succeeded],
-      [{worker.stats.failed, [job: worker.job]} | failed],
-      [{worker.stats.rejected, [job: worker.job]} | rejected]
+      [{worker.runners, [queue: worker.queue]} | runners],
+      [{worker.stats.succeeded, [queue: worker.queue]} | succeeded],
+      [{worker.stats.failed, [queue: worker.queue]} | failed],
+      [{worker.stats.rejected, [queue: worker.queue]} | rejected]
     }
   end
 end

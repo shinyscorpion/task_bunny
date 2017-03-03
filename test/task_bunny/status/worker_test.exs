@@ -2,13 +2,15 @@ defmodule TaskBunny.Status.WorkerTest do
   use ExUnit.Case, async: false
 
   import TaskBunny.TestSupport.QueueHelper
-  alias TaskBunny.Config
+  alias TaskBunny.{Config, Queue}
   alias TaskBunny.TestSupport.JobTestHelper
   alias TaskBunny.TestSupport.JobTestHelper.TestJob
 
   @host :worker_test
   @supervisor :worker_test_supervisor
   @worker_supervisor :worker_test_worker_supervisor
+  @queue1 "task_bunny.status.worker_test1"
+  @queue2 "task_bunny.status.worker_test2"
 
   defmodule RejectJob do
     use TaskBunny.Job
@@ -23,34 +25,31 @@ defmodule TaskBunny.Status.WorkerTest do
     def max_retry, do: 0
   end
 
-  defp find_worker(workers, job_search) do
-    Enum.find(workers, fn %{job: job} -> job == job_search end)
+  defp find_worker(workers, queue) do
+    Enum.find(workers, fn %{queue: w_queue} -> queue == w_queue end)
   end
 
-  defp setup_config do
-    jobs = [
-      [
-        job: TestJob,
-        concurrency: 3,
-        host: @host,
-      ],
-      [
-        job: RejectJob,
-        concurrency: 3,
-        host: @host,
-      ],
+  defp all_queues do
+    Queue.queue_with_subqueues(@queue1) ++
+    Queue.queue_with_subqueues(@queue2)
+  end
+
+  defp mock_config do
+    workers = [
+      [host: @host, queue: @queue1, concurrency: 3],
+      [host: @host, queue: @queue2, concurrency: 3]
     ]
 
     :meck.new Config, [:passthrough]
     :meck.expect Config, :hosts, fn -> [@host] end
     :meck.expect Config, :connect_options, fn (@host) -> "amqp://localhost" end
-    :meck.expect Config, :jobs, fn -> jobs end
+    :meck.expect Config, :workers, fn -> workers end
   end
 
   setup do
-    clean(TestJob.all_queues())
+    clean(all_queues())
 
-    setup_config()
+    mock_config()
     JobTestHelper.setup()
 
     TaskBunny.Supervisor.start_link(@supervisor, @worker_supervisor)
@@ -75,13 +74,13 @@ defmodule TaskBunny.Status.WorkerTest do
     test "running with jobs being performed" do
       payload = %{"sleep" => 10_000}
 
-      TestJob.enqueue(payload, host: @host)
-      TestJob.enqueue(payload, host: @host)
+      TestJob.enqueue(payload, host: @host, queue: @queue1)
+      TestJob.enqueue(payload, host: @host, queue: @queue1)
 
       JobTestHelper.wait_for_perform(2)
 
       %{workers: workers} = TaskBunny.Status.overview(@supervisor)
-      %{runners: runner_count} = find_worker(workers, TestJob)
+      %{runners: runner_count} = find_worker(workers, @queue1)
 
       assert runner_count == 2
     end
@@ -91,11 +90,11 @@ defmodule TaskBunny.Status.WorkerTest do
     test "jobs succeeded" do
       payload = %{"hello" => "world1"}
 
-      TestJob.enqueue(payload)
+      TestJob.enqueue(payload, host: @host, queue: @queue1)
       JobTestHelper.wait_for_perform()
 
       %{workers: workers} = TaskBunny.Status.overview(@supervisor)
-      %{stats: stats} = find_worker(workers, TestJob)
+      %{stats: stats} = find_worker(workers, @queue1)
 
       assert stats.succeeded == 1
     end
@@ -103,11 +102,11 @@ defmodule TaskBunny.Status.WorkerTest do
     test "jobs failed" do
       payload = %{"fail" => "fail"}
 
-      TestJob.enqueue(payload)
+      TestJob.enqueue(payload, host: @host, queue: @queue1)
       JobTestHelper.wait_for_perform()
 
       %{workers: workers} = TaskBunny.Status.overview(@supervisor)
-      %{stats: stats} = find_worker(workers, TestJob)
+      %{stats: stats} = find_worker(workers, @queue1)
 
       assert stats.failed == 1
     end
@@ -115,11 +114,11 @@ defmodule TaskBunny.Status.WorkerTest do
     test "jobs rejected" do
       payload = %{"fail" => "fail"}
 
-      RejectJob.enqueue(payload)
+      RejectJob.enqueue(payload, host: @host, queue: @queue2)
       JobTestHelper.wait_for_perform()
 
       %{workers: workers} = TaskBunny.Status.overview(@supervisor)
-      %{stats: stats} = find_worker(workers, RejectJob)
+      %{stats: stats} = find_worker(workers, @queue2)
 
       assert stats.rejected == 1
     end

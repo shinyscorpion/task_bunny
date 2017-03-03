@@ -1,19 +1,26 @@
 defmodule TaskBunny.Queue do
-  @moduledoc false
+  @moduledoc """
+  Conviniences for accessing TaskBunny queues.
 
-  @spec declare_with_retry(%AMQP.Connection{} | atom, String.t) :: {map, map, map}
-  def declare_with_retry(host, queue_name) when is_atom(host) do
+  When you have a worker queue called "task_bunny", TaskBunny defines the following sub queues with it.
+
+  - task_bunny.retry: queues for retry
+  - task_bunny.rejected: queues for rejected message (failed more than max retries or wrong message format)
+  """
+
+  @spec declare_with_subqueues(%AMQP.Connection{} | atom, String.t) :: {map, map, map}
+  def declare_with_subqueues(host, work_queue) when is_atom(host) do
     conn = TaskBunny.Connection.get_connection!(host)
-    declare_with_retry(conn, queue_name)
+    declare_with_subqueues(conn, work_queue)
   end
 
-  def declare_with_retry(connection, queue_name) do
+  def declare_with_subqueues(connection, work_queue) do
     {:ok, channel} = AMQP.Channel.open(connection)
 
-    retry_queue = retry_queue_name(queue_name)
-    rejected_queue = rejected_queue_name(queue_name)
+    retry_queue = retry_queue(work_queue)
+    rejected_queue = rejected_queue(work_queue)
 
-    work = declare(channel, queue_name, [durable: true])
+    work = declare(channel, work_queue, [durable: true])
     rejected = declare(channel, rejected_queue, [durable: true])
 
     # Set main queue as dead letter exchange of retry queue.
@@ -21,7 +28,7 @@ defmodule TaskBunny.Queue do
     retry_options = [
       arguments: [
         {"x-dead-letter-exchange", :longstr, ""},
-        {"x-dead-letter-routing-key", :longstr, queue_name}
+        {"x-dead-letter-routing-key", :longstr, work_queue}
       ],
       durable: true
     ]
@@ -32,27 +39,29 @@ defmodule TaskBunny.Queue do
     {work, retry, rejected}
   end
 
-  @spec delete_with_retry(%AMQP.Connection{} | atom, String.t) :: :ok
-  def delete_with_retry(host, queue_name) when is_atom(host) do
+  @spec delete_with_subqueues(%AMQP.Connection{} | atom, String.t) :: :ok
+  def delete_with_subqueues(host, work_queue) when is_atom(host) do
     conn = TaskBunny.Connection.get_connection(host)
-    delete_with_retry(conn, queue_name)
+    delete_with_subqueues(conn, work_queue)
   end
 
-  def delete_with_retry(connection, queue_name) do
+  def delete_with_subqueues(connection, work_queue) do
     {:ok, channel} = AMQP.Channel.open(connection)
 
-    AMQP.Queue.delete(channel, queue_name)
-    AMQP.Queue.delete(channel, retry_queue_name(queue_name))
-    AMQP.Queue.delete(channel, rejected_queue_name(queue_name))
+    work_queue
+    |> queue_with_subqueues()
+    |> Enum.each(fn (queue) ->
+      AMQP.Queue.delete(channel, queue)
+    end)
 
     AMQP.Channel.close(channel)
     :ok
   end
 
   @spec declare(%AMQP.Channel{}, String.t, keyword) :: map
-  def declare(channel, queue_name, options \\ []) do
+  def declare(channel, queue, options \\ []) do
     options = options ++ [durable: true]
-    {:ok, state} = AMQP.Queue.declare(channel, queue_name, options)
+    {:ok, state} = AMQP.Queue.declare(channel, queue, options)
 
     state
   end
@@ -66,13 +75,32 @@ defmodule TaskBunny.Queue do
     state
   end
 
-  @spec retry_queue_name(String.t) :: String.t
-  def retry_queue_name(queue_name) do
-    queue_name <> ".retry"
+  @doc """
+  Returns a list that contains the queue and its subqueue
+  """
+  @spec queue_with_subqueues(String.t) :: [String.t]
+  def queue_with_subqueues(work_queue) do
+    [work_queue] ++ subqueues(work_queue)
   end
 
-  @spec rejected_queue_name(String.t) :: String.t
-  def rejected_queue_name(queue_name) do
-    queue_name <> ".rejected"
+  @doc """
+  Returns all sub queues for the work queue.
+  """
+  @spec subqueues(String.t) :: [String.t]
+  def subqueues(work_queue) do
+    [
+      retry_queue(work_queue),
+      rejected_queue(work_queue)
+    ]
+  end
+
+  @spec retry_queue(String.t) :: String.t
+  def retry_queue(work_queue) do
+    work_queue <> ".retry"
+  end
+
+  @spec rejected_queue(String.t) :: String.t
+  def rejected_queue(work_queue) do
+    work_queue <> ".rejected"
   end
 end

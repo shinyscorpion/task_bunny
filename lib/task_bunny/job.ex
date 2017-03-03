@@ -1,72 +1,39 @@
 defmodule TaskBunny.Job do
   @moduledoc false
-  @default_job_namespace "jobs"
 
   @callback perform(any) :: :ok | {:error, term}
 
-  alias TaskBunny.{Queue, Job, Message, Publisher}
+  alias TaskBunny.{Config, Queue, Job, Message, Publisher}
 
-  defmacro __using__(job_options \\ []) do
+  defmacro __using__(_options \\ []) do
     quote do
       @behaviour Job
       require Logger
 
-      defp snake_case(name) do
-        name
-        |> String.replace(~r/([^.])([A-Z])/, "\\1_\\2")
-        |> String.downcase
-      end
-
-      defp module_queue_name(true) do
-        __MODULE__
-        |> Atom.to_string
-        |> String.replace_prefix("Elixir.", "")
-        |> snake_case
-      end
-
-      defp module_queue_name(_) do
-        __MODULE__
-        |> Atom.to_string
-        |> String.replace(~r/^.*?([^.]+)$/, "\\1") # Only end string that doesn't have a ".".
-        |> snake_case
-      end
-
-      @spec queue_name :: String.t
-      def queue_name do
-        options = unquote(job_options)
-
-        name = case Keyword.get(options, :id, nil) do
-          nil -> options |> Keyword.get(:full, false) |> module_queue_name
-          id -> id
-        end
-
-        namespace = Keyword.get(options, :namespace, unquote(@default_job_namespace))
-
-        "#{namespace}.#{name}"
-      end
-
       @spec enqueue(any, keyword) :: :ok | {:error, any}
       def enqueue(payload, options \\ []) do
-        host = options[:host] || :default
-        queue = queue_name()
+        queue_data = Config.queue_for_job(__MODULE__)
+
+        queue = options[:queue] || queue_data[:name]
+        host = options[:host] || queue_data[:host] || :default
         message = Message.encode(__MODULE__, payload)
 
-        declare_queue(host)
+        do_enqueue(host, queue, message)
+      end
+
+      @spec do_enqueue(atom, String.t|nil, String.t) :: :ok | {:error, any}
+      defp do_enqueue(host, nil, message) do
+        {:error, "Can't find a queue for #{__MODULE__}"}
+      end
+
+      defp do_enqueue(host, queue, message) do
+        declare_queue(host, queue)
         Publisher.publish(host, queue, message)
       end
 
-      @spec all_queues :: list(String.t)
-      def all_queues do
-        [
-          queue_name(),
-          Queue.retry_queue_name(queue_name()),
-          Queue.rejected_queue_name(queue_name())
-        ]
-      end
-
-      @spec declare_queue(atom) :: :ok
-      def declare_queue(host \\ :default) do
-        Queue.declare_with_retry(host, queue_name())
+      @spec declare_queue(atom, String.t) :: :ok
+      defp declare_queue(host, queue) do
+        Queue.declare_with_subqueues(host, queue)
         :ok
       catch
         :exit, e ->
@@ -74,14 +41,9 @@ defmodule TaskBunny.Job do
           # It's highly likely caused by the options on queue declare don't match.
           # e.g. retry interbval a.k.a message ttl in retry queue
           # We carry on with error log.
-          Logger.error "failed to declare queue for #{queue_name()}. If you have changed the queue configuration, you have to delete the queue and create it again. Error: #{inspect e}"
+          Logger.error "failed to declare queue for #{queue}. If you have changed the queue configuration, you have to delete the queue and create it again. Error: #{inspect e}"
 
           {:error, {:exit, e}}
-      end
-
-      @spec delete_queue(atom) :: :ok
-      def delete_queue(host \\ :default) do
-        Queue.delete_with_retry(host, queue_name())
       end
 
       @doc false

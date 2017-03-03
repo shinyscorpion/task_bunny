@@ -19,7 +19,7 @@ defmodule TaskBunny.Message do
   @doc """
   Decode message body in JSON to map
   """
-  @spec decode(String.t) :: map
+  @spec decode(String.t) :: {:ok, map} | {:error, any}
   def decode(message) do
     case Poison.decode(message) do
       {:ok, decoded} ->
@@ -80,9 +80,9 @@ defmodule TaskBunny.Message do
     |> Poison.encode!(pretty: true)
   end
 
-  defp host() do
-    {:ok, host} = :inet.gethostname()
-    List.to_string(host)
+  defp host do
+    {:ok, hostname} = :inet.gethostname()
+    List.to_string(hostname)
   end
 
   @doc """

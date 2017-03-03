@@ -9,7 +9,7 @@ defmodule TaskBunny.Worker do
                    Publisher, Worker, Message}
 
   @type t ::%__MODULE__{
-    job: atom,
+    queue: String.t,
     host: atom,
     concurrency: integer,
     channel: AMQP.Channel.t | nil,
@@ -23,7 +23,7 @@ defmodule TaskBunny.Worker do
   }
 
   defstruct [
-    :job,
+    queue: nil,
     host: :default,
     concurrency: 1,
     channel: nil,
@@ -39,17 +39,14 @@ defmodule TaskBunny.Worker do
   @doc """
   Starts a worker for a job with concurrency
   """
-  @spec start_link({atom, integer}) :: GenServer.on_start
-  def start_link({job, concurrency}) do
-    start_link(%Worker{job: job, concurrency: concurrency})
-  end
-
-  @doc """
-  Starts a worker for a job with concurrency on the host
-  """
-  @spec start_link({atom, atom, integer}) :: GenServer.on_start
-  def start_link({host, job, concurrency}) do
-    start_link(%Worker{host: host, job: job, concurrency: concurrency})
+  @spec start_link(list) :: GenServer.on_start
+  def start_link(config) when is_list(config) do
+    %Worker{
+      host: config[:host] || :default,
+      queue: config[:queue],
+      concurrency: config[:concurrency]
+    }
+    |> start_link()
   end
 
   @doc """
@@ -57,7 +54,7 @@ defmodule TaskBunny.Worker do
   """
   @spec start_link(t) :: GenServer.on_start
   def start_link(state = %Worker{}) do
-    GenServer.start_link(__MODULE__, state, name: pname(state.job))
+    GenServer.start_link(__MODULE__, state, name: pname(state.queue))
   end
 
   @doc """
@@ -65,7 +62,7 @@ defmodule TaskBunny.Worker do
   """
   @spec init(t) :: {:ok, t} | {:stop, :connection_not_ready}
   def init(state = %Worker{}) do
-    Logger.info "TaskBunny.Worker initializing with #{inspect state.job} and maximum #{inspect state.concurrency} concurrent jobs: PID: #{inspect self()}"
+    Logger.info log_msg("initializing", state)
 
     case Connection.monitor_connection(state.host, self()) do
       :ok ->
@@ -82,7 +79,7 @@ defmodule TaskBunny.Worker do
   """
   @spec terminate(any, TaskBunny.Worker.t) :: :normal
   def terminate(_reason, state) do
-    Logger.info "TaskBunny.Worker termintating: PID: #{inspect self()}"
+    Logger.info log_msg("terminating", state)
 
     if state.channel do
       AMQP.Channel.close(state.channel)
@@ -113,23 +110,23 @@ defmodule TaskBunny.Worker do
 
   def handle_info({:stop_consumer}, state = %Worker{}) do
     if state.channel && state.consumer_tag do
-      Logger.info "Stop consuming #{inspect state.job} - #{inspect self()}"
+      Logger.info log_msg("stop consuming", state)
       Consumer.cancel(state.channel, state.consumer_tag)
       {:noreply, %{state | consumer_tag: nil}}
     else
-      Logger.info "Received stop_consumer message but consumer is not running"
+      Logger.info log_msg("received :stop_cosumer but already stopped", state)
       {:noreply, state}
     end
   end
 
   def handle_info({:connected, connection}, state = %Worker{}) do
     # Declares queue
-    state.job.declare_queue(state.host)
+    Queue.declare_with_subqueues(state.host, state.queue)
 
     # Consumes the queue
-    case Consumer.consume(connection, state.job.queue_name(), state.concurrency) do
+    case Consumer.consume(connection, state.queue, state.concurrency) do
       {channel, consumer_tag} ->
-        Logger.info "TaskBunny.Worker: start consuming #{inspect state.job}. PID: #{inspect self()}"
+        Logger.info log_msg("start comsuming", state)
         {:noreply, %{state | channel: channel, consumer_tag: consumer_tag}}
       error ->
         {:stop, {:failed_to_consume, error}, state}
@@ -143,12 +140,13 @@ defmodule TaskBunny.Worker do
   def handle_info({:basic_deliver, body, meta}, state) do
     case Message.decode(body) do
       {:ok, decoded} ->
-        Logger.debug "TaskBunny.Worker:(#{state.job}) basic_deliver with #{inspect body} on #{inspect self()}"
-        JobRunner.invoke(state.job, decoded["payload"], {body, meta})
+        Logger.debug log_msg("bacic_deliver", state, [body: body])
+
+        JobRunner.invoke(decoded["job"], decoded["payload"], {body, meta})
 
         {:noreply, %{state | runners: state.runners + 1}}
       error ->
-        Logger.error "TaskBunny.Worker:(#{state.job}) basic_deliver with invalid (#{inspect error}) payload: (#{inspect body} on #{inspect self()}"
+        Logger.error log_msg("bacic_deliver invalid body", state, [body: body, error: error])
 
         reject_message(state, body, meta)
 
@@ -163,7 +161,7 @@ defmodule TaskBunny.Worker do
   Acknowledge to RabbitMQ.
   """
   def handle_info({:job_finished, result, {body, meta}}, state) do
-    Logger.debug "TaskBunny.Worker:(#{state.job}) job_finished with #{inspect body} on #{inspect self()} with meta #{inspect meta}"
+    Logger.debug log_msg("job_finished", state, [body: body, meta: meta])
     case succeeded?(result) do
       true ->
         Consumer.ack(state.channel, meta, true)
@@ -182,11 +180,11 @@ defmodule TaskBunny.Worker do
     channel =
       case state.channel do
         nil -> false
-        _channel -> "#{state.job.queue_name} (#{state.consumer_tag})"
+        _channel -> "#{state.queue} (#{state.consumer_tag})"
       end
 
     status = %TaskBunny.Status.Worker{
-      job: state.job,
+      queue: state.queue,
       runners: state.runners,
       channel: channel,
       stats: state.job_stats,
@@ -196,9 +194,9 @@ defmodule TaskBunny.Worker do
     {:reply, status, state}
   end
 
-  @spec pname(job :: atom) :: atom
-  defp pname(job) do
-    String.to_atom("TaskBunny.Worker.#{job}")
+  @spec pname(String.t) :: atom
+  defp pname(queue) do
+    String.to_atom("TaskBunny.Worker.#{queue}")
   end
 
   @spec update_job_stats(Worker.t, :succeeded | :failed | :rejected) :: Worker.t
@@ -218,19 +216,21 @@ defmodule TaskBunny.Worker do
   defp succeeded?(_), do: false
 
   defp handle_failed_job(state, body, meta, result) do
-    failed_count = Message.failed_count(body)
+    {:ok, decoded} = Message.decode(body)
+    failed_count = Message.failed_count(decoded)
+    job = decoded["job"]
     new_body = Message.add_error_log(body, result)
 
-    case failed_count < state.job.max_retry() do
+    case failed_count < job.max_retry() do
       true ->
-        Logger.warn "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny will retry the job. JOB: #{inspect state.job}. MESSAGE: #{inspect body}. ERROR: #{inspect result}"
+        Logger.warn log_msg("job failed #{failed_count + 1} times.", state, [body: body, will_be_retried: true])
 
-        retry_message(state, new_body, meta)
+        retry_message(job, state, new_body, meta)
 
         {:noreply, update_job_stats(state, :failed)}
       false ->
         # Failed more than X times
-        Logger.error "TaskBunny.Worker - job failed #{failed_count + 1} times. TaskBunny stops retrying the job. JOB: #{inspect state.job}. PAYLOAD: #{inspect body}. ERROR: #{inspect result}"
+        Logger.error log_msg("job failed #{failed_count + 1} times.", state, [body: body, will_be_retried: false])
 
         reject_message(state, new_body, meta)
 
@@ -238,10 +238,9 @@ defmodule TaskBunny.Worker do
     end
   end
 
-  @spec retry_message(Worker.t, any, any) :: :ok
-  defp retry_message(state, body, meta) do
-    job = state.job
-    retry_queue = Queue.retry_queue_name(job.queue_name())
+  @spec retry_message(atom, Worker.t, any, any) :: :ok
+  defp retry_message(job, state, body, meta) do
+    retry_queue = Queue.retry_queue(state.queue)
     options = [
       expiration: "#{job.retry_interval()}"
     ]
@@ -253,10 +252,19 @@ defmodule TaskBunny.Worker do
 
   @spec reject_message(Worker.t, any, any) :: :ok
   defp reject_message(state, body, meta) do
-    rejected_queue = Queue.rejected_queue_name(state.job.queue_name())
+    rejected_queue = Queue.rejected_queue(state.queue)
     Publisher.publish(state.host, rejected_queue, body)
 
     Consumer.ack(state.channel, meta, true)
     :ok
+  end
+
+  defp log_msg(message, state, additional \\ nil) do
+    message = "TaskBunny.Worker: #{message}. Queue: #{state.queue}. Concurrency: #{state.concurrency}. PID: #{inspect self()}."
+    if additional do
+      "#{message} #{inspect additional}"
+    else
+      message
+    end
   end
 end

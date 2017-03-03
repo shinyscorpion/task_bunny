@@ -5,13 +5,13 @@ defmodule TaskBunny.Status.Worker do
 
   @typedoc ~S"""
   The Worker status contains the follow fields:
-    - `job`, the `Job` for the `Worker`.
+    - `queue`, the name of queue the worker is listening to.
     - `runners`, the amount of runners currently running the `Job`.
     - `channel`, the connected channel with consumer tag or false if not connected.
     - `stats`, the amount of failed and succeeded jobs.
   """
   @type t :: %__MODULE__{
-    job: atom,
+    queue: String.t,
     runners: integer,
     channel: false | String.t,
     consuming: boolean,
@@ -22,9 +22,9 @@ defmodule TaskBunny.Status.Worker do
     },
   }
 
-  @enforce_keys [:job]
+  @enforce_keys [:queue]
   defstruct [
-    :job,
+    queue: nil,
     runners: 0,
     channel: false,
     consuming: false,

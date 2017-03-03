@@ -10,7 +10,7 @@ defmodule Mix.Tasks.TaskBunny.Queue.Reset do
   So all existing messages in the queues will go away.
   """
 
-  alias TaskBunny.{Connection, Config}
+  alias TaskBunny.{Connection, Config, Queue}
 
   @doc false
   @spec run(list) :: any
@@ -22,15 +22,15 @@ defmodule Mix.Tasks.TaskBunny.Queue.Reset do
       Connection.start_link(host)
     end
 
-    Config.jobs
-    |> Enum.each(fn (job) -> reset_queue(job) end)
+    Config.queues
+    |> Enum.each(fn (queue) -> reset_queue(queue) end)
   end
 
-  defp reset_queue(job_info) do
-    Mix.shell.info "Resetting queues for #{inspect job_info}"
+  defp reset_queue(queue) do
+    Mix.shell.info "Resetting queues for #{inspect queue}"
+    host = queue[:host] || :default
 
-    job = job_info[:job]
-    job.delete_queue()
-    job.declare_queue()
+    Queue.delete_with_subqueues(host, queue[:name])
+    Queue.declare_with_subqueues(host, queue[:name])
   end
 end
