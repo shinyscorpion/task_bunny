@@ -102,5 +102,28 @@ defmodule TaskBunny.WorkerSupervisorTest do
 
       assert :ok = WorkerSupervisor.graceful_halt(pid, 1000)
     end
+
+    test "message is processed and removed after comsumer is cancelled" do
+      # This test is inevitably slow.
+      # In case you want to save time, you can tag this pending
+      pid = start_worker_supervisor()
+      wait_for_worker_up()
+
+      payload = %{"sleep" => 1_000}
+      TestJob.enqueue(payload, queue: @queue)
+      JobTestHelper.wait_for_perform()
+
+      # Consumer would be canceled here.
+      WorkerSupervisor.graceful_halt(pid, 100)
+
+      :timer.sleep(1_100)
+
+      %{message_count: count} = Queue.state(
+        Connection.get_connection(), @queue
+      )
+
+      # Make sure ack is sent and message was removed.
+      assert count == 0
+    end
   end
 end
