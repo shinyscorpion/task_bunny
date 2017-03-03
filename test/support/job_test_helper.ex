@@ -22,7 +22,7 @@ defmodule TaskBunny.JobTestHelper do
       end
     end
 
-    def retry_interval, do: RetryInterval.interval()
+    def retry_interval(_), do: RetryInterval.interval()
   end
 
   def wait_for_perform(number \\ 1) do

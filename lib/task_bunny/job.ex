@@ -54,9 +54,9 @@ defmodule TaskBunny.Job do
       # Retries 10 times in every 5 minutes in default.
       # You have to re-create the queue after you change retry_interval.
       def max_retry, do: 10
-      def retry_interval, do: 300_000
+      def retry_interval(_failed_count), do: 300_000
 
-      defoverridable [timeout: 0, max_retry: 0, retry_interval: 0]
+      defoverridable [timeout: 0, max_retry: 0, retry_interval: 1]
     end
   end
 end
