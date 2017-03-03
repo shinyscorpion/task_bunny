@@ -8,10 +8,6 @@ defmodule TaskBunny.WorkerSupervisorTest do
   @queue "task_bunny.worker_supervisor_test"
   @worker_name :"TaskBunny.Worker.#{@queue}"
 
-  defp all_queues do
-    [@queue] ++ Queue.sub_queues(@queue)
-  end
-
   defp workers do
     [
       [queue: @queue, concurrency: 1, host: :default]
@@ -38,7 +34,7 @@ defmodule TaskBunny.WorkerSupervisorTest do
   end
 
   setup do
-    clean(all_queues())
+    clean(Queue.queue_with_subqueues(@queue))
     JobTestHelper.setup
 
     :meck.new Config, [:passthrough]

@@ -121,7 +121,7 @@ defmodule TaskBunny.Worker do
 
   def handle_info({:connected, connection}, state = %Worker{}) do
     # Declares queue
-    Queue.declare_with_retry(state.host, state.queue)
+    Queue.declare_with_subqueues(state.host, state.queue)
 
     # Consumes the queue
     case Consumer.consume(connection, state.queue, state.concurrency) do
@@ -240,7 +240,7 @@ defmodule TaskBunny.Worker do
 
   @spec retry_message(atom, Worker.t, any, any) :: :ok
   defp retry_message(job, state, body, meta) do
-    retry_queue = Queue.retry_queue_name(state.queue)
+    retry_queue = Queue.retry_queue(state.queue)
     options = [
       expiration: "#{job.retry_interval()}"
     ]
@@ -252,7 +252,7 @@ defmodule TaskBunny.Worker do
 
   @spec reject_message(Worker.t, any, any) :: :ok
   defp reject_message(state, body, meta) do
-    rejected_queue = Queue.rejected_queue_name(state.queue)
+    rejected_queue = Queue.rejected_queue(state.queue)
     Publisher.publish(state.host, rejected_queue, body)
 
     Consumer.ack(state.channel, meta, true)

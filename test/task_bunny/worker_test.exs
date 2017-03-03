@@ -10,7 +10,7 @@ defmodule TaskBunny.WorkerTest do
   @queue "task_bunny.worker_test"
 
   defp all_queues do
-    [@queue] ++ Queue.sub_queues(@queue)
+    Queue.queue_with_subqueues(@queue)
   end
 
   defp start_worker(concurrency \\ 1) do
@@ -20,7 +20,6 @@ defmodule TaskBunny.WorkerTest do
 
   setup do
     clean(all_queues())
-
     JobTestHelper.setup
 
     on_exit fn ->

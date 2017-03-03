@@ -11,10 +11,6 @@ defmodule TaskBunny.StatusTest do
   @supervisor :status_test_supervisor
   @worker_supervisor :status_test_worker_supervisor
 
-  defp all_queues do
-    [@queue] ++ Queue.sub_queues(@queue)
-  end
-
   defp mock_config do
     worker = [host: @host, queue: @queue, concurrency: 1]
 
@@ -25,7 +21,7 @@ defmodule TaskBunny.StatusTest do
   end
 
   setup do
-    clean(all_queues())
+    clean(Queue.queue_with_subqueues(@queue))
 
     mock_config()
 

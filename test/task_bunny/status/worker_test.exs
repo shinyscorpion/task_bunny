@@ -30,8 +30,8 @@ defmodule TaskBunny.Status.WorkerTest do
   end
 
   defp all_queues do
-    [@queue1] ++ Queue.sub_queues(@queue1) ++
-    [@queue2] ++ Queue.sub_queues(@queue2)
+    Queue.queue_with_subqueues(@queue1) ++
+    Queue.queue_with_subqueues(@queue2)
   end
 
   defp mock_config do

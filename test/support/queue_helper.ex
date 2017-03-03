@@ -43,10 +43,6 @@ defmodule TaskBunny.TestSupport.QueueHelper do
     :ok
   end
 
-  def purge(job, host) do
-    purge(job.queue_name, host)
-  end
-
   def pop(queue) do
     {:ok, channel} = open_channel()
 

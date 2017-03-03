@@ -8,10 +8,6 @@ defmodule TaskBunny.SupervisorTest do
   @host :sv_test
   @queue "task_bunny.supervisor_test"
 
-  defp all_queues do
-    [@queue] ++ Queue.sub_queues(@queue)
-  end
-
   defp mock_config do
     worker = [host: @host, queue: @queue, concurrency: 1]
 
@@ -44,7 +40,7 @@ defmodule TaskBunny.SupervisorTest do
   end
 
   setup do
-    clean(all_queues())
+    clean(Queue.queue_with_subqueues(@queue))
 
     mock_config()
     JobTestHelper.setup()
