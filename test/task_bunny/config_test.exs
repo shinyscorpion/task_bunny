@@ -50,12 +50,16 @@ defmodule TaskBunny.ConfigTest do
   end
 
   describe "queue_for_job" do
+    defp queue_for_job(job) do
+      Config.queue_for_job(job)[:name]
+    end
+
     test "returns matched queue" do
-      assert Config.queue_for_job(High.TestJob) == "test.high"
-      assert Config.queue_for_job(SlowJob) == "test.low"
-      assert Config.queue_for_job(SampleJob) == "test.normal"
-      assert Config.queue_for_job(Extra.TestJob) == "extra.queue1"
-      assert Config.queue_for_job(Foo.High.TestJob) == "test.normal"
+      assert queue_for_job(High.TestJob) == "test.high"
+      assert queue_for_job(SlowJob) == "test.low"
+      assert queue_for_job(SampleJob) == "test.normal"
+      assert queue_for_job(Extra.TestJob) == "extra.queue1"
+      assert queue_for_job(Foo.High.TestJob) == "test.normal"
     end
   end
 end
