@@ -72,13 +72,11 @@ defmodule TaskBunny.Config do
   @doc """
   Returns queue for the given job
   """
-  @spec queue_for_job(atom) :: String.t
+  @spec queue_for_job(atom) :: keyword
   def queue_for_job(job) do
-    queue = Enum.find(queues(), fn (queue) ->
+    Enum.find(queues(), fn (queue) ->
       match_job?(job, queue[:jobs])
     end) || default_queue()
-
-    if queue, do: queue[:name], else: nil
   end
 
   @spec default_queue :: keyword | nil
