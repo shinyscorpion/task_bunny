@@ -1,6 +1,13 @@
 # Changelog
 
-We are still discussing backward incompatible changes. Please see [Gihub issues](https://github.com/shinyscorpion/task_bunny/issues) for the details.
+## 0.0.1-dev.7
+
+This will be the last feature release before 0.1.0.
+
+**You need to change your config files after updating to this version**
+
+* Decouple queues and jobs. We now have a new syntax on config file. [#21](https://github.com/shinyscorpion/task_bunny/pull/21)
+* Change `Job.retry_interval/0` to `Job.retry_interval/1` and take failure count. [#23](https://github.com/shinyscorpion/task_bunny/pull/23)
 
 ## 0.0.1-dev.6
 
