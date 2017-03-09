@@ -2,6 +2,7 @@ defmodule TaskBunny.Config do
   @moduledoc """
   Modules that help you access to TaskBunny config values
   """
+  alias TaskBunny.ConfigError
 
   @default_concurrency 2
 
@@ -50,6 +51,9 @@ defmodule TaskBunny.Config do
 
     queue_config[:queues]
     |> Enum.map(fn (queue) ->
+      unless queue[:name] do
+        raise ConfigError, "name is missing in queue definition. #{inspect queue}"
+      end
       Keyword.merge(queue, [name: namespace <> queue[:name]])
     end)
   end

@@ -125,10 +125,10 @@ defmodule TaskBunny.Worker do
 
     # Consumes the queue
     case Consumer.consume(connection, state.queue, state.concurrency) do
-      {channel, consumer_tag} ->
+      {:ok, channel, consumer_tag} ->
         Logger.info log_msg("start comsuming", state)
         {:noreply, %{state | channel: channel, consumer_tag: consumer_tag}}
-      error ->
+      {:error, error} ->
         {:stop, {:failed_to_consume, error}, state}
     end
   end

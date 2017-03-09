@@ -49,7 +49,7 @@ defmodule TaskBunny.JobRunnerTest do
 
   describe "invoke" do
     defp message(job, payload, meta) do
-      body = TaskBunny.Message.encode(job, payload)
+      body = TaskBunny.Message.encode!(job, payload)
       {body, meta}
     end
 

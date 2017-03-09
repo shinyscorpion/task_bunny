@@ -7,19 +7,20 @@ defmodule TaskBunny.Consumer do
   @doc """
   Opens a channel for the given connection and start consuming messages for the queue.
   """
-  @spec consume(struct, String.t, integer) :: {struct, String.t} | nil
-  # TODO: returns tuple
+  @spec consume(AMQP.Connection.t, String.t, integer) :: {:ok, AMQP.Channel.t, String.t} | {:error, any}
   def consume(connection, queue, concurrency) do
-    case AMQP.Channel.open(connection) do
-      {:ok, channel} ->
-        :ok = AMQP.Basic.qos(channel, prefetch_count: concurrency)
-        {:ok, consumer_tag} = AMQP.Basic.consume(channel, queue)
-
-        {channel, consumer_tag}
+    with {:ok, channel} <- AMQP.Channel.open(connection),
+         :ok <- AMQP.Basic.qos(channel, prefetch_count: concurrency),
+         {:ok, consumer_tag} <- AMQP.Basic.consume(channel, queue) do
+      {:ok, channel, consumer_tag}
+    else
       error ->
-        Logger.warn "TaskBunny.Consumer: failed to open channel for #{queue}. Detail: #{inspect error}"
+        Logger.warn """
+        TaskBunny.Consumer: start consumer for #{queue}.
+        Detail: #{inspect error}"
+        """
 
-        nil
+        {:error, error}
     end
   end
 
@@ -34,7 +35,7 @@ defmodule TaskBunny.Consumer do
   @doc """
   Acknowledges to the message.
   """
-  @spec ack(%AMQP.Channel{}, map, boolean) :: :ok
+  @spec ack(AMQP.Channel.t, map, boolean) :: :ok
   def ack(channel, meta, succeeded)
 
   def ack(channel, %{delivery_tag: tag}, true), do: AMQP.Basic.ack(channel, tag)

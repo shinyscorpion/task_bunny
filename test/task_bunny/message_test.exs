@@ -10,7 +10,7 @@ defmodule TaskBunny.MessageTest do
 
   describe "encode/decode message body(payload)" do
     test "encode and decode payload" do
-      encoded = Message.encode(NameJob, %{"name" => "Joe"})
+      {:ok, encoded} = Message.encode(NameJob, %{"name" => "Joe"})
       {:ok, %{"job" => job, "payload" => payload}} = Message.decode(encoded)
       assert job.perform(payload) == {:ok, "Joe"}
     end
@@ -26,7 +26,7 @@ defmodule TaskBunny.MessageTest do
     end
 
     test "decode invalid job" do
-      encoded = Message.encode(InvalidJob, %{"name" => "Joe"})
+      encoded = Message.encode!(InvalidJob, %{"name" => "Joe"})
       assert {:error, :job_not_loaded} == Message.decode(encoded)
     end
 
@@ -39,7 +39,7 @@ defmodule TaskBunny.MessageTest do
   describe "add_error_log" do
     @tag timeout: 1000
     test "adds error information to the message" do
-      message = Message.encode(NameJob, %{"name" => "Joe"})
+      message = Message.encode!(NameJob, %{"name" => "Joe"})
       error = {:error, "HTTP Request error"}
       new_message = Message.add_error_log(message, error)
       {:ok, %{"errors" => [added | _]}} = Message.decode(new_message)

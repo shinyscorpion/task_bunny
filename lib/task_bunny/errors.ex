@@ -1,3 +1,17 @@
+defmodule TaskBunny.ConfigError do
+  @moduledoc """
+  Raised when an error was found on TaskBunny config
+  """
+  defexception [:message]
+
+  @spec exception(String.t) :: map
+  def exception(message) do
+    title = "Failed to load TaskBunny config"
+    message = "#{title}\n#{message}"
+    %__MODULE__{message: message}
+  end
+end
+
 defmodule TaskBunny.Connection.ConnectError do
   @moduledoc """
   Raised when failed to retain a connection
@@ -6,7 +20,7 @@ defmodule TaskBunny.Connection.ConnectError do
 
   @spec exception(keyword) :: map
   def exception(_opts = [type: type, host: host]) do
-    title = "Failed to get a connection to host '#{host}':"
+    title = "Failed to get a connection to host '#{host}'."
     detail = case type do
       :invalid_host ->
         "The host is not defined in config"
@@ -25,9 +39,69 @@ defmodule TaskBunny.Connection.ConnectError do
         - Make sure you can connect to RabbitMQ from the application host.
         - You might try to get connection before process is ready.
         """
+      fallback ->
+        "#{fallback}"
     end
 
     message = "#{title}\n#{detail}"
     %__MODULE__{message: message, type: type}
   end
+end
+
+defmodule TaskBunny.Job.QueueNotFoundError do
+  @moduledoc """
+  Raised when failed to find a queue for the job.
+  """
+  defexception [:job, :message]
+
+  @spec exception(atom) :: map
+  def exception(job) do
+    title = "Failed to find a queue for the job."
+    detail = "job=#{job}"
+
+    message = "#{title}\n#{detail}"
+    %__MODULE__{message: message, job: job}
+  end
+end
+
+defmodule TaskBunny.Message.DecodeError do
+  @moduledoc """
+  Raised when failed to decode the message.
+  """
+  defexception [:message]
+
+  @spec exception(keyword) :: map
+  def exception(opts) do
+    title = "Failed to decode the message."
+    detail = case opts[:type] do
+      :job_not_loaded ->
+        "Job is not valid Elixir module"
+      :poison_decode_error ->
+        "Failed to decode the message in JSON. error=#{inspect opts[:error]}"
+      :decode_error ->
+        "Failed to decode the message. error=#{inspect opts[:error]}"
+      fallback ->
+        "#{fallback}"
+    end
+
+    message = "#{title}\n#{detail}\nmessage body=#{opts[:body]}"
+    %__MODULE__{message: message}
+  end
+end
+
+defmodule TaskBunny.Publisher.PublishError do
+  @moduledoc """
+  Raised when failed to publish the message.
+  """
+  defexception [:message, :inner_error]
+
+  @spec exception(any) :: map
+  def exception(inner_error) do
+    title = "Failed to publish the message."
+    detail = "error=#{inspect inner_error}"
+
+    message = "#{title}\n#{detail}"
+    %__MODULE__{message: message, inner_error: inner_error}
+  end
+
 end
