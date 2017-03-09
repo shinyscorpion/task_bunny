@@ -15,6 +15,14 @@ defmodule TaskBunny.Config do
   end
 
   @doc """
+  Returns host configuration. Returns nil when host is not configured.
+  """
+  @spec host_config(atom) :: keyword | nil
+  def host_config(host) do
+    hosts_config()[host]
+  end
+
+  @doc """
   Returns connect options for the host. It raises an error if the host is not found.
   """
   @spec connect_options(host :: atom) :: list | String.t

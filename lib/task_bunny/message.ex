@@ -7,6 +7,7 @@ defmodule TaskBunny.Message do
   Encode message body in JSON with job and arugment.
   """
   @spec encode(atom, any) :: String.t
+  # TODO: return tuple
   def encode(job, payload) do
     %{
       "job" => encode_job(job),
@@ -15,6 +16,8 @@ defmodule TaskBunny.Message do
     }
     |> Poison.encode!(pretty: true)
   end
+
+  # TODO: encode!
 
   @doc """
   Decode message body in JSON to map
@@ -35,6 +38,8 @@ defmodule TaskBunny.Message do
   rescue
     error -> {:error, {:decode_exception, error}}
   end
+
+  # TODO: decode!
 
   @spec encode_job(atom) :: String.t
   defp encode_job(job) do

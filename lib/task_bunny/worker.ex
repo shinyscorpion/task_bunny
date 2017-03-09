@@ -64,7 +64,7 @@ defmodule TaskBunny.Worker do
   def init(state = %Worker{}) do
     Logger.info log_msg("initializing", state)
 
-    case Connection.monitor_connection(state.host, self()) do
+    case Connection.subscribe_connection(state.host, self()) do
       :ok ->
         Process.flag(:trap_exit, true)
 

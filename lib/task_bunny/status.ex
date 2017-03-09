@@ -84,9 +84,9 @@ defmodule TaskBunny.Status do
 
   @spec get_connection_status() :: boolean
   defp get_connection_status do
-    case Connection.get_connection do
-      nil -> false
-      _ -> true
+    case Connection.get_connection() do
+      {:ok, _} -> true
+      _ -> false
     end
   end
 

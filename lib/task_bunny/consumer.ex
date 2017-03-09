@@ -8,6 +8,7 @@ defmodule TaskBunny.Consumer do
   Opens a channel for the given connection and start consuming messages for the queue.
   """
   @spec consume(struct, String.t, integer) :: {struct, String.t} | nil
+  # TODO: returns tuple
   def consume(connection, queue, concurrency) do
     case AMQP.Channel.open(connection) do
       {:ok, channel} ->

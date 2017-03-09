@@ -21,6 +21,9 @@ defmodule TaskBunny.Job do
         do_enqueue(host, queue, message)
       end
 
+      # TODO: enqueue!
+      # custom errors
+
       @spec do_enqueue(atom, String.t|nil, String.t) :: :ok | {:error, any}
       defp do_enqueue(host, nil, message) do
         {:error, "Can't find a queue for #{__MODULE__}"}
@@ -59,4 +62,6 @@ defmodule TaskBunny.Job do
       defoverridable [timeout: 0, max_retry: 0, retry_interval: 1]
     end
   end
+
+  # TODO: documentation
 end
