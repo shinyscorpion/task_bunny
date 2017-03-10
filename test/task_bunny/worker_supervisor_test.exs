@@ -74,7 +74,7 @@ defmodule TaskBunny.WorkerSupervisorTest do
       assert JobTestHelper.performed_count() == 0
 
       %{message_count: count} = Queue.state(
-        Connection.get_connection(), @queue
+        Connection.get_connection!(), @queue
       )
 
       assert count == 1
@@ -118,7 +118,7 @@ defmodule TaskBunny.WorkerSupervisorTest do
       :timer.sleep(1_100)
 
       %{message_count: count} = Queue.state(
-        Connection.get_connection(), @queue
+        Connection.get_connection!(), @queue
       )
 
       # Make sure ack is sent and message was removed.

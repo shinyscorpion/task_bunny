@@ -41,7 +41,7 @@ defmodule TaskBunny.Queue do
 
   @spec delete_with_subqueues(%AMQP.Connection{} | atom, String.t) :: :ok
   def delete_with_subqueues(host, work_queue) when is_atom(host) do
-    conn = TaskBunny.Connection.get_connection(host)
+    conn = TaskBunny.Connection.get_connection!(host)
     delete_with_subqueues(conn, work_queue)
   end
 

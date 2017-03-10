@@ -17,7 +17,7 @@ defmodule TaskBunny.QueueTestHelper do
 
   # Queue Helpers
   def open_channel(host \\ :default) do
-    conn = TaskBunny.Connection.get_connection(host)
+    conn = TaskBunny.Connection.get_connection!(host)
     {:ok, _channel} = AMQP.Channel.open(conn)
   end
 

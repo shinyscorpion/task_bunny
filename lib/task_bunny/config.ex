@@ -2,6 +2,7 @@ defmodule TaskBunny.Config do
   @moduledoc """
   Modules that help you access to TaskBunny config values
   """
+  alias TaskBunny.ConfigError
 
   @default_concurrency 2
 
@@ -12,6 +13,14 @@ defmodule TaskBunny.Config do
   def hosts do
     hosts_config()
     |> Enum.map(fn ({host, _options}) -> host end)
+  end
+
+  @doc """
+  Returns host configuration. Returns nil when host is not configured.
+  """
+  @spec host_config(atom) :: keyword | nil
+  def host_config(host) do
+    hosts_config()[host]
   end
 
   @doc """
@@ -42,6 +51,9 @@ defmodule TaskBunny.Config do
 
     queue_config[:queues]
     |> Enum.map(fn (queue) ->
+      unless queue[:name] do
+        raise ConfigError, message: "name is missing in queue definition. #{inspect queue}"
+      end
       Keyword.merge(queue, [name: namespace <> queue[:name]])
     end)
   end
@@ -72,7 +84,7 @@ defmodule TaskBunny.Config do
   @doc """
   Returns queue for the given job
   """
-  @spec queue_for_job(atom) :: keyword
+  @spec queue_for_job(atom) :: keyword | nil
   def queue_for_job(job) do
     Enum.find(queues(), fn (queue) ->
       match_job?(job, queue[:jobs])

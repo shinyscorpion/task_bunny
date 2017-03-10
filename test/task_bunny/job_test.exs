@@ -25,5 +25,21 @@ defmodule TaskBunny.JobTest do
       {:ok, %{"payload" => received_payload}} = Message.decode(received)
       assert received_payload == payload
     end
+
+    test "returns an error for wrong option" do
+      payload = %{"foo" => "bar"}
+      assert {:error, _} = TestJob.enqueue(
+        payload, queue: @queue, host: :invalid_host
+      )
+    end
+  end
+
+  describe "enqueue!" do
+    test "raises an exception for a wrong host" do
+      payload = %{"foo" => "bar"}
+      assert_raise TaskBunny.Connection.ConnectError, fn ->
+        TestJob.enqueue!(payload, queue: @queue, host: :invalid_host)
+      end
+    end
   end
 end

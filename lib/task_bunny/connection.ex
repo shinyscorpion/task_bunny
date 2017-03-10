@@ -8,7 +8,7 @@ defmodule TaskBunny.Connection do
 
   use GenServer
   require Logger
-  alias TaskBunny.Config
+  alias TaskBunny.{Config, Connection.ConnectError}
 
   @reconnect_interval 5_000
 
@@ -32,24 +32,36 @@ defmodule TaskBunny.Connection do
 
   @doc """
   Gets a RabbitMQ connection for the given host.
-  Returns nil when the connection is not available.
+
+  Returns {:ok, conn} when connection is available.
+  Returns {:error, error_info} when connection is not ready.
   """
-  @spec get_connection(atom) :: struct | nil
+  @spec get_connection(atom) :: {:ok, AMQP.Connection.t} | {:error, atom}
   def get_connection(host \\ :default) do
     case Process.whereis(pname(host)) do
-      nil -> nil
-      pid -> GenServer.call(pid, :get_connection)
+      nil ->
+        case Config.host_config(host) do
+          nil -> {:error, :invalid_host}
+          _   -> {:error, :no_connection_process}
+        end
+      pid ->
+        case GenServer.call(pid, :get_connection) do
+          nil  -> {:error, :not_connected}
+          conn -> {:ok, conn}
+        end
     end
   end
 
   @doc """
-  Similar to `get_connection/1` but raises an error when connection is not ready.
+  Similar to get_connection/1 but raises an exception when connection is not ready.
+
+  Returns connection if it's available.
   """
-  @spec get_connection!(atom) :: struct
+  @spec get_connection!(atom) :: AMQP.Connection.t
   def get_connection!(host \\ :default) do
     case get_connection(host) do
-      nil -> raise "Failed to connect #{host}"
-      conn -> conn
+      {:ok, conn} -> conn
+      {:error, error_type} -> raise ConnectError, type: error_type, host: host
     end
   end
 
@@ -58,15 +70,30 @@ defmodule TaskBunny.Connection do
   Once connection has been established, it will send a message with {:connected, connection} to the given process.
 
   Returns :ok when the server exists.
-  Returns :error when the server doesn't exist.
+  Returns {:error, info} when the server doesn't exist.
   """
-  @spec monitor_connection(atom, pid) :: :ok | :error
-  def monitor_connection(host \\ :default, listener_pid) do
+  @spec subscribe_connection(atom, pid) :: :ok | {:error, atom}
+  def subscribe_connection(host \\ :default, listener_pid) do
     case Process.whereis(pname(host)) do
-      nil -> :error
+      nil ->
+        case Config.host_config(host) do
+          nil -> {:error, :invalid_host}
+          _   -> {:error, :no_connection_process}
+        end
       pid ->
-        GenServer.cast(pid, {:monitor_connection, listener_pid})
+        GenServer.cast(pid, {:subscribe_connection, listener_pid})
         :ok
+    end
+  end
+
+  @doc """
+  Similar to subscribe_connection/2 but raises an exception when process is not ready.
+  """
+  @spec subscribe_connection!(atom, pid) :: :ok
+  def subscribe_connection!(host \\ :default, listener_pid) do
+    case subscribe_connection(host, listener_pid) do
+      :ok -> :ok
+      {:error, error_type} -> raise ConnectError, type: error_type, host: host
     end
   end
 
@@ -85,9 +112,9 @@ defmodule TaskBunny.Connection do
   end
 
   @spec handle_cast(tuple, state) :: {:noreply, state}
-  def handle_cast({:monitor_connection, listener}, {host, connection, listeners}) do
+  def handle_cast({:subscribe_connection, listener}, {host, connection, listeners}) do
     if connection do
-      notify_connect(connection, [listener])
+      publish_connection(connection, [listener])
       {:noreply, {host, connection, listeners}}
     else
       {:noreply, {host, connection, [listener | listeners]}}
@@ -104,7 +131,7 @@ defmodule TaskBunny.Connection do
       {:ok, connection} ->
         Logger.info "TaskBunny.Connection: connected to #{host}"
         Process.monitor(connection.pid)
-        notify_connect(connection, listeners)
+        publish_connection(connection, listeners)
 
         {:noreply, {host, connection, []}}
       error ->
@@ -121,9 +148,9 @@ defmodule TaskBunny.Connection do
     {:stop, {:connection_lost, reason}, {host, nil, []}}
   end
 
-  @spec notify_connect(struct, list(pid)) :: :ok
-  defp notify_connect(connection, listeners) do
-    Logger.debug "TaskBunny.Connection: notifying to #{inspect listeners}"
+  @spec publish_connection(struct, list(pid)) :: :ok
+  defp publish_connection(connection, listeners) do
+    Logger.debug "TaskBunny.Connection: publishing to #{inspect listeners}"
     Enum.each listeners, fn (pid) ->
       if Process.alive?(pid), do: send(pid, {:connected, connection})
     end

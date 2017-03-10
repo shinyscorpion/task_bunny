@@ -2,18 +2,33 @@ defmodule TaskBunny.Message do
   @moduledoc """
   Functions to access messages and its meta data.
   """
+  alias TaskBunny.Message.DecodeError
 
   @doc """
   Encode message body in JSON with job and arugment.
   """
-  @spec encode(atom, any) :: String.t
+  @spec encode(atom, any) :: {:ok, String.t}
   def encode(job, payload) do
+    data = message_data(job, payload)
+    Poison.encode(data, pretty: true)
+  end
+
+  @doc """
+  Similar to encode/2 but raises an exception on error
+  """
+  @spec encode!(atom, any) :: String.t
+  def encode!(job, payload) do
+    data = message_data(job, payload)
+    Poison.encode!(data, pretty: true)
+  end
+
+  @spec message_data(atom, any) :: map
+  defp message_data(job, payload) do
     %{
       "job" => encode_job(job),
       "payload" => payload,
       "created_at" => DateTime.utc_now()
     }
-    |> Poison.encode!(pretty: true)
   end
 
   @doc """
@@ -34,6 +49,20 @@ defmodule TaskBunny.Message do
     end
   rescue
     error -> {:error, {:decode_exception, error}}
+  end
+
+  @doc """
+  Similar to decode/1 but raises an exception on error.
+  """
+  @spec decode!(String.t) :: map
+  def decode!(message) do
+    case decode(message) do
+      {:ok, decoded} -> decoded
+      {:error, {error_type, error}} ->
+        raise DecodeError, type: error_type, body: message, error: error
+      {:error, error_type} ->
+        raise DecodeError, type: error_type, body: message
+    end
   end
 
   @spec encode_job(atom) :: String.t

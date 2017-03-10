@@ -60,7 +60,7 @@ defmodule TaskBunny.JobTestHelper do
 
   def wait_for_connection(host) do
     Enum.find_value 1..100, fn (_) ->
-      case TaskBunny.Connection.monitor_connection(host, self()) do
+      case TaskBunny.Connection.subscribe_connection(host, self()) do
         :ok -> true
         _ ->
           :timer.sleep(10)

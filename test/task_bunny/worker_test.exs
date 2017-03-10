@@ -47,7 +47,7 @@ defmodule TaskBunny.WorkerTest do
       TestJob.enqueue(payload, queue: @queue)
       JobTestHelper.wait_for_perform()
 
-      conn = Connection.get_connection()
+      conn = Connection.get_connection!()
       %{message_count: main_count} = Queue.state(conn, main)
       %{message_count: retry_count} = Queue.state(conn, retry)
       %{message_count: rejected_count} = Queue.state(conn, rejected)
@@ -87,7 +87,7 @@ defmodule TaskBunny.WorkerTest do
       TestJob.enqueue(payload, queue: @queue)
       JobTestHelper.wait_for_perform()
 
-      conn = Connection.get_connection()
+      conn = Connection.get_connection!()
       %{message_count: main_count} = Queue.state(conn, main)
       %{message_count: retry_count} = Queue.state(conn, retry)
       %{message_count: rejected_count} = Queue.state(conn, rejected)
@@ -118,7 +118,7 @@ defmodule TaskBunny.WorkerTest do
       # 1 normal + 10 retries = 11
       assert JobTestHelper.performed_count == 11
 
-      conn = Connection.get_connection()
+      conn = Connection.get_connection!()
       %{message_count: main_count} = Queue.state(conn, main)
       %{message_count: retry_count} = Queue.state(conn, retry)
       %{message_count: rejected_count} = Queue.state(conn, rejected)
