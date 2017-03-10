@@ -10,6 +10,7 @@ defmodule TaskBunny.ConfigError do
     message = "#{title}\n#{message}"
     %__MODULE__{message: message}
   end
+  _ = @lint
 end
 
 defmodule TaskBunny.Connection.ConnectError do
@@ -46,6 +47,7 @@ defmodule TaskBunny.Connection.ConnectError do
     message = "#{title}\n#{detail}"
     %__MODULE__{message: message, type: type}
   end
+  _ = @lint
 end
 
 defmodule TaskBunny.Job.QueueNotFoundError do
@@ -62,6 +64,7 @@ defmodule TaskBunny.Job.QueueNotFoundError do
     message = "#{title}\n#{detail}"
     %__MODULE__{message: message, job: job}
   end
+  _ = @lint
 end
 
 defmodule TaskBunny.Message.DecodeError do
@@ -87,6 +90,7 @@ defmodule TaskBunny.Message.DecodeError do
     message = "#{title}\n#{detail}\nmessage body=#{opts[:body]}"
     %__MODULE__{message: message}
   end
+  _ = @lint
 end
 
 defmodule TaskBunny.Publisher.PublishError do
@@ -103,4 +107,5 @@ defmodule TaskBunny.Publisher.PublishError do
     message = "#{title}\n#{detail}"
     %__MODULE__{message: message, inner_error: inner_error}
   end
+  _ = @lint
 end
