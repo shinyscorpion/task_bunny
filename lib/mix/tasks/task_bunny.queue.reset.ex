@@ -6,8 +6,8 @@ defmodule Mix.Tasks.TaskBunny.Queue.Reset do
   @moduledoc """
   Mix task to reset all queues.
 
-  Please be aware it delete queues and recreate them.
-  So all existing messages in the queues will go away.
+  What it does is that deletes the queues and creates them again.
+  Therefore all messages in the queues will go away.
   """
 
   alias TaskBunny.{Connection, Config, Queue}

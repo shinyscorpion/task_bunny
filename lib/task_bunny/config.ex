@@ -1,13 +1,13 @@
 defmodule TaskBunny.Config do
   @moduledoc """
-  Modules that help you access to TaskBunny config values
+  Handles TaskBunny configuration.
   """
   alias TaskBunny.ConfigError
 
   @default_concurrency 2
 
   @doc """
-  Returns list of hosts in config.
+  Returns list of hosts.
   """
   @spec hosts :: [atom]
   def hosts do
@@ -16,7 +16,13 @@ defmodule TaskBunny.Config do
   end
 
   @doc """
-  Returns host configuration. Returns nil when host is not configured.
+  Returns configuration for the host.
+
+  ## Examples
+
+      iex> host_config(:default)
+      [connection_options: "amqp://localhost?heartbeat=30"]
+
   """
   @spec host_config(atom) :: keyword | nil
   def host_config(host) do
@@ -24,15 +30,16 @@ defmodule TaskBunny.Config do
   end
 
   @doc """
-  Returns connect options for the host. It raises an error if the host is not found.
+  Returns connect options for the host.
   """
   @spec connect_options(host :: atom) :: list | String.t
   def connect_options(host) do
-    hosts_config()[host][:connect_options] || raise "Can not find host '#{host}' in config"
+    hosts_config()[host][:connect_options] ||
+      raise ConfigError, message: "Can not find host '#{host}' in config"
   end
 
   @doc """
-  Returns queues in config.
+  Returns list of queues.
   """
   @spec queues :: [keyword]
   def queues do
@@ -59,7 +66,7 @@ defmodule TaskBunny.Config do
   end
 
   @doc """
-  Returns workers in config.
+  Transforms queue configuration into list of workers application should run.
   """
   @spec workers :: [keyword]
   def workers do
@@ -82,7 +89,7 @@ defmodule TaskBunny.Config do
   end
 
   @doc """
-  Returns queue for the given job
+  Returns a queue for the given job.
   """
   @spec queue_for_job(atom) :: keyword | nil
   def queue_for_job(job) do
@@ -134,7 +141,7 @@ defmodule TaskBunny.Config do
   end
 
   @doc """
-  Returns if auto start is enabled.
+  Returns true if auto start is enabled.
   """
   @spec auto_start? :: boolean
   def auto_start? do
@@ -145,7 +152,7 @@ defmodule TaskBunny.Config do
   end
 
   @doc """
-  Disable auto start manually
+  Disable auto start manually.
   """
   @spec disable_auto_start :: :ok
   def disable_auto_start do
