@@ -88,7 +88,6 @@ defmodule TaskBunny.Job do
     :exit, e ->
       # Handles the error but we carry on...
       # It's highly likely caused by the options on queue declare don't match.
-      # e.g. retry interbval a.k.a message ttl in retry queue
       # We carry on with error log.
       Logger.error "TaskBunny.job: Failed to declare queue for #{queue}. If you have changed the queue configuration, you have to delete the queue and create it again. Error: #{inspect e}"
 
