@@ -40,7 +40,8 @@ defmodule TaskBunny.Publisher do
 
     with {:ok, channel} <- AMQP.Channel.open(conn),
          :ok <- AMQP.Basic.publish(channel, exchange, routing_key, message, options),
-         :ok <- AMQP.Channel.close(channel) do
+         :ok <- AMQP.Channel.close(channel)
+    do
       :ok
     else
       error -> raise PublishError, error

@@ -11,7 +11,8 @@ defmodule TaskBunny.Consumer do
   def consume(connection, queue, concurrency) do
     with {:ok, channel} <- AMQP.Channel.open(connection),
          :ok <- AMQP.Basic.qos(channel, prefetch_count: concurrency),
-         {:ok, consumer_tag} <- AMQP.Basic.consume(channel, queue) do
+         {:ok, consumer_tag} <- AMQP.Basic.consume(channel, queue)
+    do
       {:ok, channel, consumer_tag}
     else
       error ->
