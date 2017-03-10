@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.1-dev.9
+
+* Update bunch of API interface. Make return values and exceptions consistent. [#25](https://github.com/shinyscorpion/task_bunny/pull/25)
+
 ## 0.0.1-dev.8
 
 * Fix a bug on Job.enqueue [#24](https://github.com/shinyscorpion/task_bunny/pull/24)
