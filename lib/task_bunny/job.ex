@@ -36,7 +36,7 @@ defmodule TaskBunny.Job do
       # Retries 10 times in every 5 minutes in default.
       # You have to re-create the queue after you change retry_interval.
       @doc false
-      @spec timeout() :: integer
+      @spec max_retry() :: integer
       def max_retry, do: 10
 
       @doc false
