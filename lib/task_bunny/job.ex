@@ -69,7 +69,7 @@ defmodule TaskBunny.Job do
     {:ok, message} = Message.encode(job, payload)
 
     case options[:queue] || queue_data[:name] do
-      nil -> raise QueueNotFoundError, job
+      nil -> raise QueueNotFoundError, job: job
       queue -> do_enqueue(host, queue, message)
     end
   end

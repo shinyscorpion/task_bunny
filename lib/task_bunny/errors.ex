@@ -4,8 +4,8 @@ defmodule TaskBunny.ConfigError do
   """
   defexception [:message]
 
-  @spec exception(String.t) :: map
-  def exception(message) do
+  @lint false
+  def exception(message: message) do
     title = "Failed to load TaskBunny config"
     message = "#{title}\n#{message}"
     %__MODULE__{message: message}
@@ -18,7 +18,7 @@ defmodule TaskBunny.Connection.ConnectError do
   """
   defexception [:type, :message]
 
-  @spec exception(keyword) :: map
+  @lint false
   def exception(_opts = [type: type, host: host]) do
     title = "Failed to get a connection to host '#{host}'."
     detail = case type do
@@ -54,8 +54,8 @@ defmodule TaskBunny.Job.QueueNotFoundError do
   """
   defexception [:job, :message]
 
-  @spec exception(atom) :: map
-  def exception(job) do
+  @lint false
+  def exception(job: job) do
     title = "Failed to find a queue for the job."
     detail = "job=#{job}"
 
@@ -70,7 +70,7 @@ defmodule TaskBunny.Message.DecodeError do
   """
   defexception [:message]
 
-  @spec exception(keyword) :: map
+  @lint false
   def exception(opts) do
     title = "Failed to decode the message."
     detail = case opts[:type] do
@@ -95,13 +95,12 @@ defmodule TaskBunny.Publisher.PublishError do
   """
   defexception [:message, :inner_error]
 
-  @spec exception(any) :: map
-  def exception(inner_error) do
+  @lint false
+  def exception(inner_error: inner_error) do
     title = "Failed to publish the message."
     detail = "error=#{inspect inner_error}"
 
     message = "#{title}\n#{detail}"
     %__MODULE__{message: message, inner_error: inner_error}
   end
-
 end

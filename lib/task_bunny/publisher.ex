@@ -44,7 +44,7 @@ defmodule TaskBunny.Publisher do
     do
       :ok
     else
-      error -> raise PublishError, error
+      error -> raise PublishError, inner_error: error
     end
   end
 end

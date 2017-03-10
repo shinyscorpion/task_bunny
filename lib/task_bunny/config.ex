@@ -52,7 +52,7 @@ defmodule TaskBunny.Config do
     queue_config[:queues]
     |> Enum.map(fn (queue) ->
       unless queue[:name] do
-        raise ConfigError, "name is missing in queue definition. #{inspect queue}"
+        raise ConfigError, message: "name is missing in queue definition. #{inspect queue}"
       end
       Keyword.merge(queue, [name: namespace <> queue[:name]])
     end)
@@ -84,7 +84,7 @@ defmodule TaskBunny.Config do
   @doc """
   Returns queue for the given job
   """
-  @spec queue_for_job(atom) :: keyword
+  @spec queue_for_job(atom) :: keyword | nil
   def queue_for_job(job) do
     Enum.find(queues(), fn (queue) ->
       match_job?(job, queue[:jobs])
