@@ -70,7 +70,49 @@ defmodule TaskBunny.Job do
 
   """
 
+  @doc """
+  Callback to process a job.
+
+  It can take any type of argument as long as it can be seriarlized with Poison
+  but we recommend you to use map with string keys for a consistency.
+
+      def perform(name) do
+        IO.puts name <> ", it's not a preferred way"
+      end
+
+      def perform(%{"name" => name}) do
+        IO.puts name <> ", it's a preferred way :)"
+      end
+
+  """
   @callback perform(any) :: :ok | {:error, term}
+
+  @doc """
+  Callback for the timeout in milliseconds for a job execution.
+
+  Default value is 120_000 = 2 minutes.
+  Overwrite the function if you want to change the value.
+  """
+  @callback timeout() :: integer
+
+  @doc """
+  Callback for the max number of retries TaskBunny can make for a failed job.
+
+  Default value is 10.
+  Overwrite the function if you want to change the value.
+  """
+  @callback max_retry() :: integer
+
+  @doc """
+  Callback for the retry interval in milliseconds.
+
+  Default value is 300_000 = 5 minutes.
+  Overwrite the function if you want to change the value.
+
+  TaskBunny will set failed count to the argument.
+  The value will be more than or equal to 1 and less than or equal to max_retry.
+  """
+  @callback retry_interval(integer) :: integer
 
   require Logger
   alias TaskBunny.{Config, Queue, Job, Message, Publisher}
