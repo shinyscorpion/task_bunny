@@ -2,7 +2,7 @@ defmodule TaskBunny.Publisher do
   @moduledoc """
   Conviniences for publishing messages to a queue.
 
-  It provides lower level functions.
+  It's a semi private module and provides lower level functions.
   You should use Job.enqueue to enqueue a job from your application.
   """
   require Logger

@@ -17,7 +17,7 @@ defmodule TaskBunny.Connection do
   Then the supervisor will restart the GenServer and it tries to connect to the host.
   If it failes to connect, it retries again and again every five seconds.
 
-  ## Get RabbitMQ connections
+  ## Access to RabbitMQ connections
 
   The module provides two different ways to retrieve RabbitMQ connection.
 

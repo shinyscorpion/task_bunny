@@ -1,8 +1,10 @@
 defmodule TaskBunny.Status do
-  @moduledoc ~S"""
-  Modules that handles TaskBunny status.
-  """
-
+  @moduledoc false
+  # Functions that handles TaskBunny status.
+  #
+  # This module is private to TaskBunny.
+  # It's aimed to provide useful stats to Wobserver integration.
+  #
   alias TaskBunny.{Status, Connection}
   alias TaskBunny.Status.Worker
 

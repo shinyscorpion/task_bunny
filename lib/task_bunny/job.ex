@@ -1,6 +1,73 @@
 defmodule TaskBunny.Job do
   @moduledoc """
-  TODO: Write me
+  Behaviour module for implementing a TaskBunny job.
+
+  TaskBunny job is an asynchronous background job whose execution request is
+  enqueued to RabbitMQ and performed in a worker process.
+
+      defmodule HelloJob do
+        use TaskBunny.Job
+
+        def perform(%{"name" => name}) do
+          IO.puts "Hello " <> name
+
+          :ok
+        end
+      end
+
+      HelloJob.enqueue(%{"name" => "Cloud"})
+
+  ## Failing
+
+  TaskBunny treats the job as failed when...
+
+  - the return value of perform is not `:ok` or `{:ok, something}`
+  - the perform timed out
+  - the perform raises an exception while being executed
+  - the perform throws :exit signal while being executed.
+
+  TaskBunny will retry the failed job later.
+
+  ## Timeout
+
+  In default, TaskBunny terminates the job when it takes more than 2 minutes.
+  This helps you to avoid messages stuck in your queue.
+
+  If your job is expected to take longer than 2 minutes or you want to terminate
+  the job earlier, overwrite `timeout/0` function.
+
+      defmodule SlowJob do
+        use TaskBunny.Job
+
+        def timeout, do: 300_000
+
+        def perform(_) do
+          slow_work()
+          :ok
+        end
+      end
+
+  # Retry
+
+  In default, TaskBunny retries 10 times every five minutes for a failed job.
+  You can change the behavior by overwriting `max_retry/0` and `retry_interval/1`.
+
+  For example, if you want the job to be retried five times and gradually
+  increase the inteval based on failed times, you can write the logic like
+  the following.
+
+      defmodule HttpSyncJob do
+        def max_retry, do: 5
+
+        def retry_interval(failed_count) do
+          [1, 5, 10, 30, 60]
+          |> Enum.map(&(&1 * 60_000))
+          |> Enum.at(failed_count - 1, 1000)
+        end
+
+        ...
+      end
+
   """
 
   @callback perform(any) :: :ok | {:error, term}
@@ -49,6 +116,18 @@ defmodule TaskBunny.Job do
 
   @doc """
   Enqueues a job with payload.
+
+  You might want to use the shorter version if you can access to the job.
+
+      # Following two calls are exactly same.
+      RegistrationJob.enqueue(payload)
+      TaskBunny.enqueue(RegistrationJob, payload)
+
+  ## Options
+
+  - host: RabbitMQ host. In default, it's automatically selected from configuration.
+  - queue: RabbitMQ queue. In default, It's automattically selected from configuration.
+
   """
   @spec enqueue(atom, any, keyword) :: :ok | {:error, any}
   def enqueue(job, payload, options \\ []) do

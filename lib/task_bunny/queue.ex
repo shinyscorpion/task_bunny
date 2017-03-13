@@ -2,12 +2,28 @@ defmodule TaskBunny.Queue do
   @moduledoc """
   Conviniences for accessing TaskBunny queues.
 
-  When you have a worker queue called "task_bunny", TaskBunny defines the following sub queues with it.
+  It's a semi private module and it is normally wrapped by other modules.
 
-  - task_bunny.retry: queues for retry
-  - task_bunny.rejected: queues for rejected message (failed more than max retries or wrong message format)
+  ## Sub Queues
+
+  When TaskBunny creates(declares) a queue on RabbitMQ, it also creates the following sub queues.
+
+  - [queue-name].retry: holds jobs to be retried
+  - [queue-name].rejected: holds jobs that were rejected (failed more than max retry times or wrong message format)
   """
 
+  @doc """
+  Declares a queue with sub queues.
+
+      Queue.declare_with_subqueues(:default, "normal_jobs")
+
+  For this call, the function creates(declares) three queues:
+
+  - normal_jobs: a queue that holds jobs to process
+  - normal_jobs.retry: a queue that holds jobs failed and waiting to retry
+  - normal_jobs.rejected: a queue that holds jobs failed and won't be retried
+
+  """
   @spec declare_with_subqueues(%AMQP.Connection{} | atom, String.t) :: {map, map, map}
   def declare_with_subqueues(host, work_queue) when is_atom(host) do
     conn = TaskBunny.Connection.get_connection!(host)
@@ -39,6 +55,9 @@ defmodule TaskBunny.Queue do
     {work, retry, rejected}
   end
 
+  @doc """
+  Deletes the queue and its subqueues.
+  """
   @spec delete_with_subqueues(%AMQP.Connection{} | atom, String.t) :: :ok
   def delete_with_subqueues(host, work_queue) when is_atom(host) do
     conn = TaskBunny.Connection.get_connection!(host)
@@ -58,6 +77,8 @@ defmodule TaskBunny.Queue do
     :ok
   end
 
+  @doc false
+  # Declares a single queue with the options
   @spec declare(%AMQP.Channel{}, String.t, keyword) :: map
   def declare(channel, queue, options \\ []) do
     options = options ++ [durable: true]
@@ -66,6 +87,9 @@ defmodule TaskBunny.Queue do
     state
   end
 
+  @doc """
+  Returns the message count and consumer count for the given queue.
+  """
   @spec state(%AMQP.Connection{}, String.t) :: map
   def state(connection, queue) do
     {:ok, channel} = AMQP.Channel.open(connection)
@@ -94,11 +118,17 @@ defmodule TaskBunny.Queue do
     ]
   end
 
+  @doc """
+  Returns a name of retry queue.
+  """
   @spec retry_queue(String.t) :: String.t
   def retry_queue(work_queue) do
     work_queue <> ".retry"
   end
 
+  @doc """
+  Returns a name of rejected queue.
+  """
   @spec rejected_queue(String.t) :: String.t
   def rejected_queue(work_queue) do
     work_queue <> ".rejected"

@@ -1,22 +1,24 @@
 defmodule TaskBunny.WorkerSupervisor do
   @moduledoc """
-  Worker supervisor for TaskBunny.
+  Supervises all TaskBunny workers.
 
-  It supervises all Workers with one_for_one strategy.
+  You don't have to call or start Supervisor explicity.
+  It will be automatically started by application and
+  configure child workers based on configuration file.
 
-  It will receive all jobs that need workers when started and will start a worker for each job.
+  It also provides `graceful_halt/1` and `graceful_halt/2` that allow
+  you to shutdown the worker processes safely.
   """
-
   use Supervisor
   alias TaskBunny.{Config, Worker}
 
-  @type jobs :: list({host :: atom, job :: atom, concurrenct :: integer})
-
+  @doc false
   @spec start_link(atom) :: {:ok, pid} | {:error, term}
   def start_link(name \\ __MODULE__) do
     Supervisor.start_link(__MODULE__, [], name: name)
   end
 
+  @doc false
   @spec init(list) :: {:ok, {:supervisor.sup_flags, [Supervisor.Spec.spec]}} | :ignore
   def init([]) do
     Config.workers()

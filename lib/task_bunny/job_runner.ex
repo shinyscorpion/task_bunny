@@ -1,21 +1,25 @@
 defmodule TaskBunny.JobRunner do
-  @moduledoc """
-  JobRunner wraps up job execution and provides you abilities:
-
-  - invoking jobs concurrently (unblocking job execution)
-  - handling a job crashing
-  - handling timeout
-
-  ## Signal
-
-  Once the job has finished it sends a message with a tuple consisted with:
-
-  - atom indicating message type: :job_finished
-  - result: :ok or {:error, details}
-  - meta: meta data for the job
-
-  After sending the messsage, JobRunner shuts down all processes it started.
-  """
+  # Handles job invocation concerns.
+  #
+  # This module is private to TaskBunny and should not be accessed directly.
+  #
+  # JobRunner wraps up job execution and provides you abilities:
+  #
+  # - invoking jobs concurrently (unblocking job execution)
+  # - handling a job crashing
+  # - handling timeout
+  #
+  # ## Signal
+  #
+  # Once the job has finished it sends a message with a tuple consisted with:
+  #
+  # - atom indicating message type: :job_finished
+  # - result: :ok or {:error, details}
+  # - meta: meta data for the job
+  #
+  # After sending the messsage, JobRunner shuts down all processes it started.
+  #
+  @moduledoc false
 
   require Logger
 
@@ -51,11 +55,11 @@ defmodule TaskBunny.JobRunner do
     job.perform(payload)
   rescue
     error ->
-      Logger.error "TaskBunny.Worker - Runner rescued #{inspect error}"
+      Logger.error "TaskBunny.JobRunner - Runner rescued #{inspect error}"
       {:error, error}
   catch
     _, reason ->
-      Logger.error "TaskBunny.Worker - Runner caught reason: #{inspect reason}"
+      Logger.error "TaskBunny.JobRunner - Runner caught reason: #{inspect reason}"
       {:error, reason}
   end
 end
