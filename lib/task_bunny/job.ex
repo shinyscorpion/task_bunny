@@ -34,7 +34,7 @@ defmodule TaskBunny.Job do
   This prevents messages blocking a worker.
 
   If your job is expected to take longer than 2 minutes or you want to terminate
-  the job earlier, overwrite `timeout/0`.
+  the job earlier, override `timeout/0`.
 
       defmodule SlowJob do
         use TaskBunny.Job
@@ -50,7 +50,7 @@ defmodule TaskBunny.Job do
   # Retry
 
   By default TaskBunny retries 10 times every five minutes for a failed job.
-  You can change this by overwriting `max_retry/0` and `retry_interval/1`.
+  You can change this by overriding `max_retry/0` and `retry_interval/1`.
 
   For example, if you want the job to be retried five times and gradually
   increase the interval based on failed times, you can write logic like
@@ -91,7 +91,7 @@ defmodule TaskBunny.Job do
   Callback for the timeout in milliseconds for a job execution.
 
   Default value is 120_000 = 2 minutes.
-  Overwrite the function if you want to change the value.
+  Override the function if you want to change the value.
   """
   @callback timeout() :: integer
 
@@ -99,7 +99,7 @@ defmodule TaskBunny.Job do
   Callback for the max number of retries TaskBunny can make for a failed job.
 
   Default value is 10.
-  Overwrite the function if you want to change the value.
+  Override the function if you want to change the value.
   """
   @callback max_retry() :: integer
 
@@ -107,7 +107,7 @@ defmodule TaskBunny.Job do
   Callback for the retry interval in milliseconds.
 
   Default value is 300_000 = 5 minutes.
-  Overwrite the function if you want to change the value.
+  Override the function if you want to change the value.
 
   TaskBunny will set failed count to the argument.
   The value will be more than or equal to 1 and less than or equal to max_retry.
@@ -137,7 +137,7 @@ defmodule TaskBunny.Job do
       end
 
       # Returns timeout (default 2 minutes).
-      # Overwrite the method to change the timeout.
+      # Override the method to change the timeout.
       @doc false
       @spec timeout() :: integer
       def timeout, do: 120_000

@@ -167,7 +167,7 @@ You want to balance between performance and needs on throttle.
 TaskBunny retries the job if the job has failed.
 By default, it retries 10 times for every 5 minutes.
 
-If you want to change it, you can overwrite the value on a job module.
+If you want to change it, you can override the value on a job module.
 
 ```elixir
 defmodule SampleJob do
@@ -209,7 +209,7 @@ You can also change the retry_interval by the number of failures.
 By default, jobs timeout after 2 minutes.
 If job doesn't respond for more than 2 minutes, worker kills the process and moves it to retry queue.
 
-You can change the timeout by overwriting `timeout/0` in your job.
+You can change the timeout by overriding `timeout/0` in your job.
 
 ```elixir
 defmodule SlowJob do
