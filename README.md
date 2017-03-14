@@ -54,46 +54,34 @@ TaskBunny heavily relies on [amqp](https://github.com/pma/amqp) by Paulo Almeida
 
 ### Installation
 
-  1. Add `task_bunny` to your list of dependencies in `mix.exs`:
+1. Edit `mix.exs` and add `task_bunny` to your list of dependencies and applications:
+  ```elixir
+    def deps do
+      [{:task_bunny, "~> 0.0.1-dev.10"}]
+    end
+    
+    def application do
+      [applications: [:task_bunny]]
+    end
+  ```
+  
+2. Configure hosts and queues
+  ```elixir
+    config :task_bunny, hosts: [
+      default: [
+        connect_options: "amqp://localhost?heartbeat=30" # Find more options on https://github.com/pma/amqp/blob/master/lib/amqp/connection.ex
+      ]
+    ]
 
-        def deps do
-          [{:task_bunny, "~> 0.0.1-dev.10"}]
-        end
-
-  1. Start `task_bunny` before your application (required Elixir 1.3 and before):
-
-        def application do
-          [applications: [:task_bunny]]
-        end
-
-  1. Configure hosts and queues
-
-        config :task_bunny, hosts: [
-          default: [
-            # See more options on
-            # https://github.com/pma/amqp/blob/master/lib/amqp/connection.ex
-            connect_options: "amqp://localhost?heartbeat=30"
-          ]
-        ]
-
-        config :task_bunny, queue: [
-          namespace: "task_bunny." # common prefix for queue name
-          queues: [
-            [name: "normal", jobs: :default],
-            [name: "high", worker: [concurrency: 5], jobs: [EmergentJob, "Emergent.*"]]
-          ]
-        ]
-
-        # When you use TaskBunny under an umbrella app and each apps needs a different queue definition, you can prefix config key like below so that it doesn't ovewrwrite the other configuration.
-
-        config :task_bunny, app_a_queue: [
-          [name: "normal", jobs: ["AppA.*"]]
-        ]
-
-        config :task_bunny, app_b_queue: [
-          [name: "normal", jobs: ["AppB.*"]]
-        ]
-
+    config :task_bunny, queue: [
+      namespace: "task_bunny." # common prefix for queue name
+      queues: [
+        [name: "normal", jobs: :default],
+        [name: "high", worker: [concurrency: 5], jobs: [EmergentJob, "Emergent.*"]]
+      ]
+    ]
+  ```
+  
 ### Define job module
 
 Use `TaskBunny.Job` module in your job module and define `perform/1` that takes map as an argument.
@@ -239,6 +227,19 @@ You need to redefine a queue when you want to change the retry interval for a qu
 TaskBunny automatically tries reconnecting to RabbitMQ if the connection is gone.
 All workers will restart automatically once the new connection is established.
 
+### Umbrella app
+
+When you use TaskBunny under an umbrella app and each apps needs a different queue definition, you can prefix config key like below so that it doesn't ovewrwrite the other configuration.
+
+```elixir
+  config :task_bunny, app_a_queue: [
+    [name: "normal", jobs: ["AppA.*"]]
+  ]
+
+  config :task_bunny, app_b_queue: [
+    [name: "normal", jobs: ["AppB.*"]]
+  ]
+```
 
 ### Wobserver Integration
 
