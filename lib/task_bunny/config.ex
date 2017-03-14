@@ -66,7 +66,7 @@ defmodule TaskBunny.Config do
   end
 
   @doc """
-  Transforms queue configuration into list of workers application should run.
+  Transforms queue configuration into a list of workers, which the application should run.
   """
   @spec workers :: [keyword]
   def workers do

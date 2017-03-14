@@ -2,7 +2,7 @@ defmodule TaskBunny.Message do
   @moduledoc """
   Functions that work on TaskBunny messages.
 
-  It's a semi private module and it is used by Job or Worker module.
+  It is a semi private module and it is used by Job or Worker module.
   You wouldn't have to deal with it normally.
 
   However in case you need to encode/decode TaskBunny messages,

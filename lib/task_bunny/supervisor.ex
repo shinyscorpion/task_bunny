@@ -6,7 +6,7 @@ defmodule TaskBunny.Supervisor do
   When Connection crashes, it will restart all Worker through WorkerSupervisor
   so workers can always use re-established connection.
 
-  You don't have to call or start Supervisor explicity.
+  You don't have to call or start the Supervisor explicity.
   It will be automatically started by application and
   configure child processes based on configuration file.
   """

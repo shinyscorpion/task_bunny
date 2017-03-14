@@ -2,7 +2,7 @@ defmodule TaskBunny.WorkerSupervisor do
   @moduledoc """
   Supervises all TaskBunny workers.
 
-  You don't have to call or start Supervisor explicity.
+  You don't have to call or start the Supervisor explicity.
   It will be automatically started by application and
   configure child workers based on configuration file.
 

@@ -30,11 +30,11 @@ defmodule TaskBunny.Job do
 
   ## Timeout
 
-  In default, TaskBunny terminates the job when it takes more than 2 minutes.
-  This helps you to avoid messages stuck in your queue.
+  By default TaskBunny terminates the job when it takes more than 2 minutes.
+  Having right timeout avoids jobs to block a worker.
 
   If your job is expected to take longer than 2 minutes or you want to terminate
-  the job earlier, overwrite `timeout/0` function.
+  the job earlier, overwrite the `timeout/0` function.
 
       defmodule SlowJob do
         use TaskBunny.Job
@@ -49,11 +49,11 @@ defmodule TaskBunny.Job do
 
   # Retry
 
-  In default, TaskBunny retries 10 times every five minutes for a failed job.
+  By default TaskBunny retries 10 times every five minutes for a failed job.
   You can change the behavior by overwriting `max_retry/0` and `retry_interval/1`.
 
   For example, if you want the job to be retried five times and gradually
-  increase the inteval based on failed times, you can write the logic like
+  increase the interval based on failed times, you can write the logic like
   the following.
 
       defmodule HttpSyncJob do
@@ -142,7 +142,7 @@ defmodule TaskBunny.Job do
       @spec timeout() :: integer
       def timeout, do: 120_000
 
-      # Retries 10 times in every 5 minutes in default.
+      # Retries 10 times in every 5 minutes by default.
       # You have to re-create the queue after you change retry_interval.
       @doc false
       @spec max_retry() :: integer
@@ -167,8 +167,8 @@ defmodule TaskBunny.Job do
 
   ## Options
 
-  - host: RabbitMQ host. In default, it's automatically selected from configuration.
-  - queue: RabbitMQ queue. In default, It's automattically selected from configuration.
+  - host: RabbitMQ host. By default it is automatically selected from configuration.
+  - queue: RabbitMQ queue. By default It is automattically selected from configuration.
 
   """
   @spec enqueue(atom, any, keyword) :: :ok | {:error, any}
