@@ -1,11 +1,17 @@
 defmodule TaskBunny.Message do
   @moduledoc """
-  Functions to access messages and its meta data.
+  Functions that work on TaskBunny messages.
+
+  It's a semi private module used by Job or Worker.
+  You shouldn't have to deal with it normally.
+
+  However in case you need to encode/decode TaskBunny messages,
+  this module will help.
   """
   alias TaskBunny.Message.DecodeError
 
   @doc """
-  Encode message body in JSON with job and arugment.
+  Encode message body in JSON with job and argument.
   """
   @spec encode(atom, any) :: {:ok, String.t}
   def encode(job, payload) do
@@ -14,7 +20,7 @@ defmodule TaskBunny.Message do
   end
 
   @doc """
-  Similar to encode/2 but raises an exception on error
+  Similar to encode/2 but raises an exception on error.
   """
   @spec encode!(atom, any) :: String.t
   def encode!(job, payload) do
@@ -32,7 +38,7 @@ defmodule TaskBunny.Message do
   end
 
   @doc """
-  Decode message body in JSON to map
+  Decode message body in JSON to map data.
   """
   @spec decode(String.t) :: {:ok, map} | {:error, any}
   def decode(message) do
@@ -115,7 +121,7 @@ defmodule TaskBunny.Message do
   end
 
   @doc """
-  Returns a number of errors occurred for the message
+  Returns a number of errors occurred for the message.
   """
   @spec failed_count(String.t|map) :: integer
   def failed_count(message) when is_map(message) do

@@ -1,6 +1,10 @@
 defmodule TaskBunny.Worker do
   @moduledoc """
   A GenServer that listens a queue and consumes messages.
+
+  You don't have to call or start worker explicity.
+  TaskBunny loads config and starts workers automatically for you.
+
   """
 
   use GenServer
@@ -8,6 +12,9 @@ defmodule TaskBunny.Worker do
   alias TaskBunny.{Connection, Consumer, JobRunner, Queue,
                    Publisher, Worker, Message}
 
+  @typedoc """
+  Struct that represents a state of the worker GenServer.
+  """
   @type t ::%__MODULE__{
     queue: String.t,
     host: atom,
@@ -36,9 +43,8 @@ defmodule TaskBunny.Worker do
     },
   ]
 
-  @doc """
-  Starts a worker for a job with concurrency
-  """
+  # Starts a worker for a job with the given config options.
+  @doc false
   @spec start_link(list) :: GenServer.on_start
   def start_link(config) when is_list(config) do
     %Worker{
@@ -49,17 +55,15 @@ defmodule TaskBunny.Worker do
     |> start_link()
   end
 
-  @doc """
-  Starts a worker given a worker's state
-  """
+  # Starts a worker given a worker's state
+  @doc false
   @spec start_link(t) :: GenServer.on_start
   def start_link(state = %Worker{}) do
     GenServer.start_link(__MODULE__, state, name: pname(state.queue))
   end
 
-  @doc """
-  Initialises GenServer. Send a request for RabbitMQ connection
-  """
+  # Initialises GenServer. Send a request for RabbitMQ connection
+  @doc false
   @spec init(t) :: {:ok, t} | {:stop, :connection_not_ready}
   def init(state = %Worker{}) do
     Logger.info log_msg("initializing", state)
@@ -74,9 +78,8 @@ defmodule TaskBunny.Worker do
     end
   end
 
-  @doc ~S"""
-  Closes the AMQP Channel, when the worker exit is captured.
-  """
+  # Closes the AMQP Channel, when the worker exit is captured.
+  @doc false
   @spec terminate(any, TaskBunny.Worker.t) :: :normal
   def terminate(_reason, state) do
     Logger.info log_msg("terminating", state)
@@ -99,13 +102,8 @@ defmodule TaskBunny.Worker do
     :ok
   end
 
-  @doc """
-  Called when connection to RabbitMQ was established.
-  Start consumer loop
-  """
-  @spec handle_info(any, t) ::
-    {:noreply, t} |
-    {:stop, reason :: term, t}
+  @doc false
+  @spec handle_info(any, t) :: {:noreply, t} | {:stop, reason :: term, t}
   def handle_info(message, state)
 
   def handle_info({:stop_consumer}, state = %Worker{}) do
@@ -119,6 +117,8 @@ defmodule TaskBunny.Worker do
     end
   end
 
+  # Called when connection to RabbitMQ was established.
+  # Start consumer loop
   def handle_info({:connected, connection}, state = %Worker{}) do
     # Declares queue
     Queue.declare_with_subqueues(state.host, state.queue)
@@ -133,10 +133,8 @@ defmodule TaskBunny.Worker do
     end
   end
 
-  @doc """
-  Called when message was delivered from RabbitMQ.
-  Invokes a job here.
-  """
+  # Called when message was delivered from RabbitMQ.
+  # Invokes a job here.
   def handle_info({:basic_deliver, body, meta}, state) do
     case Message.decode(body) do
       {:ok, decoded} ->
@@ -156,10 +154,8 @@ defmodule TaskBunny.Worker do
     end
   end
 
-  @doc """
-  Called when job was done.
-  Acknowledge to RabbitMQ.
-  """
+  # Called when job was done.
+  # Acknowledge to RabbitMQ.
   def handle_info({:job_finished, result, {body, meta}}, state) do
     Logger.debug log_msg("job_finished", state, [body: body, meta: meta])
     case succeeded?(result) do

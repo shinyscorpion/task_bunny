@@ -1,9 +1,36 @@
 defmodule TaskBunny.Connection do
   @moduledoc """
-  A GenServer to handle RabbitMQ connection.
-  If it fails to connect to the host, it will retry every 5 seconds.
+  A GenServer that handles RabbitMQ connection.
+  It provides convenience functions to access RabbitMQ through the GenServer.
 
-  The module also provides funcitons to access RabbitMQ connections.
+  ## GenServer
+
+  TaskBunny loads the configurations and automatically starts a GenServer for each host definition.
+  They are supervised by TaskBunny so you don't have to look after them.
+
+  ## Disconnect/Reconnect
+
+  TaskBunny handles disconnection and reconnection.
+  Once the GenServer retrieves the RabbitMQ connection the GenServer monitors it.
+  When it disconnects or dies the GenServer terminates itself.
+
+  The supervisor restarts the GenServer and it tries to reconnect to the host.
+  If it fails to connect, it retries every five seconds.
+
+  ## Access to RabbitMQ connections
+
+  The module provides two ways to retrieve a RabbitMQ connection:
+
+  1. Use `get_connection/1` and it returns the connection synchronously.
+  This will succeed in most cases since TaskBunny tries to establish a
+  connection as soon as the application starts.
+
+  2. Use `subscribe_connection/1` and it sends the connection back
+  asynchronously once the connection is ready.
+  This can be useful when you can't ensure the caller might start before the
+  connectin is established.
+
+  Check out the function documentation for more details.
   """
 
   use GenServer
@@ -12,11 +39,14 @@ defmodule TaskBunny.Connection do
 
   @reconnect_interval 5_000
 
+  @doc """
+  Represents the state of a connection GenServer.
+
+  It's a tuple containing `{host, connection, subscribers}`.
+  """
   @type state :: {atom, %AMQP.Connection{} | nil, list(pid)}
 
-  @doc """
-  Starts a GenServer process linked to the cunnrent process.
-  """
+  @doc false
   @spec start_link(atom | state) :: GenServer.on_start
   def start_link(host)
 
@@ -31,10 +61,16 @@ defmodule TaskBunny.Connection do
   end
 
   @doc """
-  Gets a RabbitMQ connection for the given host.
+  Returns the RabbitMQ connection for the given host.
+  When host argument is not passed it returns the connection for the default host.
 
-  Returns {:ok, conn} when connection is available.
-  Returns {:error, error_info} when connection is not ready.
+  ## Examples
+
+      case get_connection() do
+        {:ok, conn} -> do_something(conn)
+        {:error, _} -> cry()
+      end
+
   """
   @spec get_connection(atom) :: {:ok, AMQP.Connection.t} | {:error, atom}
   def get_connection(host \\ :default) do
@@ -55,7 +91,11 @@ defmodule TaskBunny.Connection do
   @doc """
   Similar to get_connection/1 but raises an exception when connection is not ready.
 
-  Returns connection if it's available.
+  ## Examples
+
+      iex> conn = get_connection!()
+      %AMQP.Connection{}
+
   """
   @spec get_connection!(atom) :: AMQP.Connection.t
   def get_connection!(host \\ :default) do
@@ -66,11 +106,16 @@ defmodule TaskBunny.Connection do
   end
 
   @doc """
-  Asks server to send the connection back asynchronously.
+  Requests the GenServer to send the connection back asynchronously.
   Once connection has been established, it will send a message with {:connected, connection} to the given process.
 
-  Returns :ok when the server exists.
-  Returns {:error, info} when the server doesn't exist.
+  ## Examples
+
+      :ok = subscribe_connection(self())
+      receive do
+        {:connected, conn = %AMQP.Connection{}} -> do_something(conn)
+      end
+
   """
   @spec subscribe_connection(atom, pid) :: :ok | {:error, atom}
   def subscribe_connection(host \\ :default, listener_pid) do
@@ -88,6 +133,13 @@ defmodule TaskBunny.Connection do
 
   @doc """
   Similar to subscribe_connection/2 but raises an exception when process is not ready.
+  ## Examples
+
+      subscribe_connection!(self())
+      receive do
+        {:connected, conn = %AMQP.Connection{}} -> do_something(conn)
+      end
+
   """
   @spec subscribe_connection!(atom, pid) :: :ok
   def subscribe_connection!(host \\ :default, listener_pid) do

@@ -1,7 +1,10 @@
 defmodule TaskBunny.Status.Worker do
-  @moduledoc ~S"""
-  Modules that handles the Worker status.
-  """
+  @moduledoc false
+  # Functions that handles the Worker status.
+  #
+  # This module is private to TaskBunny.
+  # It's aimed to provide useful stats to Wobserver integration.
+  #
 
   @typedoc ~S"""
   The Worker status contains the follow fields:

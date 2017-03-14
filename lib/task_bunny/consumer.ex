@@ -1,11 +1,13 @@
 defmodule TaskBunny.Consumer do
-  @moduledoc """
-  Functions that work on RabbitMQ consumer
-  """
+  # Handles consumer concerns.
+  #
+  # This module is private to TaskBunny and should not be accessed directly.
+  #
+  @moduledoc false
   require Logger
 
   @doc """
-  Opens a channel for the given connection and start consuming messages for the queue.
+  Opens a channel and start consuming messages for the queue.
   """
   @spec consume(AMQP.Connection.t, String.t, integer) :: {:ok, AMQP.Channel.t, String.t} | {:error, any}
   def consume(connection, queue, concurrency) do
@@ -26,7 +28,7 @@ defmodule TaskBunny.Consumer do
   end
 
   @doc """
-  Cancel consumer to stop receiving messages.
+  Cancel the consumer to stop receiving messages.
   """
   @spec cancel(AMQP.Channel.t, String.t) :: {:ok, String.t}
   def cancel(channel, consumer_tag) do

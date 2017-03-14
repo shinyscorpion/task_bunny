@@ -1,7 +1,9 @@
 defmodule Mix.Tasks.Analyze do
-  @moduledoc ~S"""
-  Analyze the code and exit if errors have been found.
-  """
+  # Analyze the code and exit if errors have been found.
+  #
+  # It is a private mix task for TaskBunny.
+  #
+  @moduledoc false
 
   use Mix.Task
 

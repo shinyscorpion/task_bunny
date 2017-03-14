@@ -1,8 +1,10 @@
 defmodule TaskBunny.Status do
-  @moduledoc ~S"""
-  Modules that handles TaskBunny status.
-  """
-
+  @moduledoc false
+  # Functions that handle TaskBunny status.
+  #
+  # This module is private to TaskBunny.
+  # It's aimed at providing useful stats to Wobserver integration.
+  #
   alias TaskBunny.{Status, Connection}
   alias TaskBunny.Status.Worker
 
@@ -11,7 +13,7 @@ defmodule TaskBunny.Status do
     - `version`, the current status version.
     - `up`, whether the `TaskBunny.Supervisor` is running.
     - `connected`, whether a connection to RabbitMQ has been made.
-    - `workers`, list of worker statusses.
+    - `workers`, list of worker statuses.
   """
   @type t :: %__MODULE__{version: String.t, up: boolean, connected: boolean, workers: list(Worker.t)}
 
