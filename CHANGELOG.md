@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.0-rc.1
+
+* Bunch of documentation updates
+
 ## 0.0.1-dev.10
 
 * Fixed a wrong type spec.
