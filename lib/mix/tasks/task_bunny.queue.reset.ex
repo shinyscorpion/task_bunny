@@ -7,7 +7,7 @@ defmodule Mix.Tasks.TaskBunny.Queue.Reset do
   Mix task to reset all queues.
 
   It deletes the queues and creates them again.
-  Therefore all messages in the queues will be removed.
+  Therefore all messages in the queues are removed.
   """
 
   alias TaskBunny.{Connection, Config, Queue}

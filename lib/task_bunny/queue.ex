@@ -1,8 +1,8 @@
 defmodule TaskBunny.Queue do
   @moduledoc """
-  Conviniences for accessing TaskBunny queues.
+  Convenience functions for accessing TaskBunny queues.
 
-  It's a semi private module and it is normally wrapped by other modules.
+  It's a semi private module normally wrapped by other modules.
 
   ## Sub Queues
 
@@ -100,7 +100,7 @@ defmodule TaskBunny.Queue do
   end
 
   @doc """
-  Returns a list that contains the queue and its subqueue
+  Returns a list that contains the queue and its subqueue.
   """
   @spec queue_with_subqueues(String.t) :: [String.t]
   def queue_with_subqueues(work_queue) do
@@ -108,7 +108,7 @@ defmodule TaskBunny.Queue do
   end
 
   @doc """
-  Returns all sub queues for the work queue.
+  Returns all subqueues for the work queue.
   """
   @spec subqueues(String.t) :: [String.t]
   def subqueues(work_queue) do

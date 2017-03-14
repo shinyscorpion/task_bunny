@@ -3,8 +3,8 @@ defmodule TaskBunny.Supervisor do
   Main supervisor for TaskBunny.
 
   It supervises Connection and WorkerSupervisor with one_for_all strategy.
-  When Connection crashes, it will restart all Worker through WorkerSupervisor
-  so workers can always use re-established connection.
+  When Connection crashes it restarts all Worker processes through WorkerSupervisor
+  so workers can always use a re-established connection.
 
   You don't have to call or start the Supervisor explicity.
   It will be automatically started by application and
