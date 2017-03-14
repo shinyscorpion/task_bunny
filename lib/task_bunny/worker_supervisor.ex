@@ -36,9 +36,9 @@ defmodule TaskBunny.WorkerSupervisor do
   Halts the job pocessing on workers gracefully.
   It makes workers to stop processing new jobs and waits for jobs currently running to finish.
 
-  Note it doesn't terminate any worker processes.
+  Note: It doesn't terminate any worker processes.
   The worker and worker supervisor processes will continue existing but won't consume any new messages.
-  To resume it, terminate the worker supervisor then main supervisor will start new processes.
+  To resume it, terminate the worker supervisor then the main supervisor will start new processes.
   """
   @spec graceful_halt(pid|nil, integer) :: :ok | {:error, any}
 

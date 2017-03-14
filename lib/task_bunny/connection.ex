@@ -1,34 +1,36 @@
 defmodule TaskBunny.Connection do
   @moduledoc """
-  TaskBunny.Connection is a GenServer that handles RabbitMQ connection.
-  The module also provides conviniences to access RabbitMQ through the GenServers.
+  A GenServer that handles RabbitMQ connection.
+  It provides convenience functions to access RabbitMQ through the GenServer.
 
   ## GenServer
 
-  TaskBunny loads the configurations and automatically starts GenServers for each host definitions.
-  They are also supervised by TaskBunny so you don't have to look after them at all.
+  TaskBunny loads the configurations and automatically starts a GenServer for each host definition.
+  They are supervised by TaskBunny so you don't have to look after them.
 
   ## Disconnect/Reconnect
 
   TaskBunny handles disconnection and reconnection.
-  Once the GenServer retrieves the RabbitMQ connection, the GenServer monitors it.
-  When it is disconnected(died), the GenServer terminates itself.
+  Once the GenServer retrieves the RabbitMQ connection the GenServer monitors it.
+  When it disconnects or dies the GenServer terminates itself.
 
-  Then the supervisor will restart the GenServer and it tries to connect to the host.
-  If it failes to connect, it retries again and again every five seconds.
+  The supervisor restarts the GenServer and it tries to reconnect to the host.
+  If it fails to connect, it retries every five seconds.
 
   ## Access to RabbitMQ connections
 
-  The module provides two different ways to retrieve RabbitMQ connection.
+  The module provides two ways to retrieve a RabbitMQ connection:
 
-  First way is to use `get_connection/1` and it returns the connection synchronously.
-  Since TaskBunny tries to establish a connection immediately the application starts,
-  this will succeed in most of case.
+  1. Use `get_connection/1` and it returns the connection synchronously.
+  This will succeed in most cases since TaskBunny tries to establish a
+  connection as soon as the application starts.
 
-  Second way is to use `subscribe_connection/1` and it sends back the connection asynchronously once the connection gets ready.
-  This can be useful when you can't ensure the caller might start before the connectin is established.
+  2. Use `subscribe_connection/1` and it sends the connection back
+  asynchronously once the connection is ready.
+  This can be useful when you can't ensure the caller might start before the
+  connectin is established.
 
-  Check out the function document for more details.
+  Check out the function documentation for more details.
   """
 
   use GenServer
@@ -60,7 +62,7 @@ defmodule TaskBunny.Connection do
 
   @doc """
   Returns the RabbitMQ connection for the given host.
-  When host argument was not passed, it returns the connection for the default host.
+  When host argument is not passed it returns the connection for the default host.
 
   ## Examples
 

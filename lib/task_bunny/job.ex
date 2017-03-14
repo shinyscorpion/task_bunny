@@ -31,10 +31,10 @@ defmodule TaskBunny.Job do
   ## Timeout
 
   By default TaskBunny terminates the job when it takes more than 2 minutes.
-  Having right timeout avoids jobs to block a worker.
+  This prevents messages blocking a worker.
 
   If your job is expected to take longer than 2 minutes or you want to terminate
-  the job earlier, overwrite the `timeout/0` function.
+  the job earlier, overwrite `timeout/0`.
 
       defmodule SlowJob do
         use TaskBunny.Job
@@ -50,11 +50,11 @@ defmodule TaskBunny.Job do
   # Retry
 
   By default TaskBunny retries 10 times every five minutes for a failed job.
-  You can change the behavior by overwriting `max_retry/0` and `retry_interval/1`.
+  You can change this by overwriting `max_retry/0` and `retry_interval/1`.
 
   For example, if you want the job to be retried five times and gradually
-  increase the interval based on failed times, you can write the logic like
-  the following.
+  increase the interval based on failed times, you can write logic like
+  the following:
 
       defmodule HttpSyncJob do
         def max_retry, do: 5
@@ -73,7 +73,7 @@ defmodule TaskBunny.Job do
   @doc """
   Callback to process a job.
 
-  It can take any type of argument as long as it can be seriarlized with Poison
+  It can take any type of argument as long as it can be serialized with Poison,
   but we recommend you to use map with string keys for a consistency.
 
       def perform(name) do
@@ -168,7 +168,7 @@ defmodule TaskBunny.Job do
   ## Options
 
   - host: RabbitMQ host. By default it is automatically selected from configuration.
-  - queue: RabbitMQ queue. By default It is automattically selected from configuration.
+  - queue: RabbitMQ queue. By default it is automatically selected from configuration.
 
   """
   @spec enqueue(atom, any, keyword) :: :ok | {:error, any}
