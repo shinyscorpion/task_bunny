@@ -112,7 +112,7 @@ defmodule TaskBunny.Worker do
       Consumer.cancel(state.channel, state.consumer_tag)
       {:noreply, %{state | consumer_tag: nil}}
     else
-      Logger.info log_msg("received :stop_cosumer but already stopped", state)
+      Logger.info log_msg("received :stop_consumer but already stopped", state)
       {:noreply, state}
     end
   end
@@ -126,7 +126,7 @@ defmodule TaskBunny.Worker do
     # Consumes the queue
     case Consumer.consume(connection, state.queue, state.concurrency) do
       {:ok, channel, consumer_tag} ->
-        Logger.info log_msg("start comsuming", state)
+        Logger.info log_msg("start consuming", state)
         {:noreply, %{state | channel: channel, consumer_tag: consumer_tag}}
       {:error, error} ->
         {:stop, {:failed_to_consume, error}, state}
@@ -138,13 +138,13 @@ defmodule TaskBunny.Worker do
   def handle_info({:basic_deliver, body, meta}, state) do
     case Message.decode(body) do
       {:ok, decoded} ->
-        Logger.debug log_msg("bacic_deliver", state, [body: body])
+        Logger.debug log_msg("basic_deliver", state, [body: body])
 
         JobRunner.invoke(decoded["job"], decoded["payload"], {body, meta})
 
         {:noreply, %{state | runners: state.runners + 1}}
       error ->
-        Logger.error log_msg("bacic_deliver invalid body", state, [body: body, error: error])
+        Logger.error log_msg("basic_deliver invalid body", state, [body: body, error: error])
 
         reject_message(state, body, meta)
 
