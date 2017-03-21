@@ -131,6 +131,40 @@ defmodule TaskBunny.WorkerTest do
     end
   end
 
+  describe "delay" do
+    test "invokes the job with the delay" do
+      worker = start_worker()
+      [main, _, _, scheduled] = all_queues()
+      payload = %{"hello" => "world"}
+
+      # Runs job in 500 ms
+      TestJob.enqueue(payload, queue: @queue, delay: 500)
+      :timer.sleep(100)
+
+      assert JobTestHelper.performed_count == 0
+
+      conn = Connection.get_connection!()
+      %{message_count: main_count} = Queue.state(conn, main)
+      %{message_count: scheduled_count} = Queue.state(conn, scheduled)
+
+      assert main_count == 0
+      assert scheduled_count == 1
+
+      JobTestHelper.wait_for_perform(1)
+
+      assert JobTestHelper.performed_count == 1
+
+      %{message_count: main_count} = Queue.state(conn, main)
+      %{message_count: scheduled_count} = Queue.state(conn, scheduled)
+
+      assert main_count == 0
+      assert scheduled_count == 0
+
+      GenServer.stop worker
+    end
+
+  end
+
   test "invalid payload" do
     :meck.expect TaskBunny.Consumer, :ack, fn (_, _, _) -> nil end
 
