@@ -41,7 +41,7 @@ defmodule TaskBunny.WorkerTest do
 
     test "consumes the message" do
       worker = start_worker()
-      [main, retry, rejected] = all_queues()
+      [main, retry, rejected, _scheduled] = all_queues()
       payload = %{"hello" => "world1"}
 
       TestJob.enqueue(payload, queue: @queue)
@@ -81,7 +81,7 @@ defmodule TaskBunny.WorkerTest do
   describe "retry" do
     test "sends failed job to retry queue" do
       worker = start_worker()
-      [main, retry, rejected] = all_queues()
+      [main, retry, rejected, _scheduled] = all_queues()
       payload = %{"fail" => true}
 
       TestJob.enqueue(payload, queue: @queue)
@@ -109,7 +109,7 @@ defmodule TaskBunny.WorkerTest do
       reset_test_job_retry_interval(5)
 
       worker = start_worker()
-      [main, retry, rejected] = all_queues()
+      [main, retry, rejected, _scheduled] = all_queues()
       payload = %{"fail" => true}
 
       TestJob.enqueue(payload, queue: @queue)

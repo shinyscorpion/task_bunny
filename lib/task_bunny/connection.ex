@@ -39,7 +39,7 @@ defmodule TaskBunny.Connection do
 
   @reconnect_interval 5_000
 
-  @doc """
+  @typedoc """
   Represents the state of a connection GenServer.
 
   It's a tuple containing `{host, connection, subscribers}`.

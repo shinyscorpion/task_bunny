@@ -8,6 +8,7 @@ defmodule TaskBunny.Queue do
 
   When TaskBunny creates(declares) a queue on RabbitMQ, it also creates the following sub queues.
 
+  - [queue-name].scheduled: holds jobs to be executed in the future
   - [queue-name].retry: holds jobs to be retried
   - [queue-name].rejected: holds jobs that were rejected (failed more than max retry times or wrong message format)
   """
@@ -20,11 +21,12 @@ defmodule TaskBunny.Queue do
   For this call, the function creates(declares) three queues:
 
   - normal_jobs: a queue that holds jobs to process
+  - normal_jobs.scheduled: a queue that holds jobs to process in the future
   - normal_jobs.retry: a queue that holds jobs failed and waiting to retry
   - normal_jobs.rejected: a queue that holds jobs failed and won't be retried
 
   """
-  @spec declare_with_subqueues(%AMQP.Connection{} | atom, String.t) :: {map, map, map}
+  @spec declare_with_subqueues(%AMQP.Connection{} | atom, String.t) :: {map, map, map, map}
   def declare_with_subqueues(host, work_queue) when is_atom(host) do
     conn = TaskBunny.Connection.get_connection!(host)
     declare_with_subqueues(conn, work_queue)
@@ -33,6 +35,7 @@ defmodule TaskBunny.Queue do
   def declare_with_subqueues(connection, work_queue) do
     {:ok, channel} = AMQP.Channel.open(connection)
 
+    scheduled_queue = scheduled_queue(work_queue)
     retry_queue = retry_queue(work_queue)
     rejected_queue = rejected_queue(work_queue)
 
@@ -50,9 +53,18 @@ defmodule TaskBunny.Queue do
     ]
     retry = declare(channel, retry_queue, retry_options)
 
+    scheduled_options = [
+      arguments: [
+        {"x-dead-letter-exchange", :longstr, ""},
+        {"x-dead-letter-routing-key", :longstr, work_queue}
+      ],
+      durable: true
+    ]
+    scheduled = declare(channel, scheduled_queue, scheduled_options)
+
     AMQP.Channel.close(channel)
 
-    {work, retry, rejected}
+    {work, retry, rejected, scheduled}
   end
 
   @doc """
@@ -114,7 +126,8 @@ defmodule TaskBunny.Queue do
   def subqueues(work_queue) do
     [
       retry_queue(work_queue),
-      rejected_queue(work_queue)
+      rejected_queue(work_queue),
+      scheduled_queue(work_queue)
     ]
   end
 
@@ -132,5 +145,13 @@ defmodule TaskBunny.Queue do
   @spec rejected_queue(String.t) :: String.t
   def rejected_queue(work_queue) do
     work_queue <> ".rejected"
+  end
+
+  @doc """
+  Returns a name of scheduled queue.
+  """
+  @spec scheduled_queue(String.t) :: String.t
+  def scheduled_queue(work_queue) do
+    work_queue <> ".scheduled"
   end
 end
