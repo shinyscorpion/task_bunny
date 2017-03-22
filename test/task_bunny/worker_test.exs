@@ -41,7 +41,7 @@ defmodule TaskBunny.WorkerTest do
 
     test "consumes the message" do
       worker = start_worker()
-      [main, retry, rejected] = all_queues()
+      [main, retry, rejected, _scheduled] = all_queues()
       payload = %{"hello" => "world1"}
 
       TestJob.enqueue(payload, queue: @queue)
@@ -81,7 +81,7 @@ defmodule TaskBunny.WorkerTest do
   describe "retry" do
     test "sends failed job to retry queue" do
       worker = start_worker()
-      [main, retry, rejected] = all_queues()
+      [main, retry, rejected, _scheduled] = all_queues()
       payload = %{"fail" => true}
 
       TestJob.enqueue(payload, queue: @queue)
@@ -109,7 +109,7 @@ defmodule TaskBunny.WorkerTest do
       reset_test_job_retry_interval(5)
 
       worker = start_worker()
-      [main, retry, rejected] = all_queues()
+      [main, retry, rejected, _scheduled] = all_queues()
       payload = %{"fail" => true}
 
       TestJob.enqueue(payload, queue: @queue)
@@ -129,6 +129,40 @@ defmodule TaskBunny.WorkerTest do
 
       GenServer.stop worker
     end
+  end
+
+  describe "delay" do
+    test "invokes the job with the delay" do
+      worker = start_worker()
+      [main, _, _, scheduled] = all_queues()
+      payload = %{"hello" => "world"}
+
+      # Runs job in 500 ms
+      TestJob.enqueue(payload, queue: @queue, delay: 500)
+      :timer.sleep(100)
+
+      assert JobTestHelper.performed_count == 0
+
+      conn = Connection.get_connection!()
+      %{message_count: main_count} = Queue.state(conn, main)
+      %{message_count: scheduled_count} = Queue.state(conn, scheduled)
+
+      assert main_count == 0
+      assert scheduled_count == 1
+
+      JobTestHelper.wait_for_perform(1)
+
+      assert JobTestHelper.performed_count == 1
+
+      %{message_count: main_count} = Queue.state(conn, main)
+      %{message_count: scheduled_count} = Queue.state(conn, scheduled)
+
+      assert main_count == 0
+      assert scheduled_count == 0
+
+      GenServer.stop worker
+    end
+
   end
 
   test "invalid payload" do

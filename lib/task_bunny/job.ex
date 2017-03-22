@@ -191,14 +191,23 @@ defmodule TaskBunny.Job do
 
     case options[:queue] || queue_data[:name] do
       nil -> raise QueueNotFoundError, job: job
-      queue -> do_enqueue(host, queue, message)
+      queue -> do_enqueue(host, queue, message, options[:delay])
     end
   end
 
-  @spec do_enqueue(atom, String.t, String.t) :: :ok | {:error, any}
-  defp do_enqueue(host, queue, message) do
+  @spec do_enqueue(atom, String.t, String.t, nil|integer) :: :ok | {:error, any}
+  defp do_enqueue(host, queue, message, nil) do
     declare_queue(host, queue)
     Publisher.publish!(host, queue, message)
+  end
+
+  defp do_enqueue(host, queue, message, delay) do
+    declare_queue(host, queue)
+    scheduled = Queue.scheduled_queue(queue)
+    options = [
+      expiration: "#{delay}"
+    ]
+    Publisher.publish!(host, scheduled, message, options)
   end
 
   @spec declare_queue(atom, String.t) :: :ok
