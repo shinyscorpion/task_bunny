@@ -156,11 +156,11 @@ defmodule TaskBunny.Config do
   """
   @spec disable_worker? :: boolean
   def disable_worker? do
-    env = System.get_env("TASK_BUNNY_DISABLE_WORKER") || ""
-    ["1", "true", "yes"]
-    |> Enum.any?(fn (truthy) ->
-      truthy == String.downcase(env)
-    end)
+    env =
+      (System.get_env("TASK_BUNNY_DISABLE_WORKER") || "false")
+      |> String.downcase
+
+    ["1", "true", "yes"] |> Enum.member?(env)
   end
 
   @doc """
