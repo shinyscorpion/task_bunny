@@ -152,6 +152,18 @@ defmodule TaskBunny.Config do
   end
 
   @doc """
+  Returns true if worker is disabled.
+  """
+  @spec disable_worker? :: boolean
+  def disable_worker? do
+    env =
+      (System.get_env("TASK_BUNNY_DISABLE_WORKER") || "false")
+      |> String.downcase
+
+    ["1", "true", "yes"] |> Enum.member?(env)
+  end
+
+  @doc """
   Disable auto start manually.
   """
   @spec disable_auto_start :: :ok

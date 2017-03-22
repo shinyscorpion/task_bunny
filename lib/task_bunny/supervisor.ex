@@ -31,10 +31,13 @@ defmodule TaskBunny.Supervisor do
 
     # Define workers and child supervisors to be supervised
     children =
-      case Config.auto_start?() do
-        true ->
+      case {Config.auto_start?, Config.disable_worker?} do
+        {true, false} ->
           connections ++ [supervisor(WorkerSupervisor, [wsv_name])]
-        false ->
+        {true, true} ->
+          # Only connections
+          connections
+        _ ->
           []
       end
 

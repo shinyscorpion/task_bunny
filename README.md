@@ -241,6 +241,10 @@ When you use TaskBunny under an umbrella app and each apps needs a different que
   ]
 ```
 
+### Disable worker
+
+When you don't want to run TaskBunny workers in an environment set `1`, `TRUE` or `YES` to `TASK_BUNNY_DISABLE_WORKER` environment variable.
+
 ### Wobserver Integration
 
 TaskBunny automatically integrates with [Wobserver](https://github.com/shinyscorpion/wobserver).
