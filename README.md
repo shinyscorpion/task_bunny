@@ -57,7 +57,7 @@ TaskBunny heavily relies on [amqp](https://github.com/pma/amqp) by Paulo Almeida
 1. Edit `mix.exs` and add `task_bunny` to your list of dependencies and applications:
   ```elixir
     def deps do
-      [{:task_bunny, "~> 0.1.0-rc.1"}]
+      [{:task_bunny, "~> 0.1.0-rc.2"}]
     end
     
     def application do

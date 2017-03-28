@@ -1,8 +1,14 @@
 # Changelog
 
+## 0.1.0-rc.2
+
+* Support ENV var to disable TaskBunny worker. [#29](https://github.com/shinyscorpion/task_bunny/pull/29)
+* Support scheduled job execution. [#30](https://github.com/shinyscorpion/task_bunny/pull/30)
+* Updated amqp library to 0.2.0.
+
 ## 0.1.0-rc.1
 
-* Bunch of documentation updates
+* Updated documentation
 
 ## 0.0.1-dev.10
 
