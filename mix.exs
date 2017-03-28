@@ -63,7 +63,7 @@ defmodule TaskBunny.Mixfile do
 
   defp deps do
     [
-      {:amqp, "~> 0.2.0-pre.2"},
+      {:amqp, "~> 0.2.0"},
       {:credo, "~> 0.6", only: [:dev]},
       {:dialyxir, "~> 0.4", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.14", only: :dev},
