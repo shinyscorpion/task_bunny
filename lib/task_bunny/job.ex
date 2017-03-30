@@ -167,6 +167,7 @@ defmodule TaskBunny.Job do
 
   ## Options
 
+  - delay: Set time in milliseconds to schedule the job enqueue time.
   - host: RabbitMQ host. By default it is automatically selected from configuration.
   - queue: RabbitMQ queue. By default it is automatically selected from configuration.
 
