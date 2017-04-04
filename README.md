@@ -66,7 +66,7 @@ config :task_bunny, queue: [
 
 ### 4. Define TaskBunny job
 
-Use `TaskBunny.Job` module in your job module and define `perform/1` that takes map as an argument.
+Use `TaskBunny.Job` module in your job module and define `perform/1` that takes a map as an argument.
 
 ```elixir
 defmodule HelloJob do
@@ -131,7 +131,7 @@ You need to redefine a queue when you want to change the retry interval for a qu
 
 #### Umbrella app
 
-When you use TaskBunny under an umbrella app and each apps needs a different queue definition, you can prefix config key like below so that it doesn't ovewrwrite the other configuration.
+When you use TaskBunny under an umbrella app and each apps needs a different queue definition, you can prefix config key like below so that it doesn't overwrite the other configuration.
 
 ```elixir
   config :task_bunny, app_a_queue: [
@@ -162,7 +162,7 @@ SampleJob.enqueue!()
 TaskBunny.Job.enqueue!(SampleJob)
 ```
 
-First expression is concise and prefered but the later expression lets you
+First expression is concise and preferred but the later expression lets you
 enqueue the job without defining job module.
 TaskBunny takes the module just as atom and doesn't check module existence when
 it enqueues.
@@ -232,13 +232,13 @@ YourApp.HelloJob.enqueue(payload, queue: "fast_track") #=> "fast_track"
 
 #### What is worker?
 
-TaskBunny worker is a GenServer that processes jobs and hanles errors.
+TaskBunny worker is a GenServer that processes jobs and handles errors.
 A worker listens to a single queue, receives messages(jobs) from it and invokes jobs to perform.
 
 #### Concurrency
 
 By default a TaskBunny worker runs two jobs concurrently.
-You can change the concurrncy with the the config.
+You can change the concurrency with the config.
 
 ```elixir
 config :task_bunny, queue: [
@@ -252,7 +252,7 @@ config :task_bunny, queue: [
 
 The concurrency is set per an application.
 If you run your application on five different hosts with above configuration,
-there can be 55 jobs performing simultaneously in total at maximum.
+there can be 55 jobs performing simultaneously in total.
 
 #### Disable worker
 
@@ -280,7 +280,7 @@ With above, TaskBunny starts only a worker for the default queue.
 
 #### Retry
 
-TaskBunny marks the job failed when...
+TaskBunny marks the job failed when:
 
 - job raises an exception or exits during `perform`
 - `perform` doesn't return `:ok` or `{:ok, something}`
@@ -345,7 +345,7 @@ TaskBunny provides an extra layer on top of the [amqp](https://github.com/pma/am
 TaskBunny automatically connects to RabbitMQ hosts in the config at the start of
 the application.
 
-TaskBunny simply forwards `connect_options` to [AMQP.Connection.open/1](https://hexdocs.pm/amqp/AMQP.Connection.html#open/1).
+TaskBunny forwards `connect_options` to [AMQP.Connection.open/1](https://hexdocs.pm/amqp/AMQP.Connection.html#open/1).
 
 ```elixir
 config :task_bunny, hosts: [
@@ -411,7 +411,7 @@ long the host takes to come back and accessible.
 RabbitMQ supports a variety of [plugins](http://www.rabbitmq.com/plugins.html).
 If you are not familiar with them we recommend you to look into those.
 
-Especially the following plugins will help you use RabbitMQ with TaskBunny.
+The following plugins will help you use RabbitMQ with TaskBunny.
 
 * [Management Plugin](http://www.rabbitmq.com/management.html): provides an HTTP-based API for management and monitoring of your RabbitMQ server, along with a browser-based UI and a command line tool, rabbitmqadmin.
 * [Shovel Plugin](http://www.rabbitmq.com/shovel.html): helps you to move messages(job) from a queue to another queue.
