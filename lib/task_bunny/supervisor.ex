@@ -11,7 +11,7 @@ defmodule TaskBunny.Supervisor do
   configure child processes based on configuration file.
   """
   use Supervisor
-  alias TaskBunny.{Connection, Config, WorkerSupervisor}
+  alias TaskBunny.{Connection, Config, Initializer, WorkerSupervisor}
 
   @doc false
   @spec start_link(atom, atom) :: {:ok, pid} | {:error, term}
@@ -29,14 +29,16 @@ defmodule TaskBunny.Supervisor do
       worker(Connection, [host])
     end
 
+    children = connections ++ [worker(Initializer, [false])]
+
     # Define workers and child supervisors to be supervised
     children =
       case {Config.auto_start?, Config.disable_worker?} do
         {true, false} ->
-          connections ++ [supervisor(WorkerSupervisor, [wsv_name])]
+          children ++ [supervisor(WorkerSupervisor, [wsv_name])]
         {true, true} ->
           # Only connections
-          connections
+          children
         _ ->
           []
       end

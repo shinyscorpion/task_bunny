@@ -102,7 +102,14 @@ defmodule TaskBunny.Queue do
   @doc """
   Returns the message count and consumer count for the given queue.
   """
-  @spec state(%AMQP.Connection{}, String.t) :: map
+  @spec state(%AMQP.Connection{} | atom, String.t) :: map
+  def state(host_or_conn \\ :default, queue)
+
+  def state(host, queue) when is_atom(host) do
+    conn = TaskBunny.Connection.get_connection!(host)
+    state(conn, queue)
+  end
+
   def state(connection, queue) do
     {:ok, channel} = AMQP.Channel.open(connection)
     {:ok, state} = AMQP.Queue.status(channel, queue)

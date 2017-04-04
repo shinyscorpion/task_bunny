@@ -202,7 +202,6 @@ defmodule TaskBunny.Connection do
 
   @spec publish_connection(struct, list(pid)) :: :ok
   defp publish_connection(connection, listeners) do
-    Logger.debug "TaskBunny.Connection: publishing to #{inspect listeners}"
     Enum.each listeners, fn (pid) ->
       if Process.alive?(pid), do: send(pid, {:connected, connection})
     end
