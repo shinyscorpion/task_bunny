@@ -18,6 +18,7 @@ defmodule TaskBunny.WorkerTest do
   setup do
     clean(all_queues())
     JobTestHelper.setup
+    Queue.declare_with_subqueues(:default, @queue)
 
     on_exit fn ->
       JobTestHelper.teardown

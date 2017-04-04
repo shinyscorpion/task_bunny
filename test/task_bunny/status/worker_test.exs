@@ -54,6 +54,9 @@ defmodule TaskBunny.Status.WorkerTest do
     TaskBunny.Supervisor.start_link(@supervisor, @worker_supervisor)
     JobTestHelper.wait_for_connection(@host)
 
+    Queue.declare_with_subqueues(:default, @queue1)
+    Queue.declare_with_subqueues(:default, @queue2)
+
     on_exit fn ->
       :meck.unload
       JobTestHelper.teardown

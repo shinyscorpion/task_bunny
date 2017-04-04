@@ -46,6 +46,7 @@ defmodule TaskBunny.SupervisorTest do
 
     TaskBunny.Supervisor.start_link(:supevisor_test, :wsv_supervisor_test)
     JobTestHelper.wait_for_connection(@host)
+    Queue.declare_with_subqueues(:default, @queue)
 
     on_exit fn ->
       :meck.unload

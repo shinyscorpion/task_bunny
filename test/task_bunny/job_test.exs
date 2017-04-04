@@ -12,6 +12,7 @@ defmodule TaskBunny.JobTest do
 
   setup do
     clean(Queue.queue_with_subqueues(@queue))
+    Queue.declare_with_subqueues(:default, @queue)
 
     :ok
   end

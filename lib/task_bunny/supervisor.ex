@@ -29,7 +29,11 @@ defmodule TaskBunny.Supervisor do
       worker(Connection, [host])
     end
 
-    children = connections ++ [worker(Initializer, [false])]
+    children =
+      case Initializer.alive? do
+        true -> connections
+        false -> connections ++ [worker(Initializer, [false])]
+      end
 
     # Define workers and child supervisors to be supervised
     children =

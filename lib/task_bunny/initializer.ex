@@ -39,6 +39,14 @@ defmodule TaskBunny.Initializer do
     end
   end
 
+  @doc """
+  Returns true if Initializer process exists
+  """
+  @spec alive?() :: boolean
+  def alive? do
+    Process.whereis(__MODULE__) != nil
+  end
+
   @doc false
   @spec handle_call(atom, {pid, term}, boolean) :: {:reply, boolean, boolean}
   def handle_call(:get_state, _, state) do

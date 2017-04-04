@@ -197,30 +197,14 @@ defmodule TaskBunny.Job do
 
   @spec do_enqueue(atom, String.t, String.t, nil|integer) :: :ok | {:error, any}
   defp do_enqueue(host, queue, message, nil) do
-    declare_queue(host, queue)
     Publisher.publish!(host, queue, message)
   end
 
   defp do_enqueue(host, queue, message, delay) do
-    declare_queue(host, queue)
     scheduled = Queue.scheduled_queue(queue)
     options = [
       expiration: "#{delay}"
     ]
     Publisher.publish!(host, scheduled, message, options)
-  end
-
-  @spec declare_queue(atom, String.t) :: :ok
-  defp declare_queue(host, queue) do
-    Queue.declare_with_subqueues(host, queue)
-    :ok
-  catch
-    :exit, e ->
-      # Handles the error but we carry on...
-      # It's highly likely caused by the options on queue declare don't match.
-      # We carry on with error log.
-      Logger.error "TaskBunny.job: Failed to declare queue for #{queue}. If you have changed the queue configuration, you have to delete the queue and create it again. Error: #{inspect e}"
-
-      {:error, {:exit, e}}
   end
 end
