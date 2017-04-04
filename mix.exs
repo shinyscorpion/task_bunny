@@ -1,6 +1,6 @@
 defmodule TaskBunny.Mixfile do
   use Mix.Project
-  @version "0.1.0-rc.2"
+  @version "0.1.0-rc.3"
 
   def project do
     [

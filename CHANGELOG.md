@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.0-rc.3
+
+* Update README
+* Declare the queues on application start. Don't declare the queues on enqueue.
+
 ## 0.1.0-rc.2
 
 * Support ENV var to disable TaskBunny worker. [#29](https://github.com/shinyscorpion/task_bunny/pull/29)
