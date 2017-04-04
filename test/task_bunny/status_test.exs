@@ -21,6 +21,7 @@ defmodule TaskBunny.StatusTest do
 
   setup do
     clean(Queue.queue_with_subqueues(@queue))
+    Queue.declare_with_subqueues(:default, @queue)
 
     mock_config()
     JobTestHelper.setup

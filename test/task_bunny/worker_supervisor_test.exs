@@ -35,6 +35,7 @@ defmodule TaskBunny.WorkerSupervisorTest do
   setup do
     clean(Queue.queue_with_subqueues(@queue))
     JobTestHelper.setup
+    Queue.declare_with_subqueues(:default, @queue)
 
     :meck.new Config, [:passthrough]
     :meck.expect Config, :workers, fn () -> workers() end
