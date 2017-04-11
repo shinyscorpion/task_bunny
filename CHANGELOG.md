@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.0
+
+* No change from 0.1.0-rc.3
+
 ## 0.1.0-rc.3
 
 * Update README
