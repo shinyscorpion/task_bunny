@@ -59,7 +59,7 @@ config :task_bunny, hosts: [
 ]
 
 config :task_bunny, queue: [
-  namespace: "task_bunny."
+  namespace: "task_bunny.",
   queues: [[name: "normal", jobs: :default]]
 ]
 ```
