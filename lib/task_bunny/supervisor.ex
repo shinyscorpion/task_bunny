@@ -26,7 +26,7 @@ defmodule TaskBunny.Supervisor do
   def init([wsv_name]) do
     # Add Connection severs for each hosts
     connections = Enum.map Config.hosts(), fn (host) ->
-      worker(Connection, [host], [id: make_ref()])
+      worker(Connection, [host], id: make_ref())
     end
 
     children =
