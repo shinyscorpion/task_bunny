@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+* Fix the issue with multiple hosts. [#33](https://github.com/shinyscorpion/task_bunny/pull/33)
+
 ## 0.1.0
 
 * No change from 0.1.0-rc.3
