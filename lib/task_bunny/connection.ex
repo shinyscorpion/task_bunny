@@ -185,7 +185,7 @@ defmodule TaskBunny.Connection do
         Process.monitor(connection.pid)
         publish_connection(connection, listeners)
 
-        {:noreply, {host, connection, []}}
+        {:noreply, {host, connection, listeners}}
       error ->
         Logger.warn "TaskBunny.Connection: failed to connect to #{host} - Error: #{inspect error}. Retrying in #{@reconnect_interval} ms"
         Process.send_after(self(), :connect, @reconnect_interval)
