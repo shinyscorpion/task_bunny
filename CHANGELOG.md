@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+* Disable workers with the config. [#35](https://github.com/shinyscorpion/task_bunny/pull/35)
+
 ## 0.1.1
 
 * Fix the issue with multiple hosts. [#33](https://github.com/shinyscorpion/task_bunny/pull/33)
