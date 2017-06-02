@@ -156,6 +156,13 @@ defmodule TaskBunny.Config do
   """
   @spec disable_worker? :: boolean
   def disable_worker? do
+    case Application.fetch_env(:task_bunny, :disable_worker) do
+      {:ok, true} -> true
+      _ -> disable_worker_on_env?()
+    end
+  end
+
+  defp disable_worker_on_env? do
     env =
       (System.get_env("TASK_BUNNY_DISABLE_WORKER") || "false")
       |> String.downcase
