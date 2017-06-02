@@ -262,6 +262,12 @@ You can disable workers starting with your application by setting `1`, `TRUE` or
 % TASK_BUNNY_DISABLE_WORKER=1 mix phoenix.server
 ```
 
+You can also disable workers in the config.
+
+```elixir
+config :task_bunny, disable_worker: true
+```
+
 You can also disable worker running for a specific queue with the config.
 
 ```elixir
@@ -380,6 +386,12 @@ config :task_bunny, queue: [
     [name: "normal", jobs: "Legacy.*", host: :legacy]
   ]
 ]
+```
+
+If you don't want to start TaskBunny automatically in a specific environment, set `true` to `disable_auto_start` in the config:
+
+```elixir
+config :task_bunny, disable_auto_start: true
 ```
 
 #### Get connection
