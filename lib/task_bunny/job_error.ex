@@ -6,24 +6,34 @@ defmodule TaskBunny.JobError do
   @type t :: %__MODULE__{
     job: atom,
     payload: any,
-    raw_body: String.t,
-    meta: map,
     error_type: :exception | :return_value | :timeout | :exit | nil,
     exception: struct | nil,
     stacktrace: list(tuple) | nil,
-    reason: any
+    reason: any,
+    raw_body: String.t,
+    meta: map,
+    failed_count: integer,
+    queue: String.t,
+    concurrency: integer,
+    pid: pid,
+    reject: boolean
   }
 
   defstruct [
     job: nil,
     payload: nil,
-    raw_body: "",
-    meta: %{},
     error_type: nil,
     exception: nil,
     stacktrace: nil,
     return_value: nil,
-    reason: nil
+    reason: nil,
+    raw_body: "",
+    meta: %{},
+    failed_count: 0,
+    queue: "",
+    concurrency: 1,
+    pid: nil,
+    reject: false
   ]
 
   @doc false

@@ -10,7 +10,7 @@ defmodule TaskBunny.Worker do
   use GenServer
   require Logger
   alias TaskBunny.{Connection, Consumer, JobRunner, Queue,
-                   Publisher, Worker, Message}
+                   Publisher, Worker, Message, ErrorReporter}
 
   @typedoc """
   Struct that represents a state of the worker GenServer.
@@ -211,26 +211,30 @@ defmodule TaskBunny.Worker do
   defp succeeded?({:ok, _}), do: true
   defp succeeded?(_), do: false
 
-  defp handle_failed_job(state, body, meta, result) do
+  defp handle_failed_job(state, body, meta, {:error, job_error}) do
     {:ok, decoded} = Message.decode(body)
     failed_count = Message.failed_count(decoded) + 1
     job = decoded["job"]
-    new_body = Message.add_error_log(body, result)
+    new_body = Message.add_error_log(body, job_error)
 
-    case failed_count <= job.max_retry() do
-      true ->
-        Logger.warn log_msg("job failed #{failed_count} times.", state, [body: body, will_be_retried: true])
+    job_error
+    |> Map.merge(%{
+         raw_body: body,
+         meta: meta,
+         failed_count: failed_count,
+         queue: state.queue,
+         concurrency: state.concurrency,
+         pid: self(),
+         reject: failed_count > job.max_retry()
+       })
+    |> ErrorReporter.report_job_error()
 
-        retry_message(job, state, new_body, meta, failed_count)
-
-        {:noreply, update_job_stats(state, :failed)}
-      false ->
-        # Failed more than X times
-        Logger.error log_msg("job failed #{failed_count} times.", state, [body: body, will_be_retried: false])
-
-        reject_message(state, new_body, meta)
-
-        {:noreply, update_job_stats(state, :rejected)}
+    if failed_count <= job.max_retry() do
+      retry_message(job, state, new_body, meta, failed_count)
+      {:noreply, update_job_stats(state, :failed)}
+    else
+      reject_message(state, new_body, meta)
+      {:noreply, update_job_stats(state, :rejected)}
     end
   end
 
