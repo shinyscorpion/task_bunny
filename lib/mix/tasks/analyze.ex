@@ -13,7 +13,7 @@ defmodule Mix.Tasks.Analyze do
   defp execute(command, options, show_output \\ false) do
     commands = ["-q", "/dev/null", command]
 
-    label = "\e[1m#{command} #{Enum.join(options, " ")}\e[0m";
+    label = "\e[1m#{command} #{Enum.join(options, " ")}\e[0m"
 
     "    "
     |> Kernel.<>(label)

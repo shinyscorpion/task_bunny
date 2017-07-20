@@ -71,7 +71,7 @@ defmodule TaskBunny.Initializer do
   Loads config and declares queues listed
   """
   @spec declare_queues_from_config() :: :ok
-  def declare_queues_from_config() do
+  def declare_queues_from_config do
     Config.queues
     |> Enum.each(fn (queue) -> declare_queue(queue) end)
 

@@ -1,2 +1,5 @@
 lib/mix/tasks/analyze.ex:1: Callback info about the 'Elixir.Mix.Task' behaviour is not available
 lib/mix/tasks/task_bunny.queue.reset.ex:1: Callback info about the 'Elixir.Mix.Task' behaviour is not available
+:0: Unknown function 'Elixir.Mix':shell/0
+:0: Unknown function 'Elixir.Mix.Task':run/1
+:0: Unknown function 'Elixir.Wobserver':register/2

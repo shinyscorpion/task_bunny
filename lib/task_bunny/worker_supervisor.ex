@@ -71,7 +71,7 @@ defmodule TaskBunny.WorkerSupervisor do
   end
 
   defp wait_for_all_jobs_done(workers, timeout) do
-    Enum.find_value(0..round(timeout/50), fn (_) ->
+    Enum.find_value(0..round(timeout / 50), fn(_) ->
       if workers_running?(workers) do
         :timer.sleep(50)
         false

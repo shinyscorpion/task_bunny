@@ -4,13 +4,11 @@ defmodule TaskBunny.ConfigError do
   """
   defexception [:message]
 
-  @lint false
   def exception(message: message) do
     title = "Failed to load TaskBunny config"
     message = "#{title}\n#{message}"
     %__MODULE__{message: message}
   end
-  _ = @lint
 end
 
 defmodule TaskBunny.Connection.ConnectError do
@@ -19,7 +17,6 @@ defmodule TaskBunny.Connection.ConnectError do
   """
   defexception [:type, :message]
 
-  @lint false
   def exception(_opts = [type: type, host: host]) do
     title = "Failed to get a connection to host '#{host}'."
     detail = case type do
@@ -47,7 +44,6 @@ defmodule TaskBunny.Connection.ConnectError do
     message = "#{title}\n#{detail}"
     %__MODULE__{message: message, type: type}
   end
-  _ = @lint
 end
 
 defmodule TaskBunny.Job.QueueNotFoundError do
@@ -56,7 +52,6 @@ defmodule TaskBunny.Job.QueueNotFoundError do
   """
   defexception [:job, :message]
 
-  @lint false
   def exception(job: job) do
     title = "Failed to find a queue for the job."
     detail = "job=#{job}"
@@ -64,7 +59,6 @@ defmodule TaskBunny.Job.QueueNotFoundError do
     message = "#{title}\n#{detail}"
     %__MODULE__{message: message, job: job}
   end
-  _ = @lint
 end
 
 defmodule TaskBunny.Message.DecodeError do
@@ -73,7 +67,6 @@ defmodule TaskBunny.Message.DecodeError do
   """
   defexception [:message]
 
-  @lint false
   def exception(opts) do
     title = "Failed to decode the message."
     detail = case opts[:type] do
@@ -90,7 +83,6 @@ defmodule TaskBunny.Message.DecodeError do
     message = "#{title}\n#{detail}\nmessage body=#{opts[:body]}"
     %__MODULE__{message: message}
   end
-  _ = @lint
 end
 
 defmodule TaskBunny.Publisher.PublishError do
@@ -99,7 +91,6 @@ defmodule TaskBunny.Publisher.PublishError do
   """
   defexception [:message, :inner_error]
 
-  @lint false
   def exception(inner_error: inner_error) do
     title = "Failed to publish the message."
     detail = "error=#{inspect inner_error}"
@@ -107,5 +98,4 @@ defmodule TaskBunny.Publisher.PublishError do
     message = "#{title}\n#{detail}"
     %__MODULE__{message: message, inner_error: inner_error}
   end
-  _ = @lint
 end

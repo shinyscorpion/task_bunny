@@ -15,7 +15,12 @@ defmodule TaskBunny.Status do
     - `connected`, whether a connection to RabbitMQ has been made.
     - `workers`, list of worker statuses.
   """
-  @type t :: %__MODULE__{version: String.t, up: boolean, connected: boolean, workers: list(Worker.t)}
+  @type t :: %__MODULE__{
+    version: String.t,
+    up: boolean,
+    connected: boolean,
+    workers: list(Worker.t)
+  }
 
   defstruct version: "1", up: true, connected: false, workers: []
 

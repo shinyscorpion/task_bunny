@@ -1,6 +1,7 @@
 {
   "skip_files": [
-    "lib/mix/tasks"
+    "lib/mix/tasks",
+    "test"
   ],
   "coverage_options": {
     "minimum_coverage": 90

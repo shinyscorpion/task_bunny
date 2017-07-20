@@ -9,7 +9,8 @@ defmodule TaskBunny.Consumer do
   @doc """
   Opens a channel and start consuming messages for the queue.
   """
-  @spec consume(AMQP.Connection.t, String.t, integer) :: {:ok, AMQP.Channel.t, String.t} | {:error, any}
+  @spec consume(AMQP.Connection.t, String.t, integer) ::
+    {:ok, AMQP.Channel.t, String.t} | {:error, any}
   def consume(connection, queue, concurrency) do
     with {:ok, channel} <- AMQP.Channel.open(connection),
          :ok <- AMQP.Basic.qos(channel, prefetch_count: concurrency),
