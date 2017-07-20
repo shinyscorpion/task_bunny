@@ -1,19 +1,2 @@
 lib/mix/tasks/analyze.ex:1: Callback info about the 'Elixir.Mix.Task' behaviour is not available
 lib/mix/tasks/task_bunny.queue.reset.ex:1: Callback info about the 'Elixir.Mix.Task' behaviour is not available
-Unknown functions:
-  'Elixir.Mix':shell/0
-  'Elixir.Mix.Task':run/1
-  'Elixir.Wobserver':register/2
-Unknown types:
-  'Elixir.AMQP.Channel':t/0
-  'Elixir.AMQP.Connection':t/0
-  rabbit_binding:key/0
-  rabbit_exchange:name/0
-  rabbit_exchange:type/0
-  rabbit_framing:amqp_class_id/0
-  rabbit_framing:amqp_exception/0
-  rabbit_framing:amqp_method_name/0
-  rabbit_framing:amqp_property_record/0
-  rabbit_framing:amqp_table/0
-  rabbit_guid:guid/0
-  rabbit_router:routing_key/0

@@ -15,7 +15,6 @@ defmodule TaskBunny.Initializer do
   end
 
   @doc false
-  @spec init(boolean) :: {:ok, boolean}
   def init(true) do
     # Already initialized. Nothing to do.
     {:ok, true}
