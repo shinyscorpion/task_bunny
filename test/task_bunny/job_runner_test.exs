@@ -71,7 +71,7 @@ defmodule TaskBunny.JobRunnerTest do
     test "handles job error" do
       JobRunner.invoke(SampleJobs.ErrorJob, nil, nil)
 
-      assert_receive {:job_finished, {:error, "failed!"}, nil}
+      assert_receive {:job_finished, {:error, %{return_value: {:error, "failed!"}}}, nil}
     end
 
     test "handles job crashing" do
