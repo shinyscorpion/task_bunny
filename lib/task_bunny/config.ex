@@ -185,4 +185,18 @@ defmodule TaskBunny.Config do
       _ -> []
     end
   end
+
+  @doc """
+  Returns the list of failure backends.
+
+  It returns [TaskBunny.FailureBackend.Logger] by default.
+  """
+  @spec failure_backend :: [atom]
+  def failure_backend do
+    case Application.fetch_env(:task_bunny, :failure_backend) do
+      {:ok, list} when is_list(list) -> list
+      {:ok, atom} when is_atom(atom) -> [atom]
+      _ -> [TaskBunny.FailureBackend.Logger]
+    end
+  end
 end
