@@ -10,7 +10,7 @@ defmodule TaskBunny.Worker do
   use GenServer
   require Logger
   alias TaskBunny.{Connection, Consumer, JobRunner, Queue,
-                   Publisher, Worker, Message, ErrorReporter}
+                   Publisher, Worker, Message, FailureBackend}
 
   @typedoc """
   Struct that represents a state of the worker GenServer.
@@ -227,7 +227,7 @@ defmodule TaskBunny.Worker do
          pid: self(),
          reject: failed_count > job.max_retry()
        })
-    |> ErrorReporter.report_job_error()
+    |> FailureBackend.report_job_error()
 
     if failed_count <= job.max_retry() do
       retry_message(job, state, new_body, meta, failed_count)

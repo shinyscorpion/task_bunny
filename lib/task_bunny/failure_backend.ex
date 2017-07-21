@@ -1,6 +1,6 @@
-defmodule TaskBunny.ErrorReporter do
+defmodule TaskBunny.FailureBackend do
   @moduledoc """
-  A behaviour module to implment the your own error reporting backend.
+  A behaviour module to implment the your own failure backend.
   """
   alias TaskBunny.JobError
 
