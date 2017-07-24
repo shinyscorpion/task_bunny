@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0
+
+Support the failure backend extension.
+You can implement your own job failure reporting module.
+
+There is no change needed in your code for the changes and TaskBunny reports
+the job errors to Logger by default.
+There are slight changes on the message format and its contents.
+
+See [#36](https://github.com/shinyscorpion/task_bunny/pull/36) for the details.
+
 ## 0.1.2
 
 * Disable workers with the config. [#35](https://github.com/shinyscorpion/task_bunny/pull/35)
