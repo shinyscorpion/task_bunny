@@ -22,7 +22,7 @@ defmodule TaskBunny.JobError do
   """
 
   @type t :: %__MODULE__{
-    job: atom,
+    job: atom | nil,
     payload: any,
     error_type: :exception | :return_value | :timeout | :exit | nil,
     exception: struct | nil,
@@ -34,7 +34,7 @@ defmodule TaskBunny.JobError do
     failed_count: integer,
     queue: String.t,
     concurrency: integer,
-    pid: pid,
+    pid: pid | nil,
     reject: boolean
   }
 
@@ -56,6 +56,7 @@ defmodule TaskBunny.JobError do
   ]
 
   @doc false
+  @spec handle_exception(atom, any, struct) :: t
   def handle_exception(job, payload, exception) do
     %__MODULE__{
       job: job,
@@ -67,6 +68,7 @@ defmodule TaskBunny.JobError do
   end
 
   @doc false
+  @spec handle_exit(atom, any, any) :: t
   def handle_exit(job, payload, reason) do
     %__MODULE__{
       job: job,
@@ -77,6 +79,7 @@ defmodule TaskBunny.JobError do
   end
 
   @doc false
+  @spec handle_return_value(atom, any, any) :: t
   def handle_return_value(job, payload, return_value) do
     %__MODULE__{
       job: job,
@@ -87,6 +90,7 @@ defmodule TaskBunny.JobError do
   end
 
   @doc false
+  @spec handle_timeout(atom, any) :: t
   def handle_timeout(job, payload) do
     %__MODULE__{
       job: job,

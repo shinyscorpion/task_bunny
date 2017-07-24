@@ -1,6 +1,6 @@
 defmodule TaskBunny.FailureBackend do
   @moduledoc """
-  A behaviour module to implment the your own failure backend.
+  A behaviour module to implement the your own failure backend.
 
   Note the backend is called only for the errors caught during job processing.
   Any other errors won't be reported to the backend.
@@ -49,7 +49,5 @@ defmodule TaskBunny.FailureBackend do
   def report_job_error(job_error = %JobError{}) do
     Config.failure_backend()
     |> Enum.each(&(&1.report_job_error(job_error)))
-
-    :ok
   end
 end

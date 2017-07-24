@@ -189,7 +189,7 @@ defmodule TaskBunny.Config do
   @doc """
   Returns the list of failure backends.
 
-  It returns [TaskBunny.FailureBackend.Logger] by default.
+  It returns `TaskBunny.FailureBackend.Logger` by default.
   """
   @spec failure_backend :: [atom]
   def failure_backend do

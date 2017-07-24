@@ -7,7 +7,7 @@ defmodule TaskBunny.FailureBackend.Logger do
   alias TaskBunny.JobError
 
   def report_job_error(error = %JobError{error_type: :exception}) do
-    message = """
+    """
     TaskBunny - #{error.job} failed for an exception.
 
     Exception:
@@ -18,12 +18,11 @@ defmodule TaskBunny.FailureBackend.Logger do
     Stacktrace:
     #{Exception.format_stacktrace(error.stacktrace)}
     """
-
-    do_report(message, error.reject)
+    |> do_report(error.reject)
   end
 
   def report_job_error(error = %JobError{error_type: :return_value}) do
-    message = """
+    """
     TaskBunny - #{error.job} failed for an invalid return value.
 
     Return value:
@@ -31,12 +30,11 @@ defmodule TaskBunny.FailureBackend.Logger do
 
     #{common_message error}
     """
-
-    do_report(message, error.reject)
+    |> do_report(error.reject)
   end
 
   def report_job_error(error = %JobError{error_type: :exit}) do
-    message = """
+    """
     TaskBunny - #{error.job} failed for EXIT signal.
 
     Reason:
@@ -44,29 +42,26 @@ defmodule TaskBunny.FailureBackend.Logger do
 
     #{common_message error}
     """
-
-    do_report(message, error.reject)
+    |> do_report(error.reject)
   end
 
   def report_job_error(error = %JobError{error_type: :timeout}) do
-    message = """
+    """
     TaskBunny - #{error.job} failed for timeout.
 
     #{common_message error}
     """
-
-    do_report(message, error.reject)
+    |> do_report(error.reject)
   end
 
   def report_job_error(error) do
-    message = """
+    """
     TaskBunny - Failed with the unknown error type.
 
     Error dump:
     #{my_inspect error}
     """
-
-    do_report(message, true)
+    |> do_report(true)
   end
 
   defp do_report(message, rejected) do
