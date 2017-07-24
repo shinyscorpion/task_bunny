@@ -416,6 +416,29 @@ All workers will restart automatically once the new connection is established.
 TaskBunny aims to provide zero hassle and recover automatically regardless how
 long the host takes to come back and accessible.
 
+#### Failure backends
+
+By default, when the error occurs during the job execution TaskBunny reports it
+to Logger. If you want to report the error to different services, you can configure
+your custom failure backend.
+
+```elixir
+config :task_bunny, failure_backend: [YourApp.CustomFailureBackend]
+```
+
+You can also report the errors to the multiple backends. For example, if you
+want to use our default Logger backend with your custom backend you can
+configure like below:
+
+```elixir
+config :task_bunny, failure_backend: [
+  TaskBunny.FailureBackend.Logger,
+  YourApp.CustomFailureBackend
+]
+```
+
+Check out the implementation of [TaskBunny.FailureBackend.Logger](https://github.com/shinyscorpion/task_bunny/blob/master/lib/task_bunny/failure_backend/logger.ex) to learn how to write your custom failure backend.
+
 ## Monitoring
 
 #### RabbitMQ plugins

@@ -22,6 +22,7 @@ defmodule TaskBunny.JobRunner do
   @moduledoc false
 
   require Logger
+  alias TaskBunny.JobError
 
   @doc ~S"""
   Invokes the given job with the given payload.
@@ -33,10 +34,10 @@ defmodule TaskBunny.JobRunner do
   def invoke(job, payload, message) do
     caller = self()
 
-    time_out_error = {:error, "#{inspect job} timed out with #{job.timeout}"}
+    timeout_error = {:error, JobError.handle_timeout(job, payload)}
     timer = Process.send_after(
       caller,
-      {:job_finished, time_out_error, message},
+      {:job_finished, timeout_error, message},
       job.timeout
     )
 
@@ -52,14 +53,18 @@ defmodule TaskBunny.JobRunner do
   # Any raises or throws in the perform are caught and turned into an :error tuple.
   @spec run_job(atom, any) :: :ok | {:ok, any} | {:error, any}
   defp run_job(job, payload) do
-    job.perform(payload)
+    case job.perform(payload) do
+      :ok -> :ok
+      {:ok, something} -> {:ok, something}
+      error -> {:error, JobError.handle_return_value(job, payload, error)}
+    end
   rescue
     error ->
-      Logger.error "TaskBunny.JobRunner - Runner rescued #{inspect error}"
-      {:error, error}
+      Logger.debug "TaskBunny.JobRunner - Runner rescued #{inspect error}"
+      {:error, JobError.handle_exception(job, payload, error)}
   catch
     _, reason ->
-      Logger.error "TaskBunny.JobRunner - Runner caught reason: #{inspect reason}"
-      {:error, reason}
+      Logger.debug "TaskBunny.JobRunner - Runner caught reason: #{inspect reason}"
+      {:error, JobError.handle_exit(job, payload, reason)}
   end
 end
