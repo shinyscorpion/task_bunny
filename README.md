@@ -416,7 +416,7 @@ All workers will restart automatically once the new connection is established.
 TaskBunny aims to provide zero hassle and recover automatically regardless how
 long the host takes to come back and accessible.
 
-#### Failure backends
+## Failure backends
 
 By default, when the error occurs during the job execution TaskBunny reports it
 to Logger. If you want to report the error to different services, you can configure
