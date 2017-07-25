@@ -342,7 +342,7 @@ defmodule SlowJob do
 end
 ```
 
-## Connection Management
+## Connection management
 
 TaskBunny provides an extra layer on top of the [amqp](https://github.com/pma/amqp) connection module.
 
@@ -439,6 +439,12 @@ config :task_bunny, failure_backend: [
 
 Check out the implementation of [TaskBunny.FailureBackend.Logger](https://github.com/shinyscorpion/task_bunny/blob/master/lib/task_bunny/failure_backend/logger.ex) to learn how to write your custom failure backend.
 
+#### Implementations
+
+- [Rollbar backend](https://github.com/shinyscorpion/task_bunny_rollbar)
+
+(Send us a pull request if you want to add other implementation)
+
 ## Monitoring
 
 #### RabbitMQ plugins
@@ -451,7 +457,7 @@ The following plugins will help you use RabbitMQ with TaskBunny.
 * [Management Plugin](http://www.rabbitmq.com/management.html): provides an HTTP-based API for management and monitoring of your RabbitMQ server, along with a browser-based UI and a command line tool, rabbitmqadmin.
 * [Shovel Plugin](http://www.rabbitmq.com/shovel.html): helps you to move messages(job) from a queue to another queue.
 
-#### Wobserver Integration
+#### Wobserver integration
 
 TaskBunny automatically integrates with [Wobserver](https://github.com/shinyscorpion/wobserver).
 All worker and connection information will be added as a page on the web interface.
