@@ -26,7 +26,9 @@ defmodule TaskBunny.FailureBackend.LoggerTest do
     error_type: :timeout
   })
 
-  @unexpected_error "This should not be passed"
+  @unknown_error Map.merge(@job_error, %{
+    error_type: :invalid_type
+  })
 
   describe "report_job_error/1" do
     test "handles an exception" do
@@ -53,9 +55,9 @@ defmodule TaskBunny.FailureBackend.LoggerTest do
       end) =~ "TaskBunny - Elixir.TestJob failed for timeout"
     end
 
-    test "handles non JobError just in case" do
+    test "handles unknown error type" do
       assert capture_log(fn ->
-        report_job_error @unexpected_error
+        report_job_error @unknown_error
       end) =~ "TaskBunny - Failed with the unknown error type"
     end
   end

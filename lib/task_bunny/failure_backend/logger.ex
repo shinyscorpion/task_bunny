@@ -6,7 +6,17 @@ defmodule TaskBunny.FailureBackend.Logger do
   require Logger
   alias TaskBunny.JobError
 
-  def report_job_error(error = %JobError{error_type: :exception}) do
+  # Callback for FailureBackend
+  def report_job_error(error = %JobError{}) do
+    get_job_error_message(error)
+    |> do_report(error.reject)
+  end
+
+  @doc """
+  Returns the message content for the job error.
+  """
+  @spec get_job_error_message(JobError.t) :: String.t
+  def get_job_error_message(error = %JobError{error_type: :exception}) do
     """
     TaskBunny - #{error.job} failed for an exception.
 
@@ -18,10 +28,9 @@ defmodule TaskBunny.FailureBackend.Logger do
     Stacktrace:
     #{Exception.format_stacktrace(error.stacktrace)}
     """
-    |> do_report(error.reject)
   end
 
-  def report_job_error(error = %JobError{error_type: :return_value}) do
+  def get_job_error_message(error = %JobError{error_type: :return_value}) do
     """
     TaskBunny - #{error.job} failed for an invalid return value.
 
@@ -30,10 +39,9 @@ defmodule TaskBunny.FailureBackend.Logger do
 
     #{common_message error}
     """
-    |> do_report(error.reject)
   end
 
-  def report_job_error(error = %JobError{error_type: :exit}) do
+  def get_job_error_message(error = %JobError{error_type: :exit}) do
     """
     TaskBunny - #{error.job} failed for EXIT signal.
 
@@ -42,26 +50,22 @@ defmodule TaskBunny.FailureBackend.Logger do
 
     #{common_message error}
     """
-    |> do_report(error.reject)
   end
 
-  def report_job_error(error = %JobError{error_type: :timeout}) do
+  def get_job_error_message(error = %JobError{error_type: :timeout}) do
     """
     TaskBunny - #{error.job} failed for timeout.
 
     #{common_message error}
     """
-    |> do_report(error.reject)
   end
 
-  def report_job_error(error) do
+  def get_job_error_message(error = %JobError{}) do
     """
     TaskBunny - Failed with the unknown error type.
 
-    Error dump:
-    #{my_inspect error}
+    #{common_message error}
     """
-    |> do_report(true)
   end
 
   defp do_report(message, rejected) do
