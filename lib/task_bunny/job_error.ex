@@ -74,7 +74,8 @@ defmodule TaskBunny.JobError do
       job: job,
       payload: payload,
       error_type: :exit,
-      reason: reason
+      reason: reason,
+      stacktrace: System.stacktrace()
     }
   end
 
