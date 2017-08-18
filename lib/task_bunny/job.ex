@@ -85,7 +85,7 @@ defmodule TaskBunny.Job do
       end
 
   """
-  @callback perform(any) :: :ok | {:error, term}
+  @callback perform(any) :: :ok | {:ok, any} | {:error, term}
 
   @doc """
   Callback for the timeout in milliseconds for a job execution.
