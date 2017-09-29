@@ -136,12 +136,16 @@ When you use TaskBunny under an umbrella app and each apps needs a different que
 ```elixir
   config :task_bunny, app_a_queue: [
     namespace: "app_a.",
-    [name: "normal", jobs: "AppA.*"
+    queues: [
+      [name: "normal", jobs: "AppA.*"]
+    ]
   ]
 
   config :task_bunny, app_b_queue: [
     namespace: "app_b.",
-    [name: "normal", jobs: "AppB.*"
+    queues: [
+      [name: "normal", jobs: "AppB.*"]
+    ]
   ]
 ```
 
