@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2
+
+* Fix typespec [#42](https://github.com/shinyscorpion/task_bunny/pull/42)
+
 ## 0.2.1
 
 * Expose `FailureBackend.Logger.get_job_error_message/1`. [#37](https://github.com/shinyscorpion/task_bunny/pull/37)
