@@ -9,7 +9,8 @@ defmodule TaskBunny.ConfigTest do
         queues: [
           [name: "high", worker: [concurrency: 10], jobs: ["High.*"]],
           [name: "normal", jobs: :default],
-          [name: "low", worker: false, jobs: [SlowJob]]
+          [name: "low", worker: false, jobs: [SlowJob]],
+          [name: "disabled", worker: [concurrency: 0], jobs: :default]
         ]
       ],
       extra_queue: [
@@ -35,7 +36,7 @@ defmodule TaskBunny.ConfigTest do
       queue_names = Config.queues
                     |> Enum.map(fn (queue) -> queue[:name] end)
 
-      assert queue_names == ["test.high", "test.normal", "test.low", "extra.queue1"]
+      assert queue_names == ["test.high", "test.normal", "test.low", "test.disabled", "extra.queue1"]
     end
   end
 

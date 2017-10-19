@@ -71,7 +71,7 @@ defmodule TaskBunny.Config do
   @spec workers :: [keyword]
   def workers do
     queues()
-    |> Enum.filter(fn (queue) -> queue[:worker] != false end)
+    |> Enum.filter(&worker_enabled?/1)
     |> Enum.map(fn (queue) ->
       concurrency =
         if queue[:worker] && queue[:worker][:concurrency] do
@@ -86,6 +86,18 @@ defmodule TaskBunny.Config do
         host: queue[:host] || :default
       ]
     end)
+  end
+
+  # Checks worker configuration sanity.
+  @spec worker_enabled?(keyword) :: boolean
+  defp worker_enabled?(queue) do
+    case Keyword.get(queue, :worker, []) do
+      false -> false
+      worker ->
+        concurrency = Keyword.get(worker, :concurrency, @default_concurrency)
+
+        concurrency > 0
+    end
   end
 
   @doc """
