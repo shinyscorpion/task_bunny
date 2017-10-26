@@ -446,6 +446,7 @@ Check out the implementation of [TaskBunny.FailureBackend.Logger](https://github
 #### Implementations
 
 - [Rollbar backend](https://github.com/shinyscorpion/task_bunny_rollbar)
+- [Sentry backend](https://github.com/Homepolish/task_bunny_sentry)
 
 (Send us a pull request if you want to add other implementation)
 
