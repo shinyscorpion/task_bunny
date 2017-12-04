@@ -171,6 +171,8 @@ defmodule TaskBunny.Job do
   - host: RabbitMQ host. By default it is automatically selected from configuration.
   - queue: RabbitMQ queue. By default it is automatically selected from configuration.
 
+  TODO: add reply_to option that is handled in the AMQP header
+
   """
   @spec enqueue(atom, any, keyword) :: :ok | {:error, any}
   def enqueue(job, payload, options \\ []) do

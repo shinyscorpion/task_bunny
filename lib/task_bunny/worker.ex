@@ -140,6 +140,9 @@ defmodule TaskBunny.Worker do
       {:ok, decoded} ->
         Logger.debug log_msg("basic_deliver", state, [body: body])
 
+        # FIXME 
+        # - capture outcome of job runner
+        # - implement RPC option
         JobRunner.invoke(decoded["job"], decoded["payload"], {body, meta})
 
         {:noreply, %{state | runners: state.runners + 1}}
