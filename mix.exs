@@ -63,7 +63,7 @@ defmodule TaskBunny.Mixfile do
 
   defp deps do
     [
-      {:amqp, "~> 0.2.0"},
+      {:amqp, "~> 0.3.1"},
       {:poison, "~> 2.0 or ~> 3.0"},
 
       # dev/test
