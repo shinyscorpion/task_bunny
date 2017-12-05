@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0
+
+* Update amqp library to 0.3.1. See [amqp's release note](https://github.com/pma/amqp/releases) for the details
+
 ## 0.2.2
 
 * Fix typespec [#42](https://github.com/shinyscorpion/task_bunny/pull/42)
