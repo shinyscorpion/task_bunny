@@ -139,10 +139,6 @@ defmodule TaskBunny.Worker do
     case Message.decode(body) do
       {:ok, decoded} ->
         Logger.debug log_msg("basic_deliver", state, [body: body])
-
-        # FIXME 
-        # - capture outcome of job runner
-        # - implement RPC option
         JobRunner.invoke(decoded["job"], decoded["payload"], {body, meta})
 
         {:noreply, %{state | runners: state.runners + 1}}
@@ -164,6 +160,13 @@ defmodule TaskBunny.Worker do
     case succeeded?(result) do
       true ->
         Consumer.ack(state.channel, meta, true)
+        case Keyword.has_key?(meta, :reply_to) do
+          true ->
+            Logger.debug("Replying to : #{meta.repy_to}")
+            # FIXME make sure we check for the actual host
+            Publisher.publish!(:default, meta.reply_to, result, Keyword.drop(meta, :reply_to))
+          false -> Logger.debug("No reply queue found")
+        end
 
         {:noreply, update_job_stats(state, :succeeded)}
       false ->

@@ -171,8 +171,6 @@ defmodule TaskBunny.Job do
   - host: RabbitMQ host. By default it is automatically selected from configuration.
   - queue: RabbitMQ queue. By default it is automatically selected from configuration.
 
-  TODO: add reply_to option that is handled in the AMQP header
-
   """
   @spec enqueue(atom, any, keyword) :: :ok | {:error, any}
   def enqueue(job, payload, options \\ []) do
@@ -192,6 +190,7 @@ defmodule TaskBunny.Job do
     host = options[:host] || queue_data[:host] || :default
     {:ok, message} = Message.encode(job, payload)
 
+    # mapping options
     opts = %{}
     |> add_delay(options)
     |> add_reply_to(options)
@@ -203,7 +202,7 @@ defmodule TaskBunny.Job do
     end
   end
 
-  @spec do_enqueue(atom, String.t, String.t, nil|integer) :: :ok | {:error, any}
+  @spec do_enqueue(atom, String.t, String.t, Map.t) :: :ok | {:error, any}
   defp do_enqueue(host, queue, message, %{expiration: _delay} = options) do
     scheduled = Queue.scheduled_queue(queue)
     Publisher.publish!(host, scheduled, message, Map.to_list(options))
@@ -212,6 +211,8 @@ defmodule TaskBunny.Job do
     Publisher.publish!(host, queue, message, Map.to_list(options))
   end
 
+  # explicitly map options to make sure we only have approved data in our
+  # messages
   defp add_delay(map, options) do
     Map.merge(map, %{expiration: options[:delay]})
   end
