@@ -155,18 +155,19 @@ defmodule TaskBunny.Worker do
 
   # Called when job was done.
   # Acknowledge to RabbitMQ.
+  # Maybe send response.
   def handle_info({:job_finished, result, {body, meta}}, state) do
     Logger.debug log_msg("job_finished", state, [body: body, meta: meta])
     case succeeded?(result) do
       true ->
         Consumer.ack(state.channel, meta, true)
-        if meta[:reply_to] do
-            Logger.debug log_msg("Replying to : #{meta[:repy_to]}", state, [meta: meta])
-            new_meta = Map.drop(meta, [:reply_to])
-            # FIXME make sure we check for the actual host
-            Publisher.publish!(:default, meta[:reply_to], result, Map.to_list(new_meta))
+        case meta[:reply_to] do
+          :undefined -> Logger.debug("No reply queue found - ignoring")
+          reply_to ->
+            {:ok, message} = result
+            Logger.debug log_msg("Replying to :#{reply_to} with #{inspect message}", state, [meta: meta])
+            TaskBunny.Job.enqueue!(String.to_atom(reply_to), %{"ok" => message})
         end
-
         {:noreply, update_job_stats(state, :succeeded)}
       false ->
         handle_failed_job(state, body, meta, result)
