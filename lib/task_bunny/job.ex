@@ -192,22 +192,34 @@ defmodule TaskBunny.Job do
     host = options[:host] || queue_data[:host] || :default
     {:ok, message} = Message.encode(job, payload)
 
+    opts = %{}
+    |> add_delay(options)
+    |> add_reply_to(options)
+    |> add_corr_id(options)
+
     case options[:queue] || queue_data[:name] do
       nil -> raise QueueNotFoundError, job: job
-      queue -> do_enqueue(host, queue, message, options[:delay])
+      queue -> do_enqueue(host, queue, message, opts)
     end
   end
 
   @spec do_enqueue(atom, String.t, String.t, nil|integer) :: :ok | {:error, any}
-  defp do_enqueue(host, queue, message, nil) do
-    Publisher.publish!(host, queue, message)
+  defp do_enqueue(host, queue, message, %{expiration: _delay} = options) do
+    scheduled = Queue.scheduled_queue(queue)
+    Publisher.publish!(host, scheduled, message, Map.to_list(options))
+  end
+  defp do_enqueue(host, queue, message, options) do
+    Publisher.publish!(host, queue, message, Map.to_list(options))
   end
 
-  defp do_enqueue(host, queue, message, delay) do
-    scheduled = Queue.scheduled_queue(queue)
-    options = [
-      expiration: "#{delay}"
-    ]
-    Publisher.publish!(host, scheduled, message, options)
+  defp add_delay(map, options) do
+    Map.merge(map, %{expiration: options[:delay]})
   end
+  defp add_reply_to(map, options) do
+    Map.merge(map, %{reply_to: options[:reply_to]})
+  end
+  defp add_corr_id(map, options) do
+    Map.merge(map, %{correlation_id: options[:corr_id]})
+  end
+
 end
