@@ -164,11 +164,8 @@ defmodule TaskBunny.Worker do
         case meta[:reply_to] do
           :undefined -> Logger.debug("No reply queue found - ignoring")
           reply_to ->
-            {:ok, message} = result
-            Logger.debug log_msg("Replying to :#{reply_to} with #{inspect message}", state, [meta: meta])
-            opts = map_options(meta)
-            Logger.info("Found the following options: #{inspect opts} from this meta: #{inspect meta}")
-            TaskBunny.Job.enqueue!(String.to_atom(reply_to), %{"ok" => message}, opts)
+            respond(result, meta, reply_to)
+            Logger.debug log_msg("Replying to :#{reply_to} with #{inspect result}", state, [meta: meta])
         end
         {:noreply, update_job_stats(state, :succeeded)}
       false ->
@@ -274,6 +271,24 @@ defmodule TaskBunny.Worker do
     else
       message
     end
+  end
+
+  defp respond(:ok, meta, queue) do
+    message = %{"status" => "ok"}
+    respond({:ok, message}, meta, queue)
+  end
+  defp respond({:ok, message}, meta, queue) do
+    opts = map_options(meta)
+    meta2 = Enum.reduce(meta, %{}, fn({x, y}, acc) -> Map.put(acc, encode_meta(x), encode_meta(y)) end)
+    message2 = Map.put(message, "meta", meta2)
+    TaskBunny.Job.enqueue!(String.to_atom(queue), message2, opts)
+  end
+
+  defp encode_meta(x) when is_atom(x) do
+    Atom.to_string(x)
+  end
+  defp encode_meta(x) do
+    x
   end
 
   defp map_options(meta) do

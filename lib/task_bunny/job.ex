@@ -190,14 +190,17 @@ defmodule TaskBunny.Job do
     queue_data = Config.queue_for_job(job) || []
 
     host = options[:host] || queue_data[:host] || :default
-    {:ok, message} = Message.encode(job, payload)
-
-    # mapping options
-    opts = map_options(options)
-    Logger.info("Options after modding: #{inspect opts}")
-    case options[:queue] || queue_data[:name] do
-      nil -> raise QueueNotFoundError, job: job
-      queue -> do_enqueue(host, queue, message, opts)
+    case Message.encode(job, payload) do
+      {:ok, message} ->
+        opts = map_options(options)
+        Logger.info("Options after modding: #{inspect opts}")
+        case options[:queue] || queue_data[:name] do
+          nil -> raise QueueNotFoundError, job: job
+          queue -> do_enqueue(host, queue, message, opts)
+        end
+      error ->
+        Logger.error("#{inspect error}")
+        error
     end
   end
 
