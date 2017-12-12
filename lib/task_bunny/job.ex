@@ -190,17 +190,11 @@ defmodule TaskBunny.Job do
     queue_data = Config.queue_for_job(job) || []
 
     host = options[:host] || queue_data[:host] || :default
-    case Message.encode(job, payload) do
-      {:ok, message} ->
-        opts = map_options(options)
-        Logger.info("Options after modding: #{inspect opts}")
-        case options[:queue] || queue_data[:name] do
-          nil -> raise QueueNotFoundError, job: job
-          queue -> do_enqueue(host, queue, message, opts)
-        end
-      error ->
-        Logger.error("#{inspect error}")
-        error
+    {:ok, message} = Message.encode(job, payload)
+
+    case options[:queue] || queue_data[:name] do
+      nil -> raise QueueNotFoundError, job: job
+      queue -> do_enqueue(host, queue, message, map_options(options))
     end
   end
 
@@ -220,6 +214,7 @@ defmodule TaskBunny.Job do
     |> add_delay(options)
     |> add_reply_to(options)
     |> add_corr_id(options)
+    |> add_app_id(options)
   end
   defp add_delay(map, options) do
     case options[:delay] do
@@ -237,6 +232,12 @@ defmodule TaskBunny.Job do
     case options[:correlation_id] do
       nil -> map
       id -> Map.merge(map, %{correlation_id: id})
+    end
+  end
+  defp add_app_id(map, options) do
+    case options[:app_id] do
+      nil -> map
+      id -> Map.merge(map, %{app_id: id})
     end
   end
 

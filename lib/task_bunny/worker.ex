@@ -139,6 +139,7 @@ defmodule TaskBunny.Worker do
     case Message.decode(body) do
       {:ok, decoded} ->
         Logger.debug log_msg("basic_deliver", state, [body: body])
+
         JobRunner.invoke(decoded["job"], decoded["payload"], {body, meta})
 
         {:noreply, %{state | runners: state.runners + 1}}
@@ -161,11 +162,10 @@ defmodule TaskBunny.Worker do
     case succeeded?(result) do
       true ->
         Consumer.ack(state.channel, meta, true)
-        case meta[:reply_to] do
-          :undefined -> Logger.debug("No reply queue found - ignoring")
-          reply_to ->
-            respond(result, meta, reply_to)
-            Logger.debug log_msg("Replying to :#{reply_to} with #{inspect result}", state, [meta: meta])
+
+        unless meta[:reply_to] == :undefined do
+          Logger.debug log_msg("reply to #{meta[:reply_to]}", state)
+          respond(result, meta, meta[:reply_to])
         end
         {:noreply, update_job_stats(state, :succeeded)}
       false ->
@@ -279,7 +279,8 @@ defmodule TaskBunny.Worker do
   end
   defp respond({:ok, message}, meta, queue) do
     opts = map_options(meta)
-    meta2 = Enum.reduce(meta, %{}, fn({x, y}, acc) -> Map.put(acc, encode_meta(x), encode_meta(y)) end)
+    meta2 = Enum.reduce(meta, %{}, fn({x, y}, acc) ->
+      Map.put(acc, encode_meta(x), encode_meta(y)) end)
     message2 = Map.put(message, "meta", meta2)
     TaskBunny.Job.enqueue!(String.to_atom(queue), message2, opts)
   end
