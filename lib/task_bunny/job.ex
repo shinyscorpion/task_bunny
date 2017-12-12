@@ -171,7 +171,7 @@ defmodule TaskBunny.Job do
   - host: RabbitMQ host. By default it is automatically selected from configuration.
   - queue: RabbitMQ queue. By default it is automatically selected from configuration.
   - reply_to: sets the reply_to header and responds to that queue with the outcome of the job
-  - corr_id: sets a cerrelation ID that can be used to match jobs on the client side
+  - correlation_id: sets a cerrelation ID that can be used to match jobs on the client side
 
   """
   @spec enqueue(atom, any, keyword) :: :ok | {:error, any}
@@ -193,11 +193,7 @@ defmodule TaskBunny.Job do
     {:ok, message} = Message.encode(job, payload)
 
     # mapping options
-    opts = %{}
-    |> add_delay(options)
-    |> add_reply_to(options)
-    |> add_corr_id(options)
-
+    opts = map_options(options)
     Logger.info("Options after modding: #{inspect opts}")
     case options[:queue] || queue_data[:name] do
       nil -> raise QueueNotFoundError, job: job
@@ -216,6 +212,12 @@ defmodule TaskBunny.Job do
 
   # explicitly map options to make sure we only have approved data in our
   # messages
+  defp map_options(options) do
+    %{}
+    |> add_delay(options)
+    |> add_reply_to(options)
+    |> add_corr_id(options)
+  end
   defp add_delay(map, options) do
     case options[:delay] do
       nil -> map
@@ -229,7 +231,7 @@ defmodule TaskBunny.Job do
     end
   end
   defp add_corr_id(map, options) do
-    case options[:corr_id] do
+    case options[:correlation_id] do
       nil -> map
       id -> Map.merge(map, %{correlation_id: id})
     end

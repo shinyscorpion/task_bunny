@@ -166,7 +166,9 @@ defmodule TaskBunny.Worker do
           reply_to ->
             {:ok, message} = result
             Logger.debug log_msg("Replying to :#{reply_to} with #{inspect message}", state, [meta: meta])
-            TaskBunny.Job.enqueue!(String.to_atom(reply_to), %{"ok" => message})
+            opts = map_options(meta)
+            Logger.info("Found the following options: #{inspect opts} from this meta: #{inspect meta}")
+            TaskBunny.Job.enqueue!(String.to_atom(reply_to), %{"ok" => message}, opts)
         end
         {:noreply, update_job_stats(state, :succeeded)}
       false ->
@@ -272,5 +274,12 @@ defmodule TaskBunny.Worker do
     else
       message
     end
+  end
+
+  defp map_options(meta) do
+    fields = [:app_id, :cluster_id, :correlation_id, :content_type,
+              :content_encoding, :headers, :priority, :timestamp, :type,
+              :user_id]
+    Enum.filter(meta, fn({x, _}) -> x in fields end)
   end
 end
