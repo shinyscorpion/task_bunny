@@ -156,12 +156,17 @@ defmodule TaskBunny.Worker do
 
   # Called when job was done.
   # Acknowledge to RabbitMQ.
+  # Maybe send response.
   def handle_info({:job_finished, result, {body, meta}}, state) do
     Logger.debug log_msg("job_finished", state, [body: body, meta: meta])
     case succeeded?(result) do
       true ->
         Consumer.ack(state.channel, meta, true)
 
+        unless meta[:reply_to] == :undefined do
+          Logger.debug log_msg("reply to #{meta[:reply_to]}", state)
+          respond(result, meta)
+        end
         {:noreply, update_job_stats(state, :succeeded)}
       false ->
         handle_failed_job(state, body, meta, result)
@@ -266,5 +271,31 @@ defmodule TaskBunny.Worker do
     else
       message
     end
+  end
+
+  defp respond(:ok, meta) do
+    message = %{"status" => "ok"}
+    respond({:ok, message}, meta)
+  end
+  defp respond({:ok, message}, meta) do
+    opts = map_options(meta)
+    meta2 = Enum.reduce(meta, %{}, fn({x, y}, acc) ->
+      Map.put(acc, encode_meta(x), encode_meta(y)) end)
+    message2 = Map.put(message, "meta", meta2)
+    TaskBunny.Job.enqueue!(String.to_atom(meta[:reply_to]), message2, opts)
+  end
+
+  defp encode_meta(x) when is_atom(x) do
+    Atom.to_string(x)
+  end
+  defp encode_meta(x) do
+    x
+  end
+
+  defp map_options(meta) do
+    fields = [:app_id, :cluster_id, :correlation_id, :content_type,
+              :content_encoding, :headers, :priority, :timestamp, :type,
+              :user_id]
+    Enum.filter(meta, fn({x, _}) -> x in fields end)
   end
 end

@@ -170,6 +170,8 @@ defmodule TaskBunny.Job do
   - delay: Set time in milliseconds to schedule the job enqueue time.
   - host: RabbitMQ host. By default it is automatically selected from configuration.
   - queue: RabbitMQ queue. By default it is automatically selected from configuration.
+  - reply_to: sets the reply_to header and responds to that queue with the outcome of the job
+  - correlation_id: sets a cerrelation ID that can be used to match jobs on the client side
 
   """
   @spec enqueue(atom, any, keyword) :: :ok | {:error, any}
@@ -192,20 +194,51 @@ defmodule TaskBunny.Job do
 
     case options[:queue] || queue_data[:name] do
       nil -> raise QueueNotFoundError, job: job
-      queue -> do_enqueue(host, queue, message, options[:delay])
+      queue -> do_enqueue(host, queue, message, map_options(options))
     end
   end
 
-  @spec do_enqueue(atom, String.t, String.t, nil|integer) :: :ok | {:error, any}
-  defp do_enqueue(host, queue, message, nil) do
-    Publisher.publish!(host, queue, message)
+  @spec do_enqueue(atom, String.t, String.t, Map.t) :: :ok | {:error, any}
+  defp do_enqueue(host, queue, message, %{expiration: _delay} = options) do
+    scheduled = Queue.scheduled_queue(queue)
+    Publisher.publish!(host, scheduled, message, Map.to_list(options))
+  end
+  defp do_enqueue(host, queue, message, options) do
+    Publisher.publish!(host, queue, message, Map.to_list(options))
   end
 
-  defp do_enqueue(host, queue, message, delay) do
-    scheduled = Queue.scheduled_queue(queue)
-    options = [
-      expiration: "#{delay}"
-    ]
-    Publisher.publish!(host, scheduled, message, options)
+  # explicitly map options to make sure we only have approved data in our
+  # messages
+  defp map_options(options) do
+    %{}
+    |> add_delay(options)
+    |> add_reply_to(options)
+    |> add_corr_id(options)
+    |> add_app_id(options)
   end
+  defp add_delay(map, options) do
+    case options[:delay] do
+      nil -> map
+      delay -> Map.merge(map, %{expiration: delay})
+    end
+  end
+  defp add_reply_to(map, options) do
+    case options[:reply_to] do
+      nil -> map
+      queue -> Map.merge(map, %{reply_to: queue})
+    end
+  end
+  defp add_corr_id(map, options) do
+    case options[:correlation_id] do
+      nil -> map
+      id -> Map.merge(map, %{correlation_id: id})
+    end
+  end
+  defp add_app_id(map, options) do
+    case options[:app_id] do
+      nil -> map
+      id -> Map.merge(map, %{app_id: id})
+    end
+  end
+
 end
