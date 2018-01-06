@@ -131,7 +131,7 @@ defmodule TaskBunny.Job do
       end
 
       @doc false
-      @spec enqueue!(any, keyword) :: :ok | {:error, any}
+      @spec enqueue!(any, keyword) :: :ok
       def enqueue!(payload, options \\ []) do
         TaskBunny.Job.enqueue!(__MODULE__, payload, options)
       end
@@ -196,7 +196,7 @@ defmodule TaskBunny.Job do
     end
   end
 
-  @spec do_enqueue(atom, String.t, String.t, nil|integer) :: :ok | {:error, any}
+  @spec do_enqueue(atom, String.t, String.t, nil|integer) :: :ok
   defp do_enqueue(host, queue, message, nil) do
     Publisher.publish!(host, queue, message)
   end
