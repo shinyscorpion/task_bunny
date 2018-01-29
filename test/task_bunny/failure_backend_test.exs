@@ -25,15 +25,17 @@ defmodule TaskBunny.FailureBackendTest do
     failed_count: 1, queue: "test_queue", pid: self(),
   }
 
-  @exception_error Map.merge(@job_error, %{
-    error_type: :exception, exception: RuntimeError.exception("Hello"),
-    stacktrace: System.stacktrace()
-  })
+  defp exception_error do
+    Map.merge(@job_error, %{
+      error_type: :exception, exception: RuntimeError.exception("Hello"),
+      stacktrace: System.stacktrace()
+    })
+  end
 
   describe "report_job_error/1" do
     test "reports to Logger backend by default" do
       assert capture_log(fn ->
-        FailureBackend.report_job_error @exception_error
+        FailureBackend.report_job_error exception_error()
       end) =~ "TaskBunny - Elixir.TestJob failed for an exception"
     end
 
@@ -41,7 +43,7 @@ defmodule TaskBunny.FailureBackendTest do
       setup_failure_backend_config([TestBackend])
 
       assert capture_io(fn ->
-        FailureBackend.report_job_error @exception_error
+        FailureBackend.report_job_error exception_error()
       end) =~ "Hello Elixir.TestJob"
     end
   end
