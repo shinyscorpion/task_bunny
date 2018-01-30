@@ -10,32 +10,32 @@ defmodule TaskBunny.SupervisorTest do
   defp mock_config do
     worker = [host: @host, queue: @queue, concurrency: 1]
 
-    :meck.new Config, [:passthrough]
-    :meck.expect Config, :hosts, fn -> [@host] end
-    :meck.expect Config, :connect_options, fn (@host) -> "amqp://localhost" end
-    :meck.expect Config, :workers, fn -> [worker] end
+    :meck.new(Config, [:passthrough])
+    :meck.expect(Config, :hosts, fn -> [@host] end)
+    :meck.expect(Config, :connect_options, fn @host -> "amqp://localhost" end)
+    :meck.expect(Config, :workers, fn -> [worker] end)
   end
 
   defp wait_for_process_died(pid) do
-    Enum.find_value 1..100, fn (_) ->
+    Enum.find_value(1..100, fn _ ->
       unless Process.alive?(pid) do
         true
       else
         :timer.sleep(10)
         false
       end
-    end
+    end)
   end
 
   defp wait_for_process_up(name) do
-    Enum.find_value 1..100, fn (_) ->
+    Enum.find_value(1..100, fn _ ->
       if Process.whereis(name) do
         true
       else
         :timer.sleep(10)
         false
       end
-    end
+    end)
   end
 
   setup do
@@ -48,9 +48,9 @@ defmodule TaskBunny.SupervisorTest do
     JobTestHelper.wait_for_connection(@host)
     Queue.declare_with_subqueues(:default, @queue)
 
-    on_exit fn ->
-      :meck.unload
-    end
+    on_exit(fn ->
+      :meck.unload()
+    end)
 
     :ok
   end
@@ -59,8 +59,8 @@ defmodule TaskBunny.SupervisorTest do
     payload = %{"hello" => "world"}
     TestJob.enqueue(payload, host: @host, queue: @queue)
 
-    JobTestHelper.wait_for_perform
-    assert List.first(JobTestHelper.performed_payloads) == payload
+    JobTestHelper.wait_for_perform()
+    assert List.first(JobTestHelper.performed_payloads()) == payload
   end
 
   describe "AMQP connection is lost" do
@@ -88,7 +88,7 @@ defmodule TaskBunny.SupervisorTest do
       TestJob.enqueue(payload, host: @host, queue: @queue)
 
       JobTestHelper.wait_for_perform()
-      assert List.first(JobTestHelper.performed_payloads) == payload
+      assert List.first(JobTestHelper.performed_payloads()) == payload
     end
   end
 

@@ -22,38 +22,36 @@ defmodule TaskBunny.JobError do
   """
 
   @type t :: %__MODULE__{
-    job: atom | nil,
-    payload: any,
-    error_type: :exception | :return_value | :timeout | :exit | nil,
-    exception: struct | nil,
-    stacktrace: list(tuple) | nil,
-    return_value: any,
-    reason: any,
-    raw_body: String.t,
-    meta: map,
-    failed_count: integer,
-    queue: String.t,
-    concurrency: integer,
-    pid: pid | nil,
-    reject: boolean
-  }
+          job: atom | nil,
+          payload: any,
+          error_type: :exception | :return_value | :timeout | :exit | nil,
+          exception: struct | nil,
+          stacktrace: list(tuple) | nil,
+          return_value: any,
+          reason: any,
+          raw_body: String.t(),
+          meta: map,
+          failed_count: integer,
+          queue: String.t(),
+          concurrency: integer,
+          pid: pid | nil,
+          reject: boolean
+        }
 
-  defstruct [
-    job: nil,
-    payload: nil,
-    error_type: nil,
-    exception: nil,
-    stacktrace: nil,
-    return_value: nil,
-    reason: nil,
-    raw_body: "",
-    meta: %{},
-    failed_count: 0,
-    queue: "",
-    concurrency: 1,
-    pid: nil,
-    reject: false
-  ]
+  defstruct job: nil,
+            payload: nil,
+            error_type: nil,
+            exception: nil,
+            stacktrace: nil,
+            return_value: nil,
+            reason: nil,
+            raw_body: "",
+            meta: %{},
+            failed_count: 0,
+            queue: "",
+            concurrency: 1,
+            pid: nil,
+            reject: false
 
   @doc """
   Take information related to the result and make some of them JSON encode safe.
@@ -71,8 +69,8 @@ defmodule TaskBunny.JobError do
       :failed_count,
       :queue
     ])
-    |> Enum.map(fn ({k, v}) -> {k, inspect(v)} end)
-    |> Map.new
+    |> Enum.map(fn {k, v} -> {k, inspect(v)} end)
+    |> Map.new()
   end
 
   @doc false

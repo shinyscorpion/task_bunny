@@ -15,7 +15,7 @@ defmodule TaskBunny.Status.WorkerTest do
     use TaskBunny.Job
 
     def perform(payload) do
-      JobTestHelper.Tracer.performed payload
+      JobTestHelper.Tracer.performed(payload)
 
       :error
     end
@@ -29,8 +29,7 @@ defmodule TaskBunny.Status.WorkerTest do
   end
 
   defp all_queues do
-    Queue.queue_with_subqueues(@queue1) ++
-    Queue.queue_with_subqueues(@queue2)
+    Queue.queue_with_subqueues(@queue1) ++ Queue.queue_with_subqueues(@queue2)
   end
 
   defp mock_config do
@@ -39,10 +38,10 @@ defmodule TaskBunny.Status.WorkerTest do
       [host: @host, queue: @queue2, concurrency: 3]
     ]
 
-    :meck.new Config, [:passthrough]
-    :meck.expect Config, :hosts, fn -> [@host] end
-    :meck.expect Config, :connect_options, fn (@host) -> "amqp://localhost" end
-    :meck.expect Config, :workers, fn -> workers end
+    :meck.new(Config, [:passthrough])
+    :meck.expect(Config, :hosts, fn -> [@host] end)
+    :meck.expect(Config, :connect_options, fn @host -> "amqp://localhost" end)
+    :meck.expect(Config, :workers, fn -> workers end)
   end
 
   setup do
@@ -57,10 +56,10 @@ defmodule TaskBunny.Status.WorkerTest do
     Queue.declare_with_subqueues(:default, @queue1)
     Queue.declare_with_subqueues(:default, @queue2)
 
-    on_exit fn ->
-      :meck.unload
-      JobTestHelper.teardown
-    end
+    on_exit(fn ->
+      :meck.unload()
+      JobTestHelper.teardown()
+    end)
 
     :ok
   end

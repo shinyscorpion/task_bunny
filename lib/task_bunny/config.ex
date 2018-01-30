@@ -12,7 +12,7 @@ defmodule TaskBunny.Config do
   @spec hosts :: [atom]
   def hosts do
     hosts_config()
-    |> Enum.map(fn ({host, _options}) -> host end)
+    |> Enum.map(fn {host, _options} -> host end)
   end
 
   @doc """
@@ -32,7 +32,7 @@ defmodule TaskBunny.Config do
   @doc """
   Returns connect options for the host.
   """
-  @spec connect_options(host :: atom) :: list | String.t
+  @spec connect_options(host :: atom) :: list | String.t()
   def connect_options(host) do
     hosts_config()[host][:connect_options] ||
       raise ConfigError, message: "Can not find host '#{host}' in config"
@@ -44,12 +44,12 @@ defmodule TaskBunny.Config do
   @spec queues :: [keyword]
   def queues do
     :task_bunny
-    |> Application.get_all_env
-    |> Enum.filter(fn ({key, _}) ->
-         is_atom(key) && Atom.to_string(key) =~ ~r/queue$/
-       end)
-    |> Enum.map(fn ({_, queue_config}) -> parse_queue_config(queue_config) end)
-    |> Enum.flat_map(fn (queue_list) -> queue_list end)
+    |> Application.get_all_env()
+    |> Enum.filter(fn {key, _} ->
+      is_atom(key) && Atom.to_string(key) =~ ~r/queue$/
+    end)
+    |> Enum.map(fn {_, queue_config} -> parse_queue_config(queue_config) end)
+    |> Enum.flat_map(fn queue_list -> queue_list end)
   end
 
   # Get queue config and returns list of queues with namespace
@@ -57,11 +57,12 @@ defmodule TaskBunny.Config do
     namespace = queue_config[:namespace] || ""
 
     queue_config[:queues]
-    |> Enum.map(fn (queue) ->
+    |> Enum.map(fn queue ->
       unless queue[:name] do
-        raise ConfigError, message: "name is missing in queue definition. #{inspect queue}"
+        raise ConfigError, message: "name is missing in queue definition. #{inspect(queue)}"
       end
-      Keyword.merge(queue, [name: namespace <> queue[:name]])
+
+      Keyword.merge(queue, name: namespace <> queue[:name])
     end)
   end
 
@@ -72,7 +73,7 @@ defmodule TaskBunny.Config do
   def workers do
     queues()
     |> Enum.filter(&worker_enabled?/1)
-    |> Enum.map(fn (queue) ->
+    |> Enum.map(fn queue ->
       concurrency =
         if queue[:worker] && queue[:worker][:concurrency] do
           queue[:worker][:concurrency]
@@ -92,7 +93,9 @@ defmodule TaskBunny.Config do
   @spec worker_enabled?(keyword) :: boolean
   defp worker_enabled?(queue) do
     case Keyword.get(queue, :worker, []) do
-      false -> false
+      false ->
+        false
+
       worker ->
         concurrency = Keyword.get(worker, :concurrency, @default_concurrency)
 
@@ -105,19 +108,19 @@ defmodule TaskBunny.Config do
   """
   @spec queue_for_job(atom) :: keyword | nil
   def queue_for_job(job) do
-    Enum.find(queues(), fn (queue) ->
+    Enum.find(queues(), fn queue ->
       match_job?(job, queue[:jobs])
     end) || default_queue()
   end
 
   @spec default_queue :: keyword | nil
   defp default_queue do
-    Enum.find(queues(), fn (queue) ->
+    Enum.find(queues(), fn queue ->
       queue[:jobs] == :default
     end)
   end
 
-  @spec match_job?(atom, atom|String.t|list) :: boolean
+  @spec match_job?(atom, atom | String.t() | list) :: boolean
   defp match_job?(job, condition)
 
   # e.g.
@@ -139,17 +142,18 @@ defmodule TaskBunny.Config do
   defp match_job?(job, pattern) when is_binary(pattern) do
     job_name = job |> Atom.to_string() |> String.trim_leading("Elixir.")
 
-    pattern = pattern
-            |> Regex.escape()
-            |> String.replace("\\*", ".*")
+    pattern =
+      pattern
+      |> Regex.escape()
+      |> String.replace("\\*", ".*")
 
-    regex = "^#{pattern}$" |> Regex.compile!
+    regex = "^#{pattern}$" |> Regex.compile!()
 
     String.match?(job_name, regex)
   end
 
   defp match_job?(job, jobs) when is_list(jobs) do
-    Enum.any?(jobs, fn (pattern) -> match_job?(job, pattern) end)
+    Enum.any?(jobs, fn pattern -> match_job?(job, pattern) end)
   end
 
   @doc """
@@ -177,7 +181,7 @@ defmodule TaskBunny.Config do
   defp disable_worker_on_env? do
     env =
       (System.get_env("TASK_BUNNY_DISABLE_WORKER") || "false")
-      |> String.downcase
+      |> String.downcase()
 
     ["1", "true", "yes"] |> Enum.member?(env)
   end

@@ -4,9 +4,9 @@ defmodule TaskBunny.ConnectionTest do
   alias TaskBunny.{Connection, Config}
 
   setup do
-    on_exit fn ->
-      :meck.unload
-    end
+    on_exit(fn ->
+      :meck.unload()
+    end)
   end
 
   describe "get_connection" do
@@ -41,8 +41,8 @@ defmodule TaskBunny.ConnectionTest do
     end
 
     test "when the server has not established a connection" do
-      :meck.new Config
-      :meck.expect Config, :connect_options, fn (:foo) -> "amqp://localhost:1111" end
+      :meck.new(Config)
+      :meck.expect(Config, :connect_options, fn :foo -> "amqp://localhost:1111" end)
 
       {:ok, pid} = Connection.start_link(:foo)
       ret = Connection.subscribe_connection(:foo, self())
@@ -53,8 +53,8 @@ defmodule TaskBunny.ConnectionTest do
       refute_receive {:connected, _}, 10
 
       # Now connection will be made and you will receive a message
-      :meck.expect Config, :connect_options, fn (:foo) -> [] end
-      send pid, :connect
+      :meck.expect(Config, :connect_options, fn :foo -> [] end)
+      send(pid, :connect)
       assert_receive {:connected, %AMQP.Connection{}}
 
       GenServer.stop(pid)
@@ -72,8 +72,8 @@ defmodule TaskBunny.ConnectionTest do
   describe "when connection is lost" do
     test "exits the process" do
       # ...so that the supervisor can restart it
-      :meck.new Config
-      :meck.expect Config, :connect_options, fn (:foo) -> [] end
+      :meck.new(Config)
+      :meck.expect(Config, :connect_options, fn :foo -> [] end)
 
       {:ok, pid} = Connection.start_link(:foo)
       Process.unlink(pid)

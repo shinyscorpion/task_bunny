@@ -9,7 +9,7 @@ defmodule TaskBunny.Initializer do
   alias TaskBunny.{Config, Queue}
 
   @doc false
-  @spec start_link(boolean) :: GenServer.on_start
+  @spec start_link(boolean) :: GenServer.on_start()
   def start_link(initialized \\ false) do
     GenServer.start_link(__MODULE__, initialized, name: __MODULE__)
   end
@@ -72,8 +72,8 @@ defmodule TaskBunny.Initializer do
   """
   @spec declare_queues_from_config() :: :ok
   def declare_queues_from_config do
-    Config.queues
-    |> Enum.each(fn (queue) -> declare_queue(queue) end)
+    Config.queues()
+    |> Enum.each(fn queue -> declare_queue(queue) end)
 
     :ok
   end
@@ -89,16 +89,16 @@ defmodule TaskBunny.Initializer do
       {:connected, conn} -> declare_queue(conn, queue)
     after
       2_000 ->
-        Logger.warn """
+        Logger.warn("""
         TaskBunny.Initializer: Failed to get connection for #{host}.
         TaskBunny can't declare the queues but carries on.
-        """
+        """)
     end
 
     :ok
   end
 
-  @spec declare_queue(AMQP.Connection.t, String.t) :: :ok
+  @spec declare_queue(AMQP.Connection.t(), String.t()) :: :ok
   defp declare_queue(conn, queue) do
     Queue.declare_with_subqueues(conn, queue)
     :ok
@@ -107,11 +107,11 @@ defmodule TaskBunny.Initializer do
       # Handles the error but we carry on...
       # It's highly likely caused by the options on queue declare don't match.
       # We carry on with error log.
-      Logger.warn """
+      Logger.warn("""
       TaskBunny.Initializer: Failed to declare queue for #{queue}.
       If you have changed the queue configuration, you have to delete the queue and create it again.
-      Error: #{inspect e}
-      """
+      Error: #{inspect(e)}
+      """)
 
       {:error, {:exit, e}}
   end

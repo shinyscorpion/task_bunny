@@ -116,8 +116,11 @@ defmodule TaskBunny.Job do
 
   require Logger
   alias TaskBunny.{Config, Queue, Job, Message, Publisher}
+
   alias TaskBunny.{
-    Publisher.PublishError, Connection.ConnectError, Job.QueueNotFoundError
+    Publisher.PublishError,
+    Connection.ConnectError,
+    Job.QueueNotFoundError
   }
 
   defmacro __using__(_options \\ []) do
@@ -152,7 +155,7 @@ defmodule TaskBunny.Job do
       @spec retry_interval(integer) :: integer
       def retry_interval(_failed_count), do: 300_000
 
-      defoverridable [timeout: 0, max_retry: 0, retry_interval: 1]
+      defoverridable timeout: 0, max_retry: 0, retry_interval: 1
     end
   end
 
@@ -175,7 +178,6 @@ defmodule TaskBunny.Job do
   @spec enqueue(atom, any, keyword) :: :ok | {:error, any}
   def enqueue(job, payload, options \\ []) do
     enqueue!(job, payload, options)
-
   rescue
     e in [ConnectError, PublishError, QueueNotFoundError] -> {:error, e}
   end
@@ -196,16 +198,18 @@ defmodule TaskBunny.Job do
     end
   end
 
-  @spec do_enqueue(atom, String.t, String.t, nil|integer) :: :ok
+  @spec do_enqueue(atom, String.t(), String.t(), nil | integer) :: :ok
   defp do_enqueue(host, queue, message, nil) do
     Publisher.publish!(host, queue, message)
   end
 
   defp do_enqueue(host, queue, message, delay) do
     scheduled = Queue.scheduled_queue(queue)
+
     options = [
       expiration: "#{delay}"
     ]
+
     Publisher.publish!(host, scheduled, message, options)
   end
 end

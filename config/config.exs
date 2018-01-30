@@ -28,10 +28,11 @@ use Mix.Config
 # here (which is why it is important to import them last).
 #
 
-config :task_bunny, hosts: [
-  default: [
-    connect_options: []
+config :task_bunny,
+  hosts: [
+    default: [
+      connect_options: []
+    ]
   ]
-]
 
-import_config "#{Mix.env}.exs"
+import_config "#{Mix.env()}.exs"

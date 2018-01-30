@@ -24,8 +24,8 @@ defmodule TaskBunny do
 
   defp register_metrics do
     if Code.ensure_loaded(Wobserver) == {:module, Wobserver} do
-      Wobserver.register :page, {"Task Bunny", :taskbunny, &Status.page/0}
-      Wobserver.register :metric, [&Status.metrics/0]
+      Wobserver.register(:page, {"Task Bunny", :taskbunny, &Status.page/0})
+      Wobserver.register(:metric, [&Status.metrics/0])
     end
   end
 end

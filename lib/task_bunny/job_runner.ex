@@ -35,16 +35,19 @@ defmodule TaskBunny.JobRunner do
     caller = self()
 
     timeout_error = {:error, JobError.handle_timeout(job, payload)}
-    timer = Process.send_after(
-      caller,
-      {:job_finished, timeout_error, message},
-      job.timeout
-    )
 
-    pid = spawn fn ->
-      send caller, {:job_finished, run_job(job, payload), message}
-      Process.cancel_timer timer
-    end
+    timer =
+      Process.send_after(
+        caller,
+        {:job_finished, timeout_error, message},
+        job.timeout
+      )
+
+    pid =
+      spawn(fn ->
+        send(caller, {:job_finished, run_job(job, payload), message})
+        Process.cancel_timer(timer)
+      end)
 
     :timer.kill_after(job.timeout + 10, pid)
   end
@@ -60,11 +63,11 @@ defmodule TaskBunny.JobRunner do
     end
   rescue
     error ->
-      Logger.debug "TaskBunny.JobRunner - Runner rescued #{inspect error}"
+      Logger.debug("TaskBunny.JobRunner - Runner rescued #{inspect(error)}")
       {:error, JobError.handle_exception(job, payload, error)}
   catch
     _, reason ->
-      Logger.debug "TaskBunny.JobRunner - Runner caught reason: #{inspect reason}"
+      Logger.debug("TaskBunny.JobRunner - Runner caught reason: #{inspect(reason)}")
       {:error, JobError.handle_exit(job, payload, reason)}
   end
 end
