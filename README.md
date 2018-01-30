@@ -39,7 +39,7 @@ Edit `mix.exs` and add `task_bunny` to your list of dependencies and application
 
 ```elixir
 def deps do
-  [{:task_bunny, "~> 0.3.0"}]
+  [{:task_bunny, "~> 0.3.1"}]
 end
 
 def application do

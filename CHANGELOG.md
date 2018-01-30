@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.1
+
+* Typespec fix. [#50](https://github.com/shinyscorpion/task_bunny/pull/50)
+* Fix errors.result payload. [#51](https://github.com/shinyscorpion/task_bunny/pull/51)
+* Update codebase with `mix format`. [#52](https://github.com/shinyscorpion/task_bunny/pull/52)
+
 ## 0.3.0
 
 * Update amqp library to 0.3.1. See [amqp's release note](https://github.com/pma/amqp/releases) for the details
