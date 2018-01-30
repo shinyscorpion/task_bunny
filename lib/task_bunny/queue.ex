@@ -26,7 +26,7 @@ defmodule TaskBunny.Queue do
   - normal_jobs.rejected: a queue that holds jobs failed and won't be retried
 
   """
-  @spec declare_with_subqueues(%AMQP.Connection{} | atom, String.t) :: {map, map, map, map}
+  @spec declare_with_subqueues(%AMQP.Connection{} | atom, String.t()) :: {map, map, map, map}
   def declare_with_subqueues(host, work_queue) when is_atom(host) do
     conn = TaskBunny.Connection.get_connection!(host)
     declare_with_subqueues(conn, work_queue)
@@ -39,8 +39,8 @@ defmodule TaskBunny.Queue do
     retry_queue = retry_queue(work_queue)
     rejected_queue = rejected_queue(work_queue)
 
-    work = declare(channel, work_queue, [durable: true])
-    rejected = declare(channel, rejected_queue, [durable: true])
+    work = declare(channel, work_queue, durable: true)
+    rejected = declare(channel, rejected_queue, durable: true)
 
     # Set main queue as dead letter exchange of retry queue.
     # It will requeue the message once message TTL is over.
@@ -51,6 +51,7 @@ defmodule TaskBunny.Queue do
       ],
       durable: true
     ]
+
     retry = declare(channel, retry_queue, retry_options)
 
     scheduled_options = [
@@ -60,6 +61,7 @@ defmodule TaskBunny.Queue do
       ],
       durable: true
     ]
+
     scheduled = declare(channel, scheduled_queue, scheduled_options)
 
     AMQP.Channel.close(channel)
@@ -70,7 +72,7 @@ defmodule TaskBunny.Queue do
   @doc """
   Deletes the queue and its subqueues.
   """
-  @spec delete_with_subqueues(%AMQP.Connection{} | atom, String.t) :: :ok
+  @spec delete_with_subqueues(%AMQP.Connection{} | atom, String.t()) :: :ok
   def delete_with_subqueues(host, work_queue) when is_atom(host) do
     conn = TaskBunny.Connection.get_connection!(host)
     delete_with_subqueues(conn, work_queue)
@@ -81,7 +83,7 @@ defmodule TaskBunny.Queue do
 
     work_queue
     |> queue_with_subqueues()
-    |> Enum.each(fn (queue) ->
+    |> Enum.each(fn queue ->
       AMQP.Queue.delete(channel, queue)
     end)
 
@@ -91,7 +93,7 @@ defmodule TaskBunny.Queue do
 
   @doc false
   # Declares a single queue with the options
-  @spec declare(%AMQP.Channel{}, String.t, keyword) :: map
+  @spec declare(%AMQP.Channel{}, String.t(), keyword) :: map
   def declare(channel, queue, options \\ []) do
     options = options ++ [durable: true]
     {:ok, state} = AMQP.Queue.declare(channel, queue, options)
@@ -102,7 +104,7 @@ defmodule TaskBunny.Queue do
   @doc """
   Returns the message count and consumer count for the given queue.
   """
-  @spec state(%AMQP.Connection{} | atom, String.t) :: map
+  @spec state(%AMQP.Connection{} | atom, String.t()) :: map
   def state(host_or_conn \\ :default, queue)
 
   def state(host, queue) when is_atom(host) do
@@ -121,7 +123,7 @@ defmodule TaskBunny.Queue do
   @doc """
   Returns a list that contains the queue and its subqueue.
   """
-  @spec queue_with_subqueues(String.t) :: [String.t]
+  @spec queue_with_subqueues(String.t()) :: [String.t()]
   def queue_with_subqueues(work_queue) do
     [work_queue] ++ subqueues(work_queue)
   end
@@ -129,7 +131,7 @@ defmodule TaskBunny.Queue do
   @doc """
   Returns all subqueues for the work queue.
   """
-  @spec subqueues(String.t) :: [String.t]
+  @spec subqueues(String.t()) :: [String.t()]
   def subqueues(work_queue) do
     [
       retry_queue(work_queue),
@@ -141,7 +143,7 @@ defmodule TaskBunny.Queue do
   @doc """
   Returns a name of retry queue.
   """
-  @spec retry_queue(String.t) :: String.t
+  @spec retry_queue(String.t()) :: String.t()
   def retry_queue(work_queue) do
     work_queue <> ".retry"
   end
@@ -149,7 +151,7 @@ defmodule TaskBunny.Queue do
   @doc """
   Returns a name of rejected queue.
   """
-  @spec rejected_queue(String.t) :: String.t
+  @spec rejected_queue(String.t()) :: String.t()
   def rejected_queue(work_queue) do
     work_queue <> ".rejected"
   end
@@ -157,7 +159,7 @@ defmodule TaskBunny.Queue do
   @doc """
   Returns a name of scheduled queue.
   """
-  @spec scheduled_queue(String.t) :: String.t
+  @spec scheduled_queue(String.t()) :: String.t()
   def scheduled_queue(work_queue) do
     work_queue <> ".scheduled"
   end

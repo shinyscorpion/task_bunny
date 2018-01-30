@@ -19,7 +19,7 @@ defmodule TaskBunny.WorkerSupervisorTest do
   end
 
   defp wait_for_worker_up(name \\ @worker_name) do
-    Enum.find_value 1..100, fn (_) ->
+    Enum.find_value(1..100, fn _ ->
       if pid = Process.whereis(name) do
         %{consuming: consuming} = GenServer.call(pid, :status)
         !is_nil(consuming)
@@ -29,20 +29,20 @@ defmodule TaskBunny.WorkerSupervisorTest do
         :timer.sleep(10)
         false
       end
-    end
+    end)
   end
 
   setup do
     clean(Queue.queue_with_subqueues(@queue))
-    JobTestHelper.setup
+    JobTestHelper.setup()
     Queue.declare_with_subqueues(:default, @queue)
 
-    :meck.new Config, [:passthrough]
-    :meck.expect Config, :workers, fn () -> workers() end
+    :meck.new(Config, [:passthrough])
+    :meck.expect(Config, :workers, fn -> workers() end)
 
-    on_exit fn ->
-      JobTestHelper.teardown
-    end
+    on_exit(fn ->
+      JobTestHelper.teardown()
+    end)
 
     :ok
   end
@@ -56,7 +56,7 @@ defmodule TaskBunny.WorkerSupervisorTest do
     TestJob.enqueue(payload, queue: @queue)
 
     JobTestHelper.wait_for_perform()
-    assert List.first(JobTestHelper.performed_payloads) == payload
+    assert List.first(JobTestHelper.performed_payloads()) == payload
 
     Supervisor.stop(pid)
   end
@@ -74,9 +74,11 @@ defmodule TaskBunny.WorkerSupervisorTest do
 
       assert JobTestHelper.performed_count() == 0
 
-      %{message_count: count} = Queue.state(
-        Connection.get_connection!(), @queue
-      )
+      %{message_count: count} =
+        Queue.state(
+          Connection.get_connection!(),
+          @queue
+        )
 
       assert count == 1
     end
@@ -118,9 +120,11 @@ defmodule TaskBunny.WorkerSupervisorTest do
 
       :timer.sleep(1_100)
 
-      %{message_count: count} = Queue.state(
-        Connection.get_connection!(), @queue
-      )
+      %{message_count: count} =
+        Queue.state(
+          Connection.get_connection!(),
+          @queue
+        )
 
       # Make sure ack is sent and message was removed.
       assert count == 0

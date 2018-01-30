@@ -14,7 +14,7 @@ defmodule TaskBunny.Message do
   @doc """
   Encode message body in JSON with job and argument.
   """
-  @spec encode(atom, any) :: {:ok, String.t}
+  @spec encode(atom, any) :: {:ok, String.t()}
   def encode(job, payload) do
     data = message_data(job, payload)
     Poison.encode(data, pretty: true)
@@ -23,7 +23,7 @@ defmodule TaskBunny.Message do
   @doc """
   Similar to encode/2 but raises an exception on error.
   """
-  @spec encode!(atom, any) :: String.t
+  @spec encode!(atom, any) :: String.t()
   def encode!(job, payload) do
     data = message_data(job, payload)
     Poison.encode!(data, pretty: true)
@@ -41,16 +41,18 @@ defmodule TaskBunny.Message do
   @doc """
   Decode message body in JSON to map data.
   """
-  @spec decode(String.t) :: {:ok, map} | {:error, any}
+  @spec decode(String.t()) :: {:ok, map} | {:error, any}
   def decode(message) do
     case Poison.decode(message) do
       {:ok, decoded} ->
         job = decode_job(decoded["job"])
+
         if job && Code.ensure_loaded?(job) do
           {:ok, %{decoded | "job" => job}}
         else
           {:error, :job_not_loaded}
         end
+
       error ->
         {:error, {:poison_decode_error, error}}
     end
@@ -61,31 +63,35 @@ defmodule TaskBunny.Message do
   @doc """
   Similar to decode/1 but raises an exception on error.
   """
-  @spec decode!(String.t) :: map
+  @spec decode!(String.t()) :: map
   def decode!(message) do
     case decode(message) do
-      {:ok, decoded} -> decoded
+      {:ok, decoded} ->
+        decoded
+
       {:error, {error_type, error}} ->
         raise DecodeError, type: error_type, body: message, error: error
+
       {:error, error_type} ->
         raise DecodeError, type: error_type, body: message
     end
   end
 
-  @spec encode_job(atom) :: String.t
+  @spec encode_job(atom) :: String.t()
   defp encode_job(job) do
     job
-    |> Atom.to_string
+    |> Atom.to_string()
     |> String.trim_leading("Elixir.")
   end
 
-  @spec decode_job(String.t) :: atom | nil
+  @spec decode_job(String.t()) :: atom | nil
   defp decode_job(job_name) do
-    job_name = if job_name =~ ~r/^Elixir\./ do
-      job_name
-    else
-      "Elixir.#{job_name}"
-    end
+    job_name =
+      if job_name =~ ~r/^Elixir\./ do
+        job_name
+      else
+        "Elixir.#{job_name}"
+      end
 
     try do
       String.to_existing_atom(job_name)
@@ -97,7 +103,7 @@ defmodule TaskBunny.Message do
   @doc """
   Add an error log to message body.
   """
-  @spec add_error_log(String.t|map, JobError.t) :: String.t | map
+  @spec add_error_log(String.t() | map, JobError.t()) :: String.t() | map
   def add_error_log(message, error) when is_map(message) do
     error = %{
       "result" => JobError.get_result_info(error),
@@ -105,6 +111,7 @@ defmodule TaskBunny.Message do
       "host" => host(),
       "pid" => inspect(self())
     }
+
     errors = (message["errors"] || []) |> List.insert_at(-1, error)
     Map.merge(message, %{"errors" => errors})
   end
@@ -124,7 +131,7 @@ defmodule TaskBunny.Message do
   @doc """
   Returns a number of errors occurred for the message.
   """
-  @spec failed_count(String.t|map) :: integer
+  @spec failed_count(String.t() | map) :: integer
   def failed_count(message) when is_map(message) do
     case message["errors"] do
       nil -> 0

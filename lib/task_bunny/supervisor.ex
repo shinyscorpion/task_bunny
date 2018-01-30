@@ -21,28 +21,31 @@ defmodule TaskBunny.Supervisor do
 
   @doc false
   @spec init(list()) ::
-    {:ok, {:supervisor.sup_flags, [Supervisor.Spec.spec]}} |
-    :ignore
+          {:ok, {:supervisor.sup_flags(), [Supervisor.Spec.spec()]}}
+          | :ignore
   def init([wsv_name]) do
     # Add Connection severs for each hosts
-    connections = Enum.map Config.hosts(), fn (host) ->
-      worker(Connection, [host], id: make_ref())
-    end
+    connections =
+      Enum.map(Config.hosts(), fn host ->
+        worker(Connection, [host], id: make_ref())
+      end)
 
     children =
-      case Initializer.alive? do
+      case Initializer.alive?() do
         true -> connections
         false -> connections ++ [worker(Initializer, [false])]
       end
 
     # Define workers and child supervisors to be supervised
     children =
-      case {Config.auto_start?, Config.disable_worker?} do
+      case {Config.auto_start?(), Config.disable_worker?()} do
         {true, false} ->
           children ++ [supervisor(WorkerSupervisor, [wsv_name])]
+
         {true, true} ->
           # Only connections
           children
+
         _ ->
           []
       end

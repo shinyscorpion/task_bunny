@@ -9,25 +9,28 @@ defmodule TaskBunny.Mixfile do
       app: :task_bunny,
       version: @version,
       elixir: "~> 1.4",
-      elixirc_paths: elixirc_paths(Mix.env),
-      build_embedded: Mix.env == :prod,
-      start_permanent: Mix.env == :prod,
+      elixirc_paths: elixirc_paths(Mix.env()),
+      build_embedded: Mix.env() == :prod,
+      start_permanent: Mix.env() == :prod,
       deps: deps(),
       name: "TaskBunny",
       test_coverage: [tool: ExCoveralls],
       preferred_cli_env: [
-        "coveralls": :test, "coveralls.detail": :test,
-        "coveralls.post": :test, "coveralls.html": :test
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test
       ],
       dialyzer: [ignore_warnings: "dialyzer.ignore-warnings"],
       docs: [
-        extras: ["README.md"], main: "readme",
+        extras: ["README.md"],
+        main: "readme",
         source_ref: "v#{@version}",
         source_url: "https://github.com/shinyscorpion/task_bunny"
       ],
       description: @description,
       package: package(),
-      xref: [exclude: [Wobserver]],
+      xref: [exclude: [Wobserver]]
     ]
   end
 
@@ -35,9 +38,15 @@ defmodule TaskBunny.Mixfile do
     [
       name: :task_bunny,
       files: [
-        "mix.exs","README.md","LICENSE.md", # Project files
-        "lib/task_bunny.ex", "lib/task_bunny", # TaskBunny
-        "lib/mix/tasks/task_bunny.queue.reset.ex", # Tasks
+        # Project files
+        "mix.exs",
+        "README.md",
+        "LICENSE.md",
+        # TaskBunny
+        "lib/task_bunny.ex",
+        "lib/task_bunny",
+        # Tasks
+        "lib/mix/tasks/task_bunny.queue.reset.ex"
       ],
       maintainers: [
         "Elliott Hilaire",

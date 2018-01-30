@@ -19,27 +19,32 @@ defmodule TaskBunny.Connection.ConnectError do
 
   def exception(_opts = [type: type, host: host]) do
     title = "Failed to get a connection to host '#{host}'."
-    detail = case type do
-      :invalid_host ->
-        "The host is not defined in config"
-      :no_connection_process ->
-        """
-        No process running for the host connection.
 
-        - Make sure supervisor process is up running.
-        - You might try to get connection before the process is ready.
-        """
-      :not_connected ->
-        """
-        The connection is not available.
+    detail =
+      case type do
+        :invalid_host ->
+          "The host is not defined in config"
 
-        - Check if RabbitMQ host is up running.
-        - Make sure you can connect to RabbitMQ from the application host.
-        - You might try to get connection before process is ready.
-        """
-      fallback ->
-        "#{fallback}"
-    end
+        :no_connection_process ->
+          """
+          No process running for the host connection.
+
+          - Make sure supervisor process is up running.
+          - You might try to get connection before the process is ready.
+          """
+
+        :not_connected ->
+          """
+          The connection is not available.
+
+          - Check if RabbitMQ host is up running.
+          - Make sure you can connect to RabbitMQ from the application host.
+          - You might try to get connection before process is ready.
+          """
+
+        fallback ->
+          "#{fallback}"
+      end
 
     message = "#{title}\n#{detail}"
     %__MODULE__{message: message, type: type}
@@ -69,16 +74,21 @@ defmodule TaskBunny.Message.DecodeError do
 
   def exception(opts) do
     title = "Failed to decode the message."
-    detail = case opts[:type] do
-      :job_not_loaded ->
-        "Job is not valid Elixir module"
-      :poison_decode_error ->
-        "Failed to decode the message in JSON. error=#{inspect opts[:error]}"
-      :decode_error ->
-        "Failed to decode the message. error=#{inspect opts[:error]}"
-      fallback ->
-        "#{fallback}"
-    end
+
+    detail =
+      case opts[:type] do
+        :job_not_loaded ->
+          "Job is not valid Elixir module"
+
+        :poison_decode_error ->
+          "Failed to decode the message in JSON. error=#{inspect(opts[:error])}"
+
+        :decode_error ->
+          "Failed to decode the message. error=#{inspect(opts[:error])}"
+
+        fallback ->
+          "#{fallback}"
+      end
 
     message = "#{title}\n#{detail}\nmessage body=#{opts[:body]}"
     %__MODULE__{message: message}
@@ -93,7 +103,7 @@ defmodule TaskBunny.Publisher.PublishError do
 
   def exception(inner_error: inner_error) do
     title = "Failed to publish the message."
-    detail = "error=#{inspect inner_error}"
+    detail = "error=#{inspect(inner_error)}"
 
     message = "#{title}\n#{detail}"
     %__MODULE__{message: message, inner_error: inner_error}

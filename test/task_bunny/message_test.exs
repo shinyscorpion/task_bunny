@@ -31,7 +31,9 @@ defmodule TaskBunny.MessageTest do
     end
 
     test "decode invalid atom" do
-      message = "{\"payload\": \"\",\"job\":\"Hello.Message\",\"created_at\":\"2017-02-17T10:14:13.149734Z\"}"
+      message =
+        "{\"payload\": \"\",\"job\":\"Hello.Message\",\"created_at\":\"2017-02-17T10:14:13.149734Z\"}"
+
       assert {:error, :job_not_loaded} == Message.decode(message)
     end
   end
@@ -40,6 +42,7 @@ defmodule TaskBunny.MessageTest do
     @tag timeout: 1000
     test "adds error information to the message" do
       message = Message.encode!(NameJob, %{"name" => "Joe"})
+
       error = %JobError{
         error_type: :return_value,
         return_value: {:error, :test_error},
@@ -47,6 +50,7 @@ defmodule TaskBunny.MessageTest do
         stacktrace: System.stacktrace(),
         raw_body: "abcdefg"
       }
+
       new_message = Message.add_error_log(message, error)
       {:ok, %{"errors" => [added | _]}} = Message.decode(new_message)
 

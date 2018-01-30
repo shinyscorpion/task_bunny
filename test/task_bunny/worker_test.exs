@@ -17,12 +17,12 @@ defmodule TaskBunny.WorkerTest do
 
   setup do
     clean(all_queues())
-    JobTestHelper.setup
+    JobTestHelper.setup()
     Queue.declare_with_subqueues(:default, @queue)
 
-    on_exit fn ->
-      JobTestHelper.teardown
-    end
+    on_exit(fn ->
+      JobTestHelper.teardown()
+    end)
 
     :ok
   end
@@ -35,9 +35,9 @@ defmodule TaskBunny.WorkerTest do
       TestJob.enqueue(payload, queue: @queue)
       JobTestHelper.wait_for_perform()
 
-      assert List.first(JobTestHelper.performed_payloads) == payload
+      assert List.first(JobTestHelper.performed_payloads()) == payload
 
-      GenServer.stop worker
+      GenServer.stop(worker)
     end
 
     test "consumes the message" do
@@ -57,7 +57,7 @@ defmodule TaskBunny.WorkerTest do
       assert retry_count == 0
       assert rejected_count == 0
 
-      GenServer.stop worker
+      GenServer.stop(worker)
     end
 
     test "concurrency" do
@@ -65,17 +65,17 @@ defmodule TaskBunny.WorkerTest do
       payload = %{"sleep" => 10_000}
 
       # Run 10 jobs and each would take 10 seconds to finish
-      Enum.each 1..10, fn (_) ->
+      Enum.each(1..10, fn _ ->
         TestJob.enqueue(payload, queue: @queue)
-      end
+      end)
 
       # This waits for up to 1 second
-      assert JobTestHelper.wait_for_perform 5
+      assert JobTestHelper.wait_for_perform(5)
 
       # Make sure more than specified number of jobs were not invoked
-      assert JobTestHelper.performed_count == 5
+      assert JobTestHelper.performed_count() == 5
 
-      GenServer.stop worker
+      GenServer.stop(worker)
     end
   end
 
@@ -102,7 +102,7 @@ defmodule TaskBunny.WorkerTest do
 
     def reset_test_job_retry_interval(interval) do
       :meck.new(JobTestHelper.RetryInterval, [:passthrough])
-      :meck.expect(JobTestHelper.RetryInterval, :interval, fn () -> interval end)
+      :meck.expect(JobTestHelper.RetryInterval, :interval, fn -> interval end)
     end
 
     test "retries max_retry times then sends to rejected queue" do
@@ -117,7 +117,7 @@ defmodule TaskBunny.WorkerTest do
       JobTestHelper.wait_for_perform(11)
 
       # 1 normal + 10 retries = 11
-      assert JobTestHelper.performed_count == 11
+      assert JobTestHelper.performed_count() == 11
 
       conn = Connection.get_connection!()
       %{message_count: main_count} = Queue.state(conn, main)
@@ -128,7 +128,7 @@ defmodule TaskBunny.WorkerTest do
       assert retry_count == 0
       assert rejected_count == 1
 
-      GenServer.stop worker
+      GenServer.stop(worker)
     end
   end
 
@@ -142,7 +142,7 @@ defmodule TaskBunny.WorkerTest do
       TestJob.enqueue(payload, queue: @queue, delay: 500)
       :timer.sleep(100)
 
-      assert JobTestHelper.performed_count == 0
+      assert JobTestHelper.performed_count() == 0
 
       conn = Connection.get_connection!()
       %{message_count: main_count} = Queue.state(conn, main)
@@ -153,7 +153,7 @@ defmodule TaskBunny.WorkerTest do
 
       JobTestHelper.wait_for_perform(1)
 
-      assert JobTestHelper.performed_count == 1
+      assert JobTestHelper.performed_count() == 1
 
       %{message_count: main_count} = Queue.state(conn, main)
       %{message_count: scheduled_count} = Queue.state(conn, scheduled)
@@ -161,34 +161,33 @@ defmodule TaskBunny.WorkerTest do
       assert main_count == 0
       assert scheduled_count == 0
 
-      GenServer.stop worker
+      GenServer.stop(worker)
     end
-
   end
 
   test "invalid payload" do
-    :meck.expect TaskBunny.Consumer, :ack, fn (_, _, _) -> nil end
+    :meck.expect(TaskBunny.Consumer, :ack, fn _, _, _ -> nil end)
 
     assert Worker.handle_info({:basic_deliver, "}", %{}}, %{
-      host: :default,
-      queue: @queue,
-      concurrency: 1,
-      channel: nil,
-      runners: 0,
-      job_stats: %{
-        failed: 0,
-        succeeded: 0,
-        rejected: 0,
-      },
-    }) == {:noreply,
-      %{
-        host: :default,
-        queue: @queue,
-        concurrency: 1,
-        channel: nil,
-        runners: 0,
-        job_stats: %{failed: 0, rejected: 1, succeeded: 0},
-      }
-    }
+             host: :default,
+             queue: @queue,
+             concurrency: 1,
+             channel: nil,
+             runners: 0,
+             job_stats: %{
+               failed: 0,
+               succeeded: 0,
+               rejected: 0
+             }
+           }) ==
+             {:noreply,
+              %{
+                host: :default,
+                queue: @queue,
+                concurrency: 1,
+                channel: nil,
+                runners: 0,
+                job_stats: %{failed: 0, rejected: 1, succeeded: 0}
+              }}
   end
 end

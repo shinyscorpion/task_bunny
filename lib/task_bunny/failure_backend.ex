@@ -36,7 +36,7 @@ defmodule TaskBunny.FailureBackend do
   @doc """
   Callback to report a job error.
   """
-  @callback report_job_error(JobError.t) :: any
+  @callback report_job_error(JobError.t()) :: any
 
   defmacro __using__(_options \\ []) do
     quote do
@@ -45,9 +45,9 @@ defmodule TaskBunny.FailureBackend do
   end
 
   @doc false
-  @spec report_job_error(JobError.t) :: :ok
+  @spec report_job_error(JobError.t()) :: :ok
   def report_job_error(job_error = %JobError{}) do
     Config.failure_backend()
-    |> Enum.each(&(&1.report_job_error(job_error)))
+    |> Enum.each(& &1.report_job_error(job_error))
   end
 end

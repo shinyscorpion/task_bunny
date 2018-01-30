@@ -13,10 +13,10 @@ defmodule TaskBunny.StatusTest do
   defp mock_config do
     worker = [host: @host, queue: @queue, concurrency: 1]
 
-    :meck.new Config, [:passthrough]
-    :meck.expect Config, :hosts, fn -> [@host] end
-    :meck.expect Config, :connect_options, fn (@host) -> "amqp://localhost" end
-    :meck.expect Config, :workers, fn -> [worker] end
+    :meck.new(Config, [:passthrough])
+    :meck.expect(Config, :hosts, fn -> [@host] end)
+    :meck.expect(Config, :connect_options, fn @host -> "amqp://localhost" end)
+    :meck.expect(Config, :workers, fn -> [worker] end)
   end
 
   setup do
@@ -24,12 +24,12 @@ defmodule TaskBunny.StatusTest do
     Queue.declare_with_subqueues(:default, @queue)
 
     mock_config()
-    JobTestHelper.setup
+    JobTestHelper.setup()
     TaskBunny.Supervisor.start_link(@supervisor, @worker_supervisor)
 
-    on_exit fn ->
-      :meck.unload
-    end
+    on_exit(fn ->
+      :meck.unload()
+    end)
 
     :ok
   end

@@ -16,18 +16,19 @@ defmodule Mix.Tasks.TaskBunny.Queue.Reset do
   @spec run(list) :: any
   def run(_args) do
     Config.disable_auto_start()
-    Mix.Task.run "app.start"
+    Mix.Task.run("app.start")
 
-    _connections = Enum.map Config.hosts(), fn (host) ->
-      Connection.start_link(host)
-    end
+    _connections =
+      Enum.map(Config.hosts(), fn host ->
+        Connection.start_link(host)
+      end)
 
-    Config.queues
-    |> Enum.each(fn (queue) -> reset_queue(queue) end)
+    Config.queues()
+    |> Enum.each(fn queue -> reset_queue(queue) end)
   end
 
   defp reset_queue(queue) do
-    Mix.shell.info "Resetting queues for #{inspect queue}"
+    Mix.shell().info("Resetting queues for #{inspect(queue)}")
     host = queue[:host] || :default
 
     Queue.delete_with_subqueues(host, queue[:name])

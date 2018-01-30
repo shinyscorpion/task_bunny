@@ -19,16 +19,16 @@ defmodule TaskBunny.WorkerSupervisor do
   end
 
   @doc false
-  @spec init(list) :: {:ok, {:supervisor.sup_flags, [Supervisor.Spec.spec]}} | :ignore
+  @spec init(list) :: {:ok, {:supervisor.sup_flags(), [Supervisor.Spec.spec()]}} | :ignore
   def init([]) do
     Config.workers()
-    |> Enum.map(fn (config) ->
-         worker(
-          Worker,
-          [config],
-          id: "task_bunny.worker.#{config[:queue]}"
-        )
-       end)
+    |> Enum.map(fn config ->
+      worker(
+        Worker,
+        [config],
+        id: "task_bunny.worker.#{config[:queue]}"
+      )
+    end)
     |> supervise(strategy: :one_for_one)
   end
 
@@ -40,18 +40,19 @@ defmodule TaskBunny.WorkerSupervisor do
   The worker and worker supervisor processes will continue existing but won't consume any new messages.
   To resume it, terminate the worker supervisor then the main supervisor will start new processes.
   """
-  @spec graceful_halt(pid|nil, integer) :: :ok | {:error, any}
+  @spec graceful_halt(pid | nil, integer) :: :ok | {:error, any}
 
   # When pid is not found. Assume it's already gone.
   def graceful_halt(nil, _timeout), do: :ok
 
   def graceful_halt(pid, timeout) do
-    workers = pid
-              |> Supervisor.which_children()
-              |> Enum.map(fn ({_, child, _, _}) -> child end)
-              |> Enum.filter(fn (child) -> is_pid(child) end)
+    workers =
+      pid
+      |> Supervisor.which_children()
+      |> Enum.map(fn {_, child, _, _} -> child end)
+      |> Enum.filter(fn child -> is_pid(child) end)
 
-    Enum.each(workers, fn (worker) ->
+    Enum.each(workers, fn worker ->
       Worker.stop_consumer(worker)
     end)
 
@@ -71,7 +72,7 @@ defmodule TaskBunny.WorkerSupervisor do
   end
 
   defp wait_for_all_jobs_done(workers, timeout) do
-    Enum.find_value(0..round(timeout / 50), fn(_) ->
+    Enum.find_value(0..round(timeout / 50), fn _ ->
       if workers_running?(workers) do
         :timer.sleep(50)
         false
@@ -83,7 +84,7 @@ defmodule TaskBunny.WorkerSupervisor do
 
   defp workers_running?(workers) do
     workers
-    |> Enum.any?(fn (pid) -> worker_running?(pid) end)
+    |> Enum.any?(fn pid -> worker_running?(pid) end)
   end
 
   defp worker_running?(pid) when is_pid(pid) do
