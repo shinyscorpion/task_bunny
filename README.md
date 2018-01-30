@@ -30,7 +30,7 @@ However you might want to try out TaskBunny in the following cases:
 
 ### 1. Check requirements
 
-- Elixir 1.4
+- Elixir 1.4+
 - RabbitMQ 3.6.0 or greater
 
 ### 2. Install TaskBunny
