@@ -1,6 +1,6 @@
 defmodule TaskBunny.MessageTest do
   use ExUnit.Case, async: true
-  alias TaskBunny.Message
+  alias TaskBunny.{Message, JobError}
 
   defmodule NameJob do
     use TaskBunny.Job
@@ -40,11 +40,19 @@ defmodule TaskBunny.MessageTest do
     @tag timeout: 1000
     test "adds error information to the message" do
       message = Message.encode!(NameJob, %{"name" => "Joe"})
-      error = {:error, "HTTP Request error"}
+      error = %JobError{
+        error_type: :return_value,
+        return_value: {:error, :test_error},
+        failed_count: 0,
+        stacktrace: System.stacktrace(),
+        raw_body: "abcdefg"
+      }
       new_message = Message.add_error_log(message, error)
       {:ok, %{"errors" => [added | _]}} = Message.decode(new_message)
 
-      assert added["result"] == inspect(error)
+      assert added["result"]["error_type"] == ":return_value"
+      assert added["result"]["return_value"] == "{:error, :test_error}"
+      refute added["result"]["raw_body"]
     end
   end
 end

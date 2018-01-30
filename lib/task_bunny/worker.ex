@@ -215,10 +215,9 @@ defmodule TaskBunny.Worker do
     {:ok, decoded} = Message.decode(body)
     failed_count = Message.failed_count(decoded) + 1
     job = decoded["job"]
-    new_body = Message.add_error_log(body, job_error)
-
-    job_error
-    |> Map.merge(%{
+    job_error = Map.merge(
+      job_error,
+      %{
          raw_body: body,
          meta: meta,
          failed_count: failed_count,
@@ -226,8 +225,11 @@ defmodule TaskBunny.Worker do
          concurrency: state.concurrency,
          pid: self(),
          reject: failed_count > job.max_retry()
-       })
-    |> FailureBackend.report_job_error()
+       }
+    )
+    new_body = Message.add_error_log(body, job_error)
+
+    FailureBackend.report_job_error(job_error)
 
     if failed_count <= job.max_retry() do
       retry_message(job, state, new_body, meta, failed_count)

@@ -55,6 +55,26 @@ defmodule TaskBunny.JobError do
     reject: false
   ]
 
+  @doc """
+  Take information related to the result and make some of them JSON encode safe.
+
+  Since raw body can be bigger as you retry, you do not want to put the information.
+  """
+  @spec get_result_info(t) :: map()
+  def get_result_info(job_error) do
+    Map.take(job_error, [
+      :error_type,
+      :exception,
+      :stacktrace,
+      :return_value,
+      :reason,
+      :failed_count,
+      :queue
+    ])
+    |> Enum.map(fn ({k, v}) -> {k, inspect(v)} end)
+    |> Map.new
+  end
+
   @doc false
   @spec handle_exception(atom, any, struct) :: t
   def handle_exception(job, payload, exception) do
