@@ -9,6 +9,7 @@ defmodule TaskBunny.Message do
   this module will help.
   """
   alias TaskBunny.Message.DecodeError
+  alias TaskBunny.JobError
 
   @doc """
   Encode message body in JSON with job and argument.
@@ -96,10 +97,10 @@ defmodule TaskBunny.Message do
   @doc """
   Add an error log to message body.
   """
-  @spec add_error_log(String.t|map, any) :: String.t | map
+  @spec add_error_log(String.t|map, JobError.t) :: String.t | map
   def add_error_log(message, error) when is_map(message) do
     error = %{
-      "result" => inspect(error),
+      "result" => JobError.get_result_info(error),
       "failed_at" => DateTime.utc_now(),
       "host" => host(),
       "pid" => inspect(self())
