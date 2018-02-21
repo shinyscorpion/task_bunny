@@ -15,10 +15,10 @@ defmodule TaskBunny.JobTestHelper do
 
       if payload["sleep"], do: :timer.sleep(payload["sleep"])
 
-      if payload["fail"] do
-        :error
-      else
-        :ok
+      cond do
+        payload["reject"] -> :reject
+        payload["fail"] -> :error
+        true -> :ok
       end
     end
 
