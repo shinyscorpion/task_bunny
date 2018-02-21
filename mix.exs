@@ -53,7 +53,8 @@ defmodule TaskBunny.Mixfile do
         "Francesco Grammatico",
         "Ian Luites",
         "Ricardo Perez",
-        "Tatsuya Ono"
+        "Tatsuya Ono",
+        "Kenneth Lee"
       ],
       licenses: ["MIT"],
       links: %{"Github" => "https://github.com/shinyscorpion/task_bunny"}
