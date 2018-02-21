@@ -130,6 +130,26 @@ defmodule TaskBunny.WorkerTest do
 
       GenServer.stop(worker)
     end
+
+    test "sends to rejected queue if return_value is :reject" do
+      worker = start_worker()
+      [main, retry, rejected, _scheduled] = all_queues()
+      payload = %{"reject" => true}
+
+      TestJob.enqueue(payload, queue: @queue)
+      JobTestHelper.wait_for_perform()
+
+      conn = Connection.get_connection!()
+      %{message_count: main_count} = Queue.state(conn, main)
+      %{message_count: retry_count} = Queue.state(conn, retry)
+      %{message_count: rejected_count} = Queue.state(conn, rejected)
+
+      assert main_count == 0
+      assert retry_count == 0
+      assert rejected_count == 1
+
+      GenServer.stop(worker)
+    end
   end
 
   describe "delay" do

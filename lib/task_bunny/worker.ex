@@ -243,14 +243,18 @@ defmodule TaskBunny.Worker do
 
     FailureBackend.report_job_error(job_error)
 
-    if failed_count <= job.max_retry() do
-      retry_message(job, state, new_body, meta, failed_count)
-      {:noreply, update_job_stats(state, :failed)}
-    else
+    if reject?(job, failed_count, job_error) do
       reject_message(state, new_body, meta)
       {:noreply, update_job_stats(state, :rejected)}
+    else
+      retry_message(job, state, new_body, meta, failed_count)
+      {:noreply, update_job_stats(state, :failed)}
     end
   end
+
+  defp reject?(_, _, %{return_value: :reject}), do: true
+  defp reject?(_, _, %{return_value: {:reject, _}}), do: true
+  defp reject?(job, failed_count, _), do: failed_count > job.max_retry()
 
   @spec retry_message(atom, Worker.t(), any, any, integer) :: :ok
   defp retry_message(job, state, body, meta, failed_count) do
