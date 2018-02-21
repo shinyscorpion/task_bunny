@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.2
+
+* Reject without retry. [#54](https://github.com/shinyscorpion/task_bunny/pull/54)
+
 ## 0.3.1
 
 * Typespec fix. [#50](https://github.com/shinyscorpion/task_bunny/pull/50)
