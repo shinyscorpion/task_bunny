@@ -330,6 +330,12 @@ You can also change the retry_interval by the number of failures.
 
 If a job fails more than `max_retry` times, the payload is sent to `jobs.[job_name].rejected` queue.
 
+#### Immediately Reject
+
+TaskBunny can mark a job as rejected without retrying when `perform` returns `:reject` or `{:reject, something}`
+
+In this case any `max_retry` config is ignored.
+
 #### Timeout
 
 By default, jobs timeout after 2 minutes.
