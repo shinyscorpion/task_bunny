@@ -141,6 +141,7 @@ defmodule TaskBunny.Job do
 
       # Returns timeout (default 2 minutes).
       # Override the method to change the timeout.
+      # If timeout is not applicable then override the method with :infinity.
       @doc false
       @spec timeout() :: integer
       def timeout, do: 120_000

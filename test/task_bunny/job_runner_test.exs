@@ -22,6 +22,16 @@ defmodule TaskBunny.JobRunnerTest do
       end
     end
 
+    defmodule InfinityJob do
+      use TaskBunny.Job
+
+      def timeout, do: :infinity
+
+      def perform(_payload) do
+        :ok
+      end
+    end
+
     defmodule NormalJob do
       use TaskBunny.Job
 
@@ -84,6 +94,12 @@ defmodule TaskBunny.JobRunnerTest do
       JobRunner.invoke(SampleJobs.TimeoutJob, nil, nil)
 
       assert_receive {:job_finished, {:error, _}, nil}, 1000
+    end
+
+    test "handles job with infinity timeout" do
+      JobRunner.invoke(SampleJobs.InfinityJob, nil, nil)
+      
+      assert_receive {:job_finished, :ok, _}
     end
   end
 end

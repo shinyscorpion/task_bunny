@@ -27,29 +27,39 @@ defmodule TaskBunny.JobRunner do
   @doc ~S"""
   Invokes the given job with the given payload.
 
-  The job is run in a seperate process, which is killed after the job.timeout if the job has not finished yet.
+  The job run in a seperate process. If the job.timeout is equals to :infinity 
+  then the process will run with no concerns about timeouts. 
+  Otherwise it will be killed after the job.timeout if the job has not finished yet.
   A :error message is send to the :job_finished of the caller if the job times out.
   """
   @spec invoke(atom, any, {any, any}) :: {:ok | :error, any}
   def invoke(job, payload, message) do
     caller = self()
 
-    timeout_error = {:error, JobError.handle_timeout(job, payload)}
+    case job.timeout do
+      :infinity ->
+        spawn(fn ->
+          send(caller, {:job_finished, run_job(job, payload), message})
+        end)
 
-    timer =
-      Process.send_after(
-        caller,
-        {:job_finished, timeout_error, message},
-        job.timeout
-      )
+      timeout ->
+        timeout_error = {:error, JobError.handle_timeout(job, payload)}
 
-    pid =
-      spawn(fn ->
-        send(caller, {:job_finished, run_job(job, payload), message})
-        Process.cancel_timer(timer)
-      end)
+        timer =
+          Process.send_after(
+            caller,
+            {:job_finished, timeout_error, message},
+            timeout
+          )
 
-    :timer.kill_after(job.timeout + 10, pid)
+        pid =
+          spawn(fn ->
+            send(caller, {:job_finished, run_job(job, payload), message})
+            Process.cancel_timer(timer)
+          end)
+
+        :timer.kill_after(job.timeout + 10, pid)
+    end
   end
 
   # Performs a job with the given payload.
