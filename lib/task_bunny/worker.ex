@@ -245,6 +245,7 @@ defmodule TaskBunny.Worker do
 
     if reject?(job, failed_count, job_error) do
       reject_message(state, new_body, meta)
+      reject_callback(job, new_body)
       {:noreply, update_job_stats(state, :rejected)}
     else
       retry_message(job, state, new_body, meta, failed_count)
@@ -278,6 +279,8 @@ defmodule TaskBunny.Worker do
     Consumer.ack(state.channel, meta, true)
     :ok
   end
+
+  defp reject_callback(job, body), do: job.on_reject(body)
 
   defp log_msg(message, state, additional \\ nil) do
     message =

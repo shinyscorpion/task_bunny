@@ -23,6 +23,18 @@ defmodule TaskBunny.JobTestHelper do
     end
 
     def retry_interval(_), do: RetryInterval.interval()
+
+    def on_reject(body) do
+      ppid =
+        body
+        |> Poison.decode!()
+        |> get_in(["payload", "ppid"])
+
+      ppid &&
+        ppid |> Base.decode64!() |> :erlang.binary_to_term() |> send(:on_reject_callback_called)
+
+      :ok
+    end
   end
 
   def wait_for_perform(number \\ 1) do
