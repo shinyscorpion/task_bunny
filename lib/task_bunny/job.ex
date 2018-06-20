@@ -88,6 +88,13 @@ defmodule TaskBunny.Job do
   @callback perform(any) :: :ok | {:ok, any} | {:error, term}
 
   @doc """
+  Callback executed when a process gets rejected.
+
+  It receives in input the whole error trace structure plus the orginal payload for inspection and recovery actions.
+  """
+  @callback on_reject(any) :: :ok
+
+  @doc """
   Callback for the timeout in milliseconds for a job execution.
 
   Default value is 120_000 = 2 minutes.
@@ -155,7 +162,11 @@ defmodule TaskBunny.Job do
       @spec retry_interval(integer) :: integer
       def retry_interval(_failed_count), do: 300_000
 
-      defoverridable timeout: 0, max_retry: 0, retry_interval: 1
+      @doc false
+      @spec on_reject(any) :: :ok
+      def on_reject(_body), do: :ok
+
+      defoverridable timeout: 0, max_retry: 0, retry_interval: 1, on_reject: 1
     end
   end
 

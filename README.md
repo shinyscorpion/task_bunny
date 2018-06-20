@@ -330,6 +330,25 @@ You can also change the retry_interval by the number of failures.
 
 If a job fails more than `max_retry` times, the payload is sent to `jobs.[job_name].rejected` queue.
 
+When a job gets rejected the `on_reject` callback is called. By default it does nothing but you can override it.
+It's useful to execute recovery actions when a job fails (like sending an email to a customer for instance)
+
+It receives the body containing the payload of the rejected job plus the full error trace. It returns :ok
+
+```elixir
+defmodule FlakyJob do
+  use TaskBunny.Job
+  require Logger
+
+  def on_reject(_body) do
+     ...
+
+     :ok
+  end
+  ...
+end
+```
+
 #### Immediately Reject
 
 TaskBunny can mark a job as rejected without retrying when `perform` returns `:reject` or `{:reject, something}`

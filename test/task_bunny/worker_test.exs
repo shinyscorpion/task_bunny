@@ -77,6 +77,35 @@ defmodule TaskBunny.WorkerTest do
 
       GenServer.stop(worker)
     end
+
+    test "executes the on_reject callback when rejected" do
+      reset_test_job_retry_interval(5)
+
+      worker = start_worker()
+      payload = %{"fail" => true, "ppid" => self() |> :erlang.term_to_binary() |> Base.encode64()}
+
+      TestJob.enqueue(payload, queue: @queue)
+      # 1 normal + 10 retries = 11
+      JobTestHelper.wait_for_perform(11)
+
+      assert_received :on_reject_callback_called
+
+      GenServer.stop(worker)
+    end
+
+    test "executes the on_reject callback only when rejected" do
+      reset_test_job_retry_interval(5)
+
+      worker = start_worker()
+      payload = %{"fail" => true, "ppid" => self() |> :erlang.term_to_binary() |> Base.encode64()}
+
+      TestJob.enqueue(payload, queue: @queue)
+      JobTestHelper.wait_for_perform()
+
+      refute_received :on_reject_callback_called
+
+      GenServer.stop(worker)
+    end
   end
 
   describe "retry" do
