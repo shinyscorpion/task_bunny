@@ -49,12 +49,13 @@ defmodule TaskBunny.Mixfile do
         "lib/mix/tasks/task_bunny.queue.reset.ex"
       ],
       maintainers: [
+        "Antonio Sagliocco",
         "Elliott Hilaire",
         "Francesco Grammatico",
         "Ian Luites",
+        "Kenneth Lee",
         "Ricardo Perez",
-        "Tatsuya Ono",
-        "Kenneth Lee"
+        "Tatsuya Ono"
       ],
       licenses: ["MIT"],
       links: %{"Github" => "https://github.com/shinyscorpion/task_bunny"}
