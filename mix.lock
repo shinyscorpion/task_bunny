@@ -21,5 +21,5 @@
   "rabbit_common": {:hex, :rabbit_common, "3.6.14", "dc134cd7228f656367e6e6ac88f1f4ef4a63d8a78a2238f52990a4de467708a1", [:make, :rebar3], [{:recon, "2.3.2", [hex: :recon, repo: "hexpm", optional: false]}], "hexpm"},
   "recon": {:hex, :recon, "2.3.2", "4444c879be323b1b133eec5241cb84bd3821ea194c740d75617e106be4744318", [:rebar3], [], "hexpm"},
   "ssl_verify_fun": {:hex, :ssl_verify_fun, "1.1.1", "28a4d65b7f59893bc2c7de786dec1e1555bd742d336043fe644ae956c3497fbe", [:make, :rebar], [], "hexpm"},
-  "unicode_util_compat": {:hex, :unicode_util_compat, "0.3.1", "a1f612a7b512638634a603c8f401892afbf99b8ce93a45041f8aaca99cadb85e", [], [], "hexpm"},
+  "unicode_util_compat": {:hex, :unicode_util_compat, "0.3.1", "a1f612a7b512638634a603c8f401892afbf99b8ce93a45041f8aaca99cadb85e", [], [], "hexpm"}
 }
