@@ -88,7 +88,28 @@ defmodule TaskBunny.Job do
   @callback perform(any) :: :ok | {:ok, any} | {:error, term}
 
   @doc """
-  Callback executed when a process gets rejected.
+  Callback executed when a job starts.
+
+  It receives the raw message structure including payload.
+  """
+  @callback on_start(any) :: :ok
+
+  @doc """
+  Callback executed when a job succeeds.
+
+  It receives the raw message structure including original payload.
+  """
+  @callback on_success(any) :: :ok
+
+  @doc """
+  Callback executed when a job gets requeued for retry.
+
+  It receives the raw message structure including original payload.
+  """
+  @callback on_retry(any) :: :ok
+
+  @doc """
+  Callback executed when a job gets rejected.
 
   It receives in input the whole error trace structure plus the orginal payload for inspection and recovery actions.
   """
@@ -163,10 +184,28 @@ defmodule TaskBunny.Job do
       def retry_interval(_failed_count), do: 300_000
 
       @doc false
+      @spec on_start(any) :: :ok
+      def on_start(_body), do: :ok
+
+      @doc false
+      @spec on_success(any) :: :ok
+      def on_success(_body), do: :ok
+
+      @doc false
+      @spec on_retry(any) :: :ok
+      def on_retry(_body), do: :ok
+
+      @doc false
       @spec on_reject(any) :: :ok
       def on_reject(_body), do: :ok
 
-      defoverridable timeout: 0, max_retry: 0, retry_interval: 1, on_reject: 1
+      defoverridable timeout: 0,
+                     max_retry: 0,
+                     retry_interval: 1,
+                     on_start: 1,
+                     on_success: 1,
+                     on_retry: 1,
+                     on_reject: 1
     end
   end
 

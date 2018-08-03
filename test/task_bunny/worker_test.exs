@@ -78,6 +78,38 @@ defmodule TaskBunny.WorkerTest do
       GenServer.stop(worker)
     end
 
+    test "executes the on_start callback when starting" do
+      worker = start_worker()
+
+      payload = %{
+        "sleep" => 100,
+        "ppid" => self() |> :erlang.term_to_binary() |> Base.encode64()
+      }
+
+      TestJob.enqueue(payload, queue: @queue)
+      assert JobTestHelper.wait_for_perform(1)
+
+      assert_received :on_start_callback_called
+      refute_received :on_success_callback_called
+
+      GenServer.stop(worker)
+    end
+
+    test "executes the on_success callback when successful" do
+      worker = start_worker()
+
+      payload = %{
+        "ppid" => self() |> :erlang.term_to_binary() |> Base.encode64()
+      }
+
+      TestJob.enqueue(payload, queue: @queue)
+      assert JobTestHelper.wait_for_perform()
+
+      assert_received :on_success_callback_called
+
+      GenServer.stop(worker)
+    end
+
     test "executes the on_reject callback when rejected" do
       reset_test_job_retry_interval(5)
 
@@ -125,6 +157,19 @@ defmodule TaskBunny.WorkerTest do
       assert main_count == 0
       assert retry_count == 1
       assert rejected_count == 0
+
+      GenServer.stop(worker)
+    end
+
+    test "executes the on_retry callback when requeued for retry" do
+      worker = start_worker()
+
+      payload = %{"fail" => true, "ppid" => self() |> :erlang.term_to_binary() |> Base.encode64()}
+
+      TestJob.enqueue(payload, queue: @queue)
+      JobTestHelper.wait_for_perform()
+
+      assert_received :on_retry_callback_called
 
       GenServer.stop(worker)
     end
