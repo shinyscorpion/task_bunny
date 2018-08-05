@@ -14,27 +14,28 @@ defmodule TaskBunny.Message do
   @doc """
   Encode message body in JSON with job and argument.
   """
-  @spec encode(atom, any) :: {:ok, String.t()}
-  def encode(job, payload) do
-    data = message_data(job, payload)
+  @spec encode(atom, any, keyword | nil) :: {:ok, String.t()}
+  def encode(job, payload, options \\ []) do
+    data = message_data(job, payload, options)
     Poison.encode(data, pretty: true)
   end
 
   @doc """
   Similar to encode/2 but raises an exception on error.
   """
-  @spec encode!(atom, any) :: String.t()
-  def encode!(job, payload) do
-    data = message_data(job, payload)
+  @spec encode!(atom, any, keyword | nil) :: String.t()
+  def encode!(job, payload, options \\ []) do
+    data = message_data(job, payload, options)
     Poison.encode!(data, pretty: true)
   end
 
-  @spec message_data(atom, any) :: map
-  defp message_data(job, payload) do
+  @spec message_data(atom, any, keyword) :: map
+  defp message_data(job, payload, options) do
     %{
       "job" => encode_job(job),
       "payload" => payload,
-      "created_at" => DateTime.utc_now()
+      "created_at" => DateTime.utc_now(),
+      "id" => options[:id]
     }
   end
 

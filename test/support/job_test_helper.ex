@@ -24,16 +24,37 @@ defmodule TaskBunny.JobTestHelper do
 
     def retry_interval(_), do: RetryInterval.interval()
 
+    def on_start(body) do
+      pid = enqueuer_pid(body)
+      pid && send(pid, :on_start_callback_called)
+      :ok
+    end
+
+    def on_success(body) do
+      pid = enqueuer_pid(body)
+      pid && send(pid, :on_success_callback_called)
+      :ok
+    end
+
+    def on_retry(body) do
+      pid = enqueuer_pid(body)
+      pid && send(pid, :on_retry_callback_called)
+      :ok
+    end
+
     def on_reject(body) do
+      pid = enqueuer_pid(body)
+      pid && send(pid, :on_reject_callback_called)
+      :ok
+    end
+
+    defp enqueuer_pid(body) do
       ppid =
         body
         |> Poison.decode!()
         |> get_in(["payload", "ppid"])
 
-      ppid &&
-        ppid |> Base.decode64!() |> :erlang.binary_to_term() |> send(:on_reject_callback_called)
-
-      :ok
+      ppid && ppid |> Base.decode64!() |> :erlang.binary_to_term()
     end
   end
 
