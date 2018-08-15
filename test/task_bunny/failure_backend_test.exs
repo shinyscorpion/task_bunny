@@ -3,16 +3,6 @@ defmodule TaskBunny.FailureBackendTest do
   alias TaskBunny.{JobError, FailureBackend}
   import ExUnit.{CaptureLog, CaptureIO}
 
-  defp setup_failure_backend_config(failure_backend) do
-    :meck.new(Application, [:passthrough])
-
-    :meck.expect(Application, :fetch_env, fn :task_bunny, :failure_backend ->
-      {:ok, failure_backend}
-    end)
-
-    on_exit(fn -> :meck.unload() end)
-  end
-
   defmodule TestBackend do
     use FailureBackend
 
@@ -30,14 +20,6 @@ defmodule TaskBunny.FailureBackendTest do
     pid: self()
   }
 
-  defp exception_error do
-    Map.merge(@job_error, %{
-      error_type: :exception,
-      exception: RuntimeError.exception("Hello"),
-      stacktrace: System.stacktrace()
-    })
-  end
-
   describe "report_job_error/1" do
     test "reports to Logger backend by default" do
       assert capture_log(fn ->
@@ -52,5 +34,28 @@ defmodule TaskBunny.FailureBackendTest do
                FailureBackend.report_job_error(exception_error())
              end) =~ "Hello Elixir.TestJob"
     end
+  end
+
+  ## PRIVATE FUNCTIONS
+
+  defp exception_error do
+    raise "Hello"
+  rescue
+    e in RuntimeError ->
+      Map.merge(@job_error, %{
+        error_type: :exception,
+        exception: e,
+        stacktrace: __STACKTRACE__
+      })
+  end
+
+  defp setup_failure_backend_config(failure_backend) do
+    :meck.new(Application, [:passthrough])
+
+    :meck.expect(Application, :fetch_env, fn :task_bunny, :failure_backend ->
+      {:ok, failure_backend}
+    end)
+
+    on_exit(fn -> :meck.unload() end)
   end
 end

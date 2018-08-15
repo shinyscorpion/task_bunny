@@ -93,7 +93,7 @@ defmodule TaskBunny.Worker do
     Logger.info(log_msg("terminating", state))
 
     if state.channel do
-      AMQP.Channel.close(state.channel)
+      :ok = AMQP.Channel.close(state.channel)
     end
 
     :normal
@@ -149,7 +149,11 @@ defmodule TaskBunny.Worker do
       {:ok, decoded} ->
         Logger.debug(log_msg("basic_deliver", state, body: body))
 
-        JobRunner.invoke(decoded["job"], decoded["payload"], {body, meta})
+        job = decoded["job"]
+
+        start_callback(job, body)
+
+        JobRunner.invoke(job, decoded["payload"], {body, meta})
 
         {:noreply, %{state | runners: state.runners + 1}}
 
@@ -171,9 +175,7 @@ defmodule TaskBunny.Worker do
 
     case succeeded?(result) do
       true ->
-        Consumer.ack(state.channel, meta, true)
-
-        {:noreply, update_job_stats(state, :succeeded)}
+        handle_successful_job(state, body, meta)
 
       false ->
         handle_failed_job(state, body, meta, result)
@@ -223,6 +225,17 @@ defmodule TaskBunny.Worker do
   defp succeeded?({:ok, _}), do: true
   defp succeeded?(_), do: false
 
+  defp handle_successful_job(state, body, meta) do
+    {:ok, decoded} = Message.decode(body)
+    job = decoded["job"]
+
+    success_callback(job, body)
+
+    Consumer.ack(state.channel, meta, true)
+
+    {:noreply, update_job_stats(state, :succeeded)}
+  end
+
   defp handle_failed_job(state, body, meta, {:error, job_error}) do
     {:ok, decoded} = Message.decode(body)
     failed_count = Message.failed_count(decoded) + 1
@@ -249,6 +262,7 @@ defmodule TaskBunny.Worker do
       {:noreply, update_job_stats(state, :rejected)}
     else
       retry_message(job, state, new_body, meta, failed_count)
+      retry_callback(job, new_body)
       {:noreply, update_job_stats(state, :failed)}
     end
   end
@@ -279,6 +293,12 @@ defmodule TaskBunny.Worker do
     Consumer.ack(state.channel, meta, true)
     :ok
   end
+
+  defp start_callback(job, body), do: job.on_start(body)
+
+  defp success_callback(job, body), do: job.on_success(body)
+
+  defp retry_callback(job, body), do: job.on_retry(body)
 
   defp reject_callback(job, body), do: job.on_reject(body)
 

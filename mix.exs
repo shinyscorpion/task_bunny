@@ -8,7 +8,7 @@ defmodule TaskBunny.Mixfile do
     [
       app: :task_bunny,
       version: @version,
-      elixir: "~> 1.4",
+      elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
@@ -64,7 +64,7 @@ defmodule TaskBunny.Mixfile do
 
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:sasl, :logger],
       mod: {TaskBunny, []}
     ]
   end
@@ -74,17 +74,17 @@ defmodule TaskBunny.Mixfile do
 
   defp deps do
     [
-      {:amqp, "~> 0.3.1"},
-      {:poison, "~> 2.0 or ~> 3.0"},
-
-      # dev/test
+      {:amqp, "~> 1.0"},
+      {:jason, "~> 1.1"},
       {:credo, "~> 0.6", only: [:dev]},
       {:dialyxir, "~> 0.4", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.14", only: :dev},
       {:excoveralls, "~> 0.5", only: :test},
       {:inch_ex, "~> 0.5", only: [:dev, :test]},
-      {:logger_file_backend, "~> 0.0.9", only: :test},
-      {:meck, "~> 0.8.2", only: :test}
+      # TODO: Replace with Mox
+      {:meck, "~> 0.8", only: :test},
+      # See: https://github.com/pma/amqp/issues/99#issuecomment-405006397      
+      {:ranch_proxy_protocol, "~> 2.0", override: true}
     ]
   end
 end

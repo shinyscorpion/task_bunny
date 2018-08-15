@@ -1,5 +1,6 @@
 defmodule TaskBunny.SupervisorTest do
   use ExUnit.Case, async: false
+  import ExUnit.CaptureLog
   import TaskBunny.QueueTestHelper
   alias TaskBunny.{Config, Connection, Queue, JobTestHelper}
   alias JobTestHelper.TestJob
@@ -70,18 +71,20 @@ defmodule TaskBunny.SupervisorTest do
       conn_pid = Process.whereis(conn_name)
       work_pid = Process.whereis(work_name)
 
-      # Close the connection
-      conn = Connection.get_connection!(@host)
-      AMQP.Connection.close(conn)
-      wait_for_process_died(conn_pid)
-      JobTestHelper.wait_for_connection(@host)
+      capture_log(fn ->
+        # Close the connection
+        conn = Connection.get_connection!(@host)
+        :ok = AMQP.Connection.close(conn)
+        wait_for_process_died(conn_pid)
+        JobTestHelper.wait_for_connection(@host)
 
-      new_conn_pid = Process.whereis(conn_name)
-      new_work_pid = Process.whereis(work_name)
+        new_conn_pid = Process.whereis(conn_name)
+        new_work_pid = Process.whereis(work_name)
 
-      # Test if GenServer has different pids
-      refute new_conn_pid == conn_pid
-      refute new_work_pid == work_pid
+        # Test if GenServer has different pids
+        refute new_conn_pid == conn_pid
+        refute new_work_pid == work_pid
+      end)
 
       # Make sure worker handles the job
       payload = %{"hello" => "world"}
@@ -99,18 +102,20 @@ defmodule TaskBunny.SupervisorTest do
       conn_pid = Process.whereis(conn_name)
       work_pid = Process.whereis(work_name)
 
-      # Kill worker
-      Process.exit(work_pid, :kill)
-      wait_for_process_died(work_pid)
-      wait_for_process_up(work_name)
+      capture_log(fn ->
+        # Kill worker
+        Process.exit(work_pid, :kill)
+        wait_for_process_died(work_pid)
+        wait_for_process_up(work_name)
 
-      new_conn_pid = Process.whereis(conn_name)
-      new_work_pid = Process.whereis(work_name)
+        new_conn_pid = Process.whereis(conn_name)
+        new_work_pid = Process.whereis(work_name)
 
-      # Test if the worker is restarted and connection stays same.
-      assert new_conn_pid == conn_pid
-      refute new_work_pid == nil
-      refute new_work_pid == work_pid
+        # Test if the worker is restarted and connection stays same.
+        assert new_conn_pid == conn_pid
+        refute new_work_pid == nil
+        refute new_work_pid == work_pid
+      end)
     end
   end
 end

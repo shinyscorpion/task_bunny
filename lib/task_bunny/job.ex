@@ -73,7 +73,7 @@ defmodule TaskBunny.Job do
   @doc """
   Callback to process a job.
 
-  It can take any type of argument as long as it can be serialized with Poison,
+  It can take any type of argument as long as it can be serialized with Jason,
   but we recommend you to use map with string keys for a consistency.
 
       def perform(name) do
@@ -88,7 +88,28 @@ defmodule TaskBunny.Job do
   @callback perform(any) :: :ok | {:ok, any} | {:error, term}
 
   @doc """
-  Callback executed when a process gets rejected.
+  Callback executed when a job starts.
+
+  It receives the raw message structure including payload.
+  """
+  @callback on_start(any) :: :ok
+
+  @doc """
+  Callback executed when a job succeeds.
+
+  It receives the raw message structure including original payload.
+  """
+  @callback on_success(any) :: :ok
+
+  @doc """
+  Callback executed when a job gets requeued for retry.
+
+  It receives the raw message structure including original payload.
+  """
+  @callback on_retry(any) :: :ok
+
+  @doc """
+  Callback executed when a job gets rejected.
 
   It receives in input the whole error trace structure plus the orginal payload for inspection and recovery actions.
   """
@@ -163,10 +184,28 @@ defmodule TaskBunny.Job do
       def retry_interval(_failed_count), do: 300_000
 
       @doc false
+      @spec on_start(any) :: :ok
+      def on_start(_body), do: :ok
+
+      @doc false
+      @spec on_success(any) :: :ok
+      def on_success(_body), do: :ok
+
+      @doc false
+      @spec on_retry(any) :: :ok
+      def on_retry(_body), do: :ok
+
+      @doc false
       @spec on_reject(any) :: :ok
       def on_reject(_body), do: :ok
 
-      defoverridable timeout: 0, max_retry: 0, retry_interval: 1, on_reject: 1
+      defoverridable timeout: 0,
+                     max_retry: 0,
+                     retry_interval: 1,
+                     on_start: 1,
+                     on_success: 1,
+                     on_retry: 1,
+                     on_reject: 1
     end
   end
 
@@ -184,6 +223,7 @@ defmodule TaskBunny.Job do
   - delay: Set time in milliseconds to schedule the job enqueue time.
   - host: RabbitMQ host. By default it is automatically selected from configuration.
   - queue: RabbitMQ queue. By default it is automatically selected from configuration.
+  - id: Set a job ID to enable unique identification of jobs, e.g. as an idempotency key.
 
   """
   @spec enqueue(atom, any, keyword) :: :ok | {:error, any}
@@ -201,7 +241,8 @@ defmodule TaskBunny.Job do
     queue_data = Config.queue_for_job(job) || []
 
     host = options[:host] || queue_data[:host] || :default
-    {:ok, message} = Message.encode(job, payload)
+    message_options = Keyword.take(options, [:id])
+    {:ok, message} = Message.encode(job, payload, message_options)
 
     case options[:queue] || queue_data[:name] do
       nil -> raise QueueNotFoundError, job: job

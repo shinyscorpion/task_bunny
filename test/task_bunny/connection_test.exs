@@ -1,6 +1,6 @@
 defmodule TaskBunny.ConnectionTest do
   use ExUnit.Case, async: false
-
+  import ExUnit.CaptureLog
   alias TaskBunny.{Connection, Config}
 
   setup do
@@ -44,20 +44,22 @@ defmodule TaskBunny.ConnectionTest do
       :meck.new(Config)
       :meck.expect(Config, :connect_options, fn :foo -> "amqp://localhost:1111" end)
 
-      {:ok, pid} = Connection.start_link(:foo)
-      ret = Connection.subscribe_connection(:foo, self())
+      capture_log(fn ->
+        {:ok, pid} = Connection.start_link(:foo)
+        ret = Connection.subscribe_connection(:foo, self())
 
-      # Trying to connect
-      assert ret == :ok
-      # Since the connect options is invalid, you won't get any message
-      refute_receive {:connected, _}, 10
+        # Trying to connect
+        assert ret == :ok
+        # Since the connect options is invalid, you won't get any message
+        refute_receive {:connected, _}, 10
 
-      # Now connection will be made and you will receive a message
-      :meck.expect(Config, :connect_options, fn :foo -> [] end)
-      send(pid, :connect)
-      assert_receive {:connected, %AMQP.Connection{}}
+        # Now connection will be made and you will receive a message
+        :meck.expect(Config, :connect_options, fn :foo -> [] end)
+        send(pid, :connect)
+        assert_receive {:connected, %AMQP.Connection{}}
 
-      GenServer.stop(pid)
+        GenServer.stop(pid)
+      end)
     end
   end
 
@@ -75,14 +77,16 @@ defmodule TaskBunny.ConnectionTest do
       :meck.new(Config)
       :meck.expect(Config, :connect_options, fn :foo -> [] end)
 
-      {:ok, pid} = Connection.start_link(:foo)
-      Process.unlink(pid)
+      capture_log(fn ->
+        {:ok, pid} = Connection.start_link(:foo)
+        Process.unlink(pid)
 
-      {:ok, conn} = Connection.get_connection(:foo)
-      AMQP.Connection.close(conn)
-      :timer.sleep(10)
+        {:ok, conn} = Connection.get_connection(:foo)
+        :ok = AMQP.Connection.close(conn)
+        :timer.sleep(10)
 
-      refute Process.alive?(pid)
+        refute Process.alive?(pid)
+      end)
     end
   end
 end

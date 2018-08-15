@@ -10,14 +10,14 @@ defmodule TaskBunny.MessageTest do
 
   describe "encode/decode message body(payload)" do
     test "encode and decode payload" do
-      {:ok, encoded} = Message.encode(NameJob, %{"name" => "Joe"})
-      {:ok, %{"job" => job, "payload" => payload}} = Message.decode(encoded)
+      {:ok, encoded} = Message.encode(NameJob, %{"name" => "Joe"}, id: "some-id")
+      {:ok, %{"job" => job, "payload" => payload, "id" => "some-id"}} = Message.decode(encoded)
       assert job.perform(payload) == {:ok, "Joe"}
     end
 
     test "decode broken json" do
       message = "{aaa:bbb}"
-      assert {:error, {:poison_decode_error, _}} = Message.decode(message)
+      assert {:error, {:json_decode_error, _}} = Message.decode(message)
     end
 
     test "decode wrong format" do
@@ -47,7 +47,7 @@ defmodule TaskBunny.MessageTest do
         error_type: :return_value,
         return_value: {:error, :test_error},
         failed_count: 0,
-        stacktrace: System.stacktrace(),
+        stacktrace: nil,
         raw_body: "abcdefg"
       }
 

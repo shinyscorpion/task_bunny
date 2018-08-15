@@ -74,26 +74,26 @@ defmodule TaskBunny.JobError do
   end
 
   @doc false
-  @spec handle_exception(atom, any, struct) :: t
-  def handle_exception(job, payload, exception) do
+  @spec handle_exception(atom, any, struct, Exception.stacktrace()) :: t
+  def handle_exception(job, payload, exception, stacktrace) do
     %__MODULE__{
       job: job,
       payload: payload,
       error_type: :exception,
       exception: exception,
-      stacktrace: System.stacktrace()
+      stacktrace: stacktrace
     }
   end
 
   @doc false
-  @spec handle_exit(atom, any, any) :: t
-  def handle_exit(job, payload, reason) do
+  @spec handle_exit(atom, any, any, Exception.stacktrace()) :: t
+  def handle_exit(job, payload, reason, stacktrace) do
     %__MODULE__{
       job: job,
       payload: payload,
       error_type: :exit,
       reason: reason,
-      stacktrace: System.stacktrace()
+      stacktrace: stacktrace
     }
   end
 

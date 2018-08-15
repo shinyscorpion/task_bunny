@@ -64,10 +64,10 @@ defmodule TaskBunny.JobRunner do
   rescue
     error ->
       Logger.debug("TaskBunny.JobRunner - Runner rescued #{inspect(error)}")
-      {:error, JobError.handle_exception(job, payload, error)}
+      {:error, JobError.handle_exception(job, payload, error, __STACKTRACE__)}
   catch
     _, reason ->
       Logger.debug("TaskBunny.JobRunner - Runner caught reason: #{inspect(reason)}")
-      {:error, JobError.handle_exit(job, payload, reason)}
+      {:error, JobError.handle_exit(job, payload, reason, __STACKTRACE__)}
   end
 end
