@@ -75,7 +75,7 @@ defmodule TaskBunny.Mixfile do
   defp deps do
     [
       {:amqp, "~> 0.3.1"},
-      {:poison, "~> 2.0 or ~> 3.0"},
+      {:jason, "~> 1.1"},
 
       # dev/test
       {:credo, "~> 0.6", only: [:dev]},
@@ -83,8 +83,8 @@ defmodule TaskBunny.Mixfile do
       {:ex_doc, "~> 0.14", only: :dev},
       {:excoveralls, "~> 0.5", only: :test},
       {:inch_ex, "~> 0.5", only: [:dev, :test]},
-      {:logger_file_backend, "~> 0.0.9", only: :test},
-      {:meck, "~> 0.8.2", only: :test}
+      # TODO: Replace with Mox
+      {:meck, "~> 0.8", only: :test}
     ]
   end
 end

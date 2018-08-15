@@ -80,7 +80,7 @@ defmodule TaskBunny.Message.DecodeError do
         :job_not_loaded ->
           "Job is not valid Elixir module"
 
-        :poison_decode_error ->
+        :json_decode_error ->
           "Failed to decode the message in JSON. error=#{inspect(opts[:error])}"
 
         :decode_error ->

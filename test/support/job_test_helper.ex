@@ -51,7 +51,7 @@ defmodule TaskBunny.JobTestHelper do
     defp enqueuer_pid(body) do
       ppid =
         body
-        |> Poison.decode!()
+        |> Jason.decode!()
         |> get_in(["payload", "ppid"])
 
       ppid && ppid |> Base.decode64!() |> :erlang.binary_to_term()
