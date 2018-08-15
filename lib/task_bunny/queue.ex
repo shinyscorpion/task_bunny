@@ -64,7 +64,7 @@ defmodule TaskBunny.Queue do
 
     scheduled = declare(channel, scheduled_queue, scheduled_options)
 
-    AMQP.Channel.close(channel)
+    :ok = AMQP.Channel.close(channel)
 
     {work, retry, rejected, scheduled}
   end
@@ -84,10 +84,10 @@ defmodule TaskBunny.Queue do
     work_queue
     |> queue_with_subqueues()
     |> Enum.each(fn queue ->
-      AMQP.Queue.delete(channel, queue)
+      :ok = AMQP.Queue.delete(channel, queue)
     end)
 
-    AMQP.Channel.close(channel)
+    :ok = AMQP.Channel.close(channel)
     :ok
   end
 
@@ -115,7 +115,7 @@ defmodule TaskBunny.Queue do
   def state(connection, queue) do
     {:ok, channel} = AMQP.Channel.open(connection)
     {:ok, state} = AMQP.Queue.status(channel, queue)
-    AMQP.Channel.close(channel)
+    :ok = AMQP.Channel.close(channel)
 
     state
   end

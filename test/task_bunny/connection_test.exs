@@ -82,7 +82,7 @@ defmodule TaskBunny.ConnectionTest do
         Process.unlink(pid)
 
         {:ok, conn} = Connection.get_connection(:foo)
-        AMQP.Connection.close(conn)
+        :ok = AMQP.Connection.close(conn)
         :timer.sleep(10)
 
         refute Process.alive?(pid)

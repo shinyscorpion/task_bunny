@@ -35,4 +35,8 @@ config :task_bunny,
     ]
   ]
 
+# lager is used by rabbit_common.
+# Silent it by setting the higher loglevel.
+config :lager, handlers: [level: :critical]
+
 import_config "#{Mix.env()}.exs"

@@ -25,7 +25,7 @@ defmodule TaskBunny.QueueTestHelper do
     {:ok, channel} = open_channel(host)
     {:ok, _state} = AMQP.Queue.declare(channel, queue, durable: true)
 
-    AMQP.Channel.close(channel)
+    :ok = AMQP.Channel.close(channel)
 
     :ok
   end
@@ -35,10 +35,10 @@ defmodule TaskBunny.QueueTestHelper do
   def purge(queue, host) when is_binary(queue) do
     {:ok, channel} = open_channel(host)
 
-    AMQP.Queue.purge(channel, queue)
-    AMQP.Queue.delete(channel, queue)
+    {:ok, _} = AMQP.Queue.purge(channel, queue)
+    {:ok, _} = AMQP.Queue.delete(channel, queue)
 
-    AMQP.Channel.close(channel)
+    :ok = AMQP.Channel.close(channel)
 
     :ok
   end
@@ -46,12 +46,12 @@ defmodule TaskBunny.QueueTestHelper do
   def pop(queue) do
     {:ok, channel} = open_channel()
 
-    AMQP.Basic.qos(channel, prefetch_count: 1)
-    AMQP.Basic.consume(channel, queue)
+    :ok = AMQP.Basic.qos(channel, prefetch_count: 1)
+    {:ok, _} = AMQP.Basic.consume(channel, queue)
 
     receive do
       {:basic_deliver, payload, meta} ->
-        AMQP.Channel.close(channel)
+        :ok = AMQP.Channel.close(channel)
         {payload, meta}
     end
   end

@@ -74,17 +74,17 @@ defmodule TaskBunny.Mixfile do
 
   defp deps do
     [
-      {:amqp, "~> 0.3.1"},
+      {:amqp, "~> 1.0"},
       {:jason, "~> 1.1"},
-
-      # dev/test
       {:credo, "~> 0.6", only: [:dev]},
       {:dialyxir, "~> 0.4", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.14", only: :dev},
       {:excoveralls, "~> 0.5", only: :test},
       {:inch_ex, "~> 0.5", only: [:dev, :test]},
       # TODO: Replace with Mox
-      {:meck, "~> 0.8", only: :test}
+      {:meck, "~> 0.8", only: :test},
+      # See: https://github.com/pma/amqp/issues/99#issuecomment-405006397      
+      {:ranch_proxy_protocol, "~> 2.0", override: true}
     ]
   end
 end
