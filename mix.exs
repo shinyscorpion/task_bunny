@@ -8,7 +8,7 @@ defmodule TaskBunny.Mixfile do
     [
       app: :task_bunny,
       version: @version,
-      elixir: "~> 1.4",
+      elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
@@ -64,7 +64,7 @@ defmodule TaskBunny.Mixfile do
 
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:sasl, :logger],
       mod: {TaskBunny, []}
     ]
   end

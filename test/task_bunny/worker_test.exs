@@ -1,6 +1,7 @@
 defmodule TaskBunny.WorkerTest do
   use ExUnit.Case, async: false
   import TaskBunny.QueueTestHelper
+  import ExUnit.CaptureLog
   alias TaskBunny.{Connection, Worker, Queue, JobTestHelper}
   alias JobTestHelper.TestJob
 
@@ -118,7 +119,7 @@ defmodule TaskBunny.WorkerTest do
 
       TestJob.enqueue(payload, queue: @queue)
       # 1 normal + 10 retries = 11
-      JobTestHelper.wait_for_perform(11)
+      capture_log(fn -> JobTestHelper.wait_for_perform(11) end)
 
       assert_received :on_reject_callback_called
 
@@ -132,7 +133,7 @@ defmodule TaskBunny.WorkerTest do
       payload = %{"fail" => true, "ppid" => self() |> :erlang.term_to_binary() |> Base.encode64()}
 
       TestJob.enqueue(payload, queue: @queue)
-      JobTestHelper.wait_for_perform()
+      capture_log(fn -> JobTestHelper.wait_for_perform() end)
 
       refute_received :on_reject_callback_called
 
@@ -147,7 +148,7 @@ defmodule TaskBunny.WorkerTest do
       payload = %{"fail" => true}
 
       TestJob.enqueue(payload, queue: @queue)
-      JobTestHelper.wait_for_perform()
+      capture_log(fn -> JobTestHelper.wait_for_perform() end)
 
       conn = Connection.get_connection!()
       %{message_count: main_count} = Queue.state(conn, main)
@@ -167,7 +168,7 @@ defmodule TaskBunny.WorkerTest do
       payload = %{"fail" => true, "ppid" => self() |> :erlang.term_to_binary() |> Base.encode64()}
 
       TestJob.enqueue(payload, queue: @queue)
-      JobTestHelper.wait_for_perform()
+      capture_log(fn -> JobTestHelper.wait_for_perform() end)
 
       assert_received :on_retry_callback_called
 
@@ -188,7 +189,7 @@ defmodule TaskBunny.WorkerTest do
       payload = %{"fail" => true}
 
       TestJob.enqueue(payload, queue: @queue)
-      JobTestHelper.wait_for_perform(11)
+      capture_log(fn -> JobTestHelper.wait_for_perform(11) end)
 
       # 1 normal + 10 retries = 11
       assert JobTestHelper.performed_count() == 11
@@ -211,7 +212,7 @@ defmodule TaskBunny.WorkerTest do
       payload = %{"reject" => true}
 
       TestJob.enqueue(payload, queue: @queue)
-      JobTestHelper.wait_for_perform()
+      capture_log(fn -> JobTestHelper.wait_for_perform() end)
 
       conn = Connection.get_connection!()
       %{message_count: main_count} = Queue.state(conn, main)
@@ -262,26 +263,28 @@ defmodule TaskBunny.WorkerTest do
   test "invalid payload" do
     :meck.expect(TaskBunny.Consumer, :ack, fn _, _, _ -> nil end)
 
-    assert Worker.handle_info({:basic_deliver, "}", %{}}, %{
-             host: :default,
-             queue: @queue,
-             concurrency: 1,
-             channel: nil,
-             runners: 0,
-             job_stats: %{
-               failed: 0,
-               succeeded: 0,
-               rejected: 0
-             }
-           }) ==
-             {:noreply,
-              %{
-                host: :default,
-                queue: @queue,
-                concurrency: 1,
-                channel: nil,
-                runners: 0,
-                job_stats: %{failed: 0, rejected: 1, succeeded: 0}
-              }}
+    capture_log(fn ->
+      assert Worker.handle_info({:basic_deliver, "}", %{}}, %{
+               host: :default,
+               queue: @queue,
+               concurrency: 1,
+               channel: nil,
+               runners: 0,
+               job_stats: %{
+                 failed: 0,
+                 succeeded: 0,
+                 rejected: 0
+               }
+             }) ==
+               {:noreply,
+                %{
+                  host: :default,
+                  queue: @queue,
+                  concurrency: 1,
+                  channel: nil,
+                  runners: 0,
+                  job_stats: %{failed: 0, rejected: 1, succeeded: 0}
+                }}
+    end)
   end
 end

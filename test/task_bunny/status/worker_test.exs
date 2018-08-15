@@ -1,6 +1,7 @@
 defmodule TaskBunny.Status.WorkerTest do
   use ExUnit.Case, async: false
 
+  import ExUnit.CaptureLog
   import TaskBunny.QueueTestHelper
   alias TaskBunny.{Config, Queue, JobTestHelper}
   alias JobTestHelper.TestJob
@@ -104,7 +105,7 @@ defmodule TaskBunny.Status.WorkerTest do
       payload = %{"fail" => "fail"}
 
       TestJob.enqueue(payload, host: @host, queue: @queue1)
-      JobTestHelper.wait_for_perform()
+      capture_log(fn -> JobTestHelper.wait_for_perform() end)
 
       %{workers: workers} = TaskBunny.Status.overview(@supervisor)
       %{stats: stats} = find_worker(workers, @queue1)
@@ -116,7 +117,7 @@ defmodule TaskBunny.Status.WorkerTest do
       payload = %{"fail" => "fail"}
 
       RejectJob.enqueue(payload, host: @host, queue: @queue2)
-      JobTestHelper.wait_for_perform()
+      capture_log(fn -> JobTestHelper.wait_for_perform() end)
 
       %{workers: workers} = TaskBunny.Status.overview(@supervisor)
       %{stats: stats} = find_worker(workers, @queue2)

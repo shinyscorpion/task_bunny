@@ -1,4 +1,6 @@
 use Mix.Config
 
-config :logger, backends: [{LoggerFileBackend, :log_file}]
-config :logger, :log_file, level: :debug, path: "logs/test.log"
+config :logger,
+  handle_otp_reports: true,
+  handle_sasl_reports: true,
+  level: :warn
