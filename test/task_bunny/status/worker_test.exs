@@ -2,7 +2,7 @@ defmodule TaskBunny.Status.WorkerTest do
   use ExUnit.Case, async: false
 
   import TaskBunny.QueueTestHelper
-  alias TaskBunny.{Config, Queue, JobTestHelper}
+  alias TaskBunny.{Config, Queue, JobTestHelper, PublisherSupervisor}
   alias JobTestHelper.TestJob
 
   @host :worker_test
@@ -50,6 +50,7 @@ defmodule TaskBunny.Status.WorkerTest do
     mock_config()
     JobTestHelper.setup()
 
+    {:ok, _server_pid} = PublisherSupervisor.start_link()
     TaskBunny.Supervisor.start_link(@supervisor, @worker_supervisor)
     JobTestHelper.wait_for_connection(@host)
 

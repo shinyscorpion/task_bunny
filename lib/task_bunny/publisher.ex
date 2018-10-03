@@ -21,8 +21,11 @@ defmodule TaskBunny.Publisher do
     e in [ConnectError, PublishError] -> {:error, e}
   end
 
+  @timeout 10_000
+
   @doc """
-  Similar to publish/4 but raises exception on error.
+  Similar to publish/4 but raises exception on error. It calls the publisher worker to publish the
+  message on the queue
   """
   @spec publish!(atom, String.t(), String.t(), keyword) :: :ok
   def publish!(host, queue, message, options \\ []) do
@@ -31,15 +34,16 @@ defmodule TaskBunny.Publisher do
     #{host}:#{queue}: #{inspect(message)}. options = #{inspect(options)}
     """)
 
-    conn = TaskBunny.Connection.get_connection!(host)
-
     exchange = ""
     routing_key = queue
     options = Keyword.merge([persistent: true], options)
 
-    with {:ok, channel} <- AMQP.Channel.open(conn),
-         :ok <- AMQP.Basic.publish(channel, exchange, routing_key, message, options),
-         :ok <- AMQP.Channel.close(channel) do
+    with :ok <-
+           :poolboy.transaction(
+             :publisher,
+             &GenServer.call(&1, {:publish, host, exchange, routing_key, message, options}),
+             @timeout
+           ) do
       :ok
     else
       error -> raise PublishError, inner_error: error

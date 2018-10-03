@@ -1,7 +1,16 @@
 defmodule TaskBunny.WorkerSupervisorTest do
   use ExUnit.Case, async: false
   import TaskBunny.QueueTestHelper
-  alias TaskBunny.{Config, Connection, Queue, WorkerSupervisor, JobTestHelper}
+
+  alias TaskBunny.{
+    Config,
+    Connection,
+    Queue,
+    WorkerSupervisor,
+    JobTestHelper,
+    PublisherSupervisor
+  }
+
   alias JobTestHelper.TestJob
 
   @queue "task_bunny.worker_supervisor_test"
@@ -33,6 +42,7 @@ defmodule TaskBunny.WorkerSupervisorTest do
   end
 
   setup do
+    {:ok, _server_pid} = PublisherSupervisor.start_link()
     clean(Queue.queue_with_subqueues(@queue))
     JobTestHelper.setup()
     Queue.declare_with_subqueues(:default, @queue)

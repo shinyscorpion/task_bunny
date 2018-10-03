@@ -1,7 +1,7 @@
 defmodule TaskBunny.JobTest do
   use ExUnit.Case
   import TaskBunny.QueueTestHelper
-  alias TaskBunny.{Job, Queue, Message, QueueTestHelper}
+  alias TaskBunny.{Job, Queue, Message, QueueTestHelper, PublisherSupervisor}
 
   @queue "task_bunny.job_test"
 
@@ -11,6 +11,7 @@ defmodule TaskBunny.JobTest do
   end
 
   setup do
+    {:ok, _server_pid} = PublisherSupervisor.start_link()
     clean(Queue.queue_with_subqueues(@queue))
     Queue.declare_with_subqueues(:default, @queue)
 
@@ -43,7 +44,7 @@ defmodule TaskBunny.JobTest do
     test "raises an exception for a wrong host" do
       payload = %{"foo" => "bar"}
 
-      assert_raise TaskBunny.Connection.ConnectError, fn ->
+      assert_raise TaskBunny.Publisher.PublishError, fn ->
         TestJob.enqueue!(payload, queue: @queue, host: :invalid_host)
       end
     end
