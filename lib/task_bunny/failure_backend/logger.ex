@@ -8,7 +8,8 @@ defmodule TaskBunny.FailureBackend.Logger do
 
   # Callback for FailureBackend
   def report_job_error(error = %JobError{}) do
-    get_job_error_message(error)
+    error
+    |> get_job_error_message()
     |> do_report(error.reject)
   end
 
