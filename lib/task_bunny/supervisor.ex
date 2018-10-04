@@ -62,8 +62,8 @@ defmodule TaskBunny.Supervisor do
     [
       {:name, {:local, name}},
       {:worker_module, PublisherWorker},
-      {:size, 15},
-      {:max_overflow, 0}
+      {:size, Config.publisher_pool_size()},
+      {:max_overflow, Config.publisher_max_overflow()}
     ]
   end
 end

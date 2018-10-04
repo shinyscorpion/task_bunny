@@ -1,9 +1,7 @@
 defmodule TaskBunny.WorkerSupervisorTest do
   use ExUnit.Case, async: false
   import TaskBunny.QueueTestHelper
-
   alias TaskBunny.{Config, Connection, Queue, WorkerSupervisor, JobTestHelper}
-
   alias JobTestHelper.TestJob
 
   @queue "task_bunny.worker_supervisor_test"
