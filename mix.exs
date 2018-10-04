@@ -8,7 +8,7 @@ defmodule TaskBunny.Mixfile do
     [
       app: :task_bunny,
       version: @version,
-      elixir: "~> 1.4",
+      elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
@@ -84,7 +84,8 @@ defmodule TaskBunny.Mixfile do
       {:excoveralls, "~> 0.5", only: :test},
       {:inch_ex, "~> 0.5", only: [:dev, :test]},
       {:logger_file_backend, "~> 0.0.9", only: :test},
-      {:meck, "~> 0.8.2", only: :test}
+      {:meck, "~> 0.8.2", only: :test},
+      {:poolboy, "~> 1.5"}
     ]
   end
 end

@@ -70,4 +70,28 @@ defmodule TaskBunny.ConfigTest do
       assert queue_for_job(Foo.High.TestJob) == "test.normal"
     end
   end
+
+  describe "publisher_pool_size" do
+    test "returns the pool size for the publisher if it has been configured for the application" do
+      :meck.expect(Application, :get_env, fn :task_bunny, :publisher_pool_size, 15 -> 5 end)
+
+      assert Config.publisher_pool_size() == 5
+    end
+
+    test "returns 15 by default" do
+      assert Config.publisher_pool_size() == 15
+    end
+  end
+
+  describe "publisher_max_overflow" do
+    test "returns the max overflow for the publisher if is configured for the application" do
+      :meck.expect(Application, :get_env, fn :task_bunny, :publisher_max_overflow, 0 -> 5 end)
+
+      assert Config.publisher_max_overflow() == 5
+    end
+
+    test "returns 0 by default" do
+      assert Config.publisher_max_overflow() == 0
+    end
+  end
 end

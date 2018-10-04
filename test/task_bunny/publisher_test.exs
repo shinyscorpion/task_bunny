@@ -7,7 +7,6 @@ defmodule TaskBunny.PublisherTest do
 
   setup do
     clean([@queue_name])
-
     :ok
   end
 
@@ -18,6 +17,15 @@ defmodule TaskBunny.PublisherTest do
 
       {message, _} = QueueTestHelper.pop(@queue_name)
       assert message == "Hello Queue"
+    end
+
+    test "returns an error tuple when there is an error" do
+      assert Publisher.publish(:invalid, @queue_name, "Hello Queue") ==
+               {:error,
+                %Publisher.PublishError{
+                  inner_error: {:error, :invalid_host},
+                  message: "Failed to publish the message.\nerror={:error, :invalid_host}"
+                }}
     end
   end
 end

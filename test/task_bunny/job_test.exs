@@ -43,7 +43,7 @@ defmodule TaskBunny.JobTest do
     test "raises an exception for a wrong host" do
       payload = %{"foo" => "bar"}
 
-      assert_raise TaskBunny.Connection.ConnectError, fn ->
+      assert_raise TaskBunny.Publisher.PublishError, fn ->
         TestJob.enqueue!(payload, queue: @queue, host: :invalid_host)
       end
     end

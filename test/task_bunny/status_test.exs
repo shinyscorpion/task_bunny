@@ -9,6 +9,7 @@ defmodule TaskBunny.StatusTest do
 
   @supervisor :status_test_supervisor
   @worker_supervisor :status_test_worker_supervisor
+  @publisher :status_test_publisher
 
   defp mock_config do
     worker = [host: @host, queue: @queue, concurrency: 1]
@@ -25,7 +26,7 @@ defmodule TaskBunny.StatusTest do
 
     mock_config()
     JobTestHelper.setup()
-    TaskBunny.Supervisor.start_link(@supervisor, @worker_supervisor)
+    TaskBunny.Supervisor.start_link(@supervisor, @worker_supervisor, @publisher)
 
     on_exit(fn ->
       :meck.unload()

@@ -16,7 +16,7 @@ defmodule TaskBunny.FailureBackend.LoggerTest do
   @exception_error Map.merge(@job_error, %{
                      error_type: :exception,
                      exception: RuntimeError.exception("Hello"),
-                     stacktrace: System.stacktrace()
+                     stacktrace: []
                    })
 
   @return_value_error Map.merge(@job_error, %{

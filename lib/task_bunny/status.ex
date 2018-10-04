@@ -61,7 +61,8 @@ defmodule TaskBunny.Status do
           task_bunny_job_runners_now: {runners, :gauge, "Current amount of TaskBunny runners."},
           task_bunny_jobs_succeeded_total:
             {succeeded, :counter, "The amount of succeeded TaskBunny jobs."},
-          task_bunny_jobs_failed_total: {failed, :counter, "The amount of failed TaskBunny jobs."},
+          task_bunny_jobs_failed_total:
+            {failed, :counter, "The amount of failed TaskBunny jobs."},
           task_bunny_jobs_rejected_total:
             {rejected, :counter, "The amount of rejected TaskBunny jobs."}
         ]

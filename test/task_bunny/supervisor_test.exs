@@ -44,7 +44,7 @@ defmodule TaskBunny.SupervisorTest do
     mock_config()
     JobTestHelper.setup()
 
-    TaskBunny.Supervisor.start_link(:supevisor_test, :wsv_supervisor_test)
+    TaskBunny.Supervisor.start_link(:supevisor_test, :wsv_supervisor_test, :ps_supervisor_test)
     JobTestHelper.wait_for_connection(@host)
     Queue.declare_with_subqueues(:default, @queue)
 

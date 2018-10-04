@@ -60,7 +60,8 @@ defmodule TaskBunny.JobError do
   """
   @spec get_result_info(t) :: map()
   def get_result_info(job_error) do
-    Map.take(job_error, [
+    job_error
+    |> Map.take([
       :error_type,
       :exception,
       :stacktrace,
