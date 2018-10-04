@@ -54,6 +54,7 @@ defmodule TaskBunny.Mixfile do
         "Francesco Grammatico",
         "Ian Luites",
         "Kenneth Lee",
+        "Maria Calderon",
         "Ricardo Perez",
         "Tatsuya Ono"
       ],
