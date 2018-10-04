@@ -1,13 +1,12 @@
 defmodule TaskBunny.PublisherTest do
   use ExUnit.Case, async: false
   import TaskBunny.QueueTestHelper
-  alias TaskBunny.{Publisher, QueueTestHelper, PublisherSupervisor}
+  alias TaskBunny.{Publisher, QueueTestHelper}
 
   @queue_name "task_bunny.test_queue"
 
   setup do
     clean([@queue_name])
-    {:ok, _server_pid} = PublisherSupervisor.start_link()
     :ok
   end
 

@@ -2,12 +2,13 @@ defmodule TaskBunny.Status.WorkerTest do
   use ExUnit.Case, async: false
 
   import TaskBunny.QueueTestHelper
-  alias TaskBunny.{Config, Queue, JobTestHelper, PublisherSupervisor}
+  alias TaskBunny.{Config, Queue, JobTestHelper}
   alias JobTestHelper.TestJob
 
   @host :worker_test
   @supervisor :worker_test_supervisor
   @worker_supervisor :worker_test_worker_supervisor
+  @publisher :workert_test_publisher
   @queue1 "task_bunny.status.worker_test1"
   @queue2 "task_bunny.status.worker_test2"
 
@@ -50,8 +51,7 @@ defmodule TaskBunny.Status.WorkerTest do
     mock_config()
     JobTestHelper.setup()
 
-    {:ok, _server_pid} = PublisherSupervisor.start_link()
-    TaskBunny.Supervisor.start_link(@supervisor, @worker_supervisor)
+    TaskBunny.Supervisor.start_link(@supervisor, @worker_supervisor, @publisher)
     JobTestHelper.wait_for_connection(@host)
 
     Queue.declare_with_subqueues(:default, @queue1)

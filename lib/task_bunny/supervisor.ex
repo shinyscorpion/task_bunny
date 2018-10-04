@@ -11,29 +11,34 @@ defmodule TaskBunny.Supervisor do
   configure child processes based on configuration file.
   """
   use Supervisor
-  alias TaskBunny.{Connection, Config, Initializer, WorkerSupervisor}
+  alias TaskBunny.{Connection, Config, Initializer, WorkerSupervisor, PublisherWorker}
 
   @doc false
   @spec start_link(atom, atom) :: {:ok, pid} | {:error, term}
-  def start_link(name \\ __MODULE__, wsv_name \\ WorkerSupervisor) do
-    Supervisor.start_link(__MODULE__, [wsv_name], name: name)
+  def start_link(name \\ __MODULE__, wsv_name \\ WorkerSupervisor, ps_name \\ :publisher) do
+    Supervisor.start_link(__MODULE__, [wsv_name, ps_name], name: name)
   end
 
   @doc false
   @spec init(list()) ::
           {:ok, {:supervisor.sup_flags(), [Supervisor.Spec.spec()]}}
           | :ignore
-  def init([wsv_name]) do
+  def init([wsv_name, ps_name]) do
     # Add Connection severs for each hosts
     connections =
-      Enum.map(Config.hosts(), fn host ->
-        worker(Connection, [host], id: make_ref())
-      end)
+      Enum.map(
+        Config.hosts(),
+        fn host ->
+          worker(Connection, [host], id: make_ref())
+        end
+      )
+
+    publisher = [:poolboy.child_spec(:publisher, publisher_config(ps_name))]
 
     children =
       case Initializer.alive?() do
-        true -> connections
-        false -> connections ++ [worker(Initializer, [false])]
+        true -> connections ++ publisher
+        false -> connections ++ publisher ++ [worker(Initializer, [false])]
       end
 
     # Define workers and child supervisors to be supervised
@@ -51,5 +56,14 @@ defmodule TaskBunny.Supervisor do
       end
 
     supervise(children, strategy: :one_for_all)
+  end
+
+  defp publisher_config(name) do
+    [
+      {:name, {:local, name}},
+      {:worker_module, PublisherWorker},
+      {:size, 15},
+      {:max_overflow, 0}
+    ]
   end
 end
