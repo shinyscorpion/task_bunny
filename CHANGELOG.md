@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.4
+
+* Managing publisher connections with poolboy. [#65](https://github.com/shinyscorpion/task_bunny/pull/65).
+ Now channels are reused for publishing messages thanks to the usage of Poolboy.
+
 ## 0.3.2
 
 * Reject without retry. [#54](https://github.com/shinyscorpion/task_bunny/pull/54)
