@@ -73,7 +73,7 @@ defmodule TaskBunny.ConfigTest do
 
   describe "publisher_pool_size" do
     test "returns the pool size for the publisher if it has been configured for the application" do
-      :meck.expect(Application, :fetch_env, fn :task_bunny, :publisher_pool_size -> {:ok, 5} end)
+      :meck.expect(Application, :get_env, fn :task_bunny, :publisher_pool_size, 15 -> 5 end)
 
       assert Config.publisher_pool_size() == 5
     end
@@ -85,9 +85,7 @@ defmodule TaskBunny.ConfigTest do
 
   describe "publisher_max_overflow" do
     test "returns the max overflow for the publisher if is configured for the application" do
-      :meck.expect(Application, :fetch_env, fn :task_bunny, :publisher_max_overflow ->
-        {:ok, 5}
-      end)
+      :meck.expect(Application, :get_env, fn :task_bunny, :publisher_max_overflow, 0 -> 5 end)
 
       assert Config.publisher_max_overflow() == 5
     end
