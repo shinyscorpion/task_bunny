@@ -10,7 +10,8 @@ defmodule TaskBunny.ConfigTest do
           [name: "high", worker: [concurrency: 10], jobs: ["High.*"]],
           [name: "normal", jobs: :default],
           [name: "low", worker: false, jobs: [SlowJob]],
-          [name: "disabled", worker: [concurrency: 0], jobs: :default]
+          [name: "disabled", worker: [concurrency: 0], jobs: :default],
+          [name: "storing-rejected-disabled", worker: [store_rejected_jobs: false], jobs: :default]
         ]
       ],
       extra_queue: [
@@ -42,6 +43,7 @@ defmodule TaskBunny.ConfigTest do
                "test.normal",
                "test.low",
                "test.disabled",
+               "test.storing-rejected-disabled",
                "extra.queue1"
              ]
     end
@@ -50,9 +52,10 @@ defmodule TaskBunny.ConfigTest do
   describe "workers" do
     test "lists up information for workers" do
       assert Config.workers() == [
-               [queue: "test.high", concurrency: 10, host: :default],
-               [queue: "test.normal", concurrency: 2, host: :default],
-               [queue: "extra.queue1", concurrency: 1, host: :extra]
+               [queue: "test.high", concurrency: 10, store_rejected_jobs: true, host: :default],
+               [queue: "test.normal", concurrency: 2, store_rejected_jobs: true, host: :default],
+               [queue: "test.storing-rejected-disabled", concurrency: 2, store_rejected_jobs: false, host: :default],
+               [queue: "extra.queue1", concurrency: 1, store_rejected_jobs: true, host: :extra]
              ]
     end
   end

@@ -28,6 +28,7 @@ defmodule TaskBunny.Worker do
           queue: String.t(),
           host: atom,
           concurrency: integer,
+          store_rejected_jobs: boolean,
           channel: AMQP.Channel.t() | nil,
           consumer_tag: String.t() | nil,
           runners: integer,
@@ -41,6 +42,7 @@ defmodule TaskBunny.Worker do
   defstruct queue: nil,
             host: :default,
             concurrency: 1,
+            store_rejected_jobs: true,
             channel: nil,
             consumer_tag: nil,
             runners: 0,
@@ -57,7 +59,8 @@ defmodule TaskBunny.Worker do
     %Worker{
       host: config[:host] || :default,
       queue: config[:queue],
-      concurrency: config[:concurrency]
+      concurrency: config[:concurrency],
+      store_rejected_jobs: Keyword.get(config, :store_rejected_jobs, true)
     }
     |> start_link()
   end
@@ -273,8 +276,10 @@ defmodule TaskBunny.Worker do
 
   @spec reject_message(Worker.t(), any, any) :: :ok
   defp reject_message(state, body, meta) do
-    rejected_queue = Queue.rejected_queue(state.queue)
-    Publisher.publish(state.host, rejected_queue, body)
+    if state.store_rejected_jobs do
+      rejected_queue = Queue.rejected_queue(state.queue)
+      Publisher.publish(state.host, rejected_queue, body)
+    end
 
     Consumer.ack(state.channel, meta, true)
     :ok

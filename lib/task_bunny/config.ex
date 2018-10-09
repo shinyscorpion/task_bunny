@@ -81,9 +81,17 @@ defmodule TaskBunny.Config do
           @default_concurrency
         end
 
+      store_rejected_jobs =
+        if queue[:worker] && is_boolean(queue[:worker][:store_rejected_jobs]) do
+          queue[:worker][:store_rejected_jobs]
+        else
+          true
+        end
+
       [
         queue: queue[:name],
         concurrency: concurrency,
+        store_rejected_jobs: store_rejected_jobs,
         host: queue[:host] || :default
       ]
     end)
