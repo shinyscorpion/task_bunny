@@ -258,6 +258,23 @@ The concurrency is set per an application.
 If you run your application on five different hosts with above configuration,
 there can be 55 jobs performing simultaneously in total.
 
+#### Disable storing rejected jobs in a queue
+
+By default, if a job fails more than `max_retry` times, the payload is sent to `[namespace].[job_name].rejected` queue.
+You can disable this behavior in the config by setting `store_rejected_jobs` worker parameter to `false` (defaults to `true`).
+This might be useful when rejected jobs queue is never consumed, thus making the queue grow infinitely.
+
+```elixir
+config :task_bunny, queue: [
+  namespace: "task_bunny."
+  queues: [
+    [name: "default", jobs: :default, worker: [concurrency: 1, store_rejected_jobs: false]]
+  ]
+]
+```
+
+With above, worker does not store rejected jobs. However, `on_reject` callback is still called when a job gets rejected.
+
 #### Disable worker
 
 You can disable workers starting with your application by setting `1`, `TRUE` or `YES` to `TASK_BUNNY_DISABLE_WORKER` environment variable.

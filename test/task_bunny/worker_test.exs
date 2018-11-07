@@ -10,10 +10,23 @@ defmodule TaskBunny.WorkerTest do
     Queue.queue_with_subqueues(@queue)
   end
 
-  defp start_worker(concurrency \\ 1) do
-    {:ok, worker} = Worker.start_link(queue: @queue, concurrency: concurrency)
+  defp start_worker() do
+    start_worker(%{concurrency: 1, store_rejected_jobs: true})
+  end
+
+  defp start_worker(%{concurrency: concurrency, store_rejected_jobs: store_rejected_jobs}) do
+    {:ok, worker} = Worker.start_link(queue: @queue, concurrency: concurrency, store_rejected_jobs: store_rejected_jobs)
     worker
   end
+
+  defp start_worker(%{concurrency: concurrency}) do
+    start_worker(%{concurrency: concurrency, store_rejected_jobs: true})
+  end
+
+  defp start_worker(%{store_rejected_jobs: store_rejected_jobs}) do
+    start_worker(%{concurrency: 1, store_rejected_jobs: store_rejected_jobs})
+  end
+
 
   setup do
     clean(all_queues())
@@ -61,7 +74,7 @@ defmodule TaskBunny.WorkerTest do
     end
 
     test "concurrency" do
-      worker = start_worker(5)
+      worker = start_worker(%{concurrency: 5})
       payload = %{"sleep" => 10_000}
 
       # Run 10 jobs and each would take 10 seconds to finish
@@ -134,12 +147,10 @@ defmodule TaskBunny.WorkerTest do
       :meck.expect(JobTestHelper.RetryInterval, :interval, fn -> interval end)
     end
 
-    test "retries max_retry times then sends to rejected queue" do
+    def retry_max_times do
       # Sets up TestJob to retry shortly
       reset_test_job_retry_interval(5)
 
-      worker = start_worker()
-      [main, retry, rejected, _scheduled] = all_queues()
       payload = %{"fail" => true}
 
       TestJob.enqueue(payload, queue: @queue)
@@ -147,6 +158,13 @@ defmodule TaskBunny.WorkerTest do
 
       # 1 normal + 10 retries = 11
       assert JobTestHelper.performed_count() == 11
+    end
+
+    test "retries max_retry times then sends to rejected queue" do
+      worker = start_worker()
+      [main, retry, rejected, _scheduled] = all_queues()
+
+      retry_max_times()
 
       conn = Connection.get_connection!()
       %{message_count: main_count} = Queue.state(conn, main)
@@ -156,6 +174,24 @@ defmodule TaskBunny.WorkerTest do
       assert main_count == 0
       assert retry_count == 0
       assert rejected_count == 1
+
+      GenServer.stop(worker)
+    end
+
+    test "does not send to rejected queue if store_rejected_jobs is false" do
+      worker = start_worker(%{store_rejected_jobs: false})
+      [main, retry, rejected, _scheduled] = all_queues()
+
+      retry_max_times()
+
+      conn = Connection.get_connection!()
+      %{message_count: main_count} = Queue.state(conn, main)
+      %{message_count: retry_count} = Queue.state(conn, retry)
+      %{message_count: rejected_count} = Queue.state(conn, rejected)
+
+      assert main_count == 0
+      assert retry_count == 0
+      assert rejected_count == 0
 
       GenServer.stop(worker)
     end
@@ -221,6 +257,7 @@ defmodule TaskBunny.WorkerTest do
              host: :default,
              queue: @queue,
              concurrency: 1,
+             store_rejected_jobs: true,
              channel: nil,
              runners: 0,
              job_stats: %{
@@ -234,6 +271,7 @@ defmodule TaskBunny.WorkerTest do
                 host: :default,
                 queue: @queue,
                 concurrency: 1,
+                store_rejected_jobs: true,
                 channel: nil,
                 runners: 0,
                 job_stats: %{failed: 0, rejected: 1, succeeded: 0}
