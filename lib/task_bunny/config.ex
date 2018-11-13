@@ -97,6 +97,16 @@ defmodule TaskBunny.Config do
     end)
   end
 
+  @doc """
+  Get worker for the application to run by queue name.
+  """
+  @spec workers :: keyword | nil
+  def worker(queue) do
+    Enum.find(workers(), fn(worker) ->
+      worker[:queue] == queue
+    end)
+  end
+
   # Checks worker configuration sanity.
   @spec worker_enabled?(keyword) :: boolean
   defp worker_enabled?(queue) do
