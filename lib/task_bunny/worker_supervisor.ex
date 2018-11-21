@@ -11,17 +11,26 @@ defmodule TaskBunny.WorkerSupervisor do
   """
   use Supervisor
   alias TaskBunny.{Config, Worker}
+  @defaults %{queues: []} # init default options
 
   @doc false
   @spec start_link(atom) :: {:ok, pid} | {:error, term}
-  def start_link(name \\ __MODULE__) do
-    Supervisor.start_link(__MODULE__, [], name: name)
+  def start_link(name \\ __MODULE__, options \\ []) do
+    Supervisor.start_link(__MODULE__, options, name: name)
   end
 
   @doc false
   @spec init(list) :: {:ok, {:supervisor.sup_flags(), [Supervisor.Spec.spec()]}} | :ignore
-  def init([]) do
-    Config.workers()
+  def init(options \\ []) do
+    %{queues: queues} = Enum.into(options, @defaults)
+    workers =
+    if Enum.empty?(queues) do
+      Config.workers()
+    else
+      Config.worker(queues)
+    end
+
+    workers
     |> Enum.map(fn config ->
       worker(
         Worker,
