@@ -98,6 +98,16 @@ defmodule TaskBunny.Config do
   end
 
   @doc """
+  Get workers for the application to run by queue namespace.
+  """
+  @spec worker([namespace: String.t()]) :: keyword | nil
+  def worker([namespace: namespace] = queues) when is_list(queues) do
+    Enum.filter(workers(), fn(worker) ->
+      worker[:queue] =~ namespace
+    end)
+  end
+
+  @doc """
   Get workers for the application to run by queue names.
   """
   @spec worker([String.t()]) :: keyword | nil

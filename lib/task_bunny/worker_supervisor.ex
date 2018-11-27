@@ -14,15 +14,16 @@ defmodule TaskBunny.WorkerSupervisor do
   @defaults %{queues: []} # init default options
 
   @doc false
-  @spec start_link(atom) :: {:ok, pid} | {:error, term}
-  def start_link(name \\ __MODULE__, options \\ []) do
-    Supervisor.start_link(__MODULE__, options, name: name)
+  @spec start_link(atom, list()) :: {:ok, pid} | {:error, term}
+  def start_link(name \\ __MODULE__, arg \\ []) do
+    Supervisor.start_link(__MODULE__, arg, name: name)
   end
 
   @doc false
-  @spec init(list) :: {:ok, {:supervisor.sup_flags(), [Supervisor.Spec.spec()]}} | :ignore
-  def init(options \\ []) do
-    %{queues: queues} = Enum.into(options, @defaults)
+  @spec init(list()) :: {:ok, {:supervisor.sup_flags(), [Supervisor.Spec.spec()]}} | :ignore
+  def init(args \\ []) do
+    %{queues: queues} = Enum.into(args, @defaults)
+
     workers =
     if Enum.empty?(queues) do
       Config.workers()
