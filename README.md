@@ -462,7 +462,7 @@ children = [
           TaskBunny.Supervisor,
           TaskBunny.WorkerSupervisor,
           :publisher,
-          [queues: [namespace: "pest_routes"]] # empty list will start all queues in configs, you can also name queues specifically: [queues: ["mynamespace.myqueue.name"]]
+          [queues: [namespace: "my-name-space"]] # empty list will start all queues in configs, you can also name queues specifically: [queues: ["my-name-space.my-queue.name"]]
         ]
       )
       # ... anything else. (i.e. Ecto.Repo, etc) 
