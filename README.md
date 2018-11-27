@@ -467,6 +467,7 @@ children = [
       )
       # ... anything else. (i.e. Ecto.Repo, etc) 
     ]
+    Supervisor.start_link(children, [strategy: :one_for_one, name: MyApp.Supervisor])
 ```
 
 
