@@ -11,7 +11,11 @@ defmodule TaskBunny.ConfigTest do
           [name: "normal", jobs: :default],
           [name: "low", worker: false, jobs: [SlowJob]],
           [name: "disabled", worker: [concurrency: 0], jobs: :default],
-          [name: "storing-rejected-disabled", worker: [store_rejected_jobs: false], jobs: :default]
+          [
+            name: "storing-rejected-disabled",
+            worker: [store_rejected_jobs: false],
+            jobs: :default
+          ]
         ]
       ],
       extra_queue: [
@@ -50,13 +54,60 @@ defmodule TaskBunny.ConfigTest do
   end
 
   describe "workers" do
-    test "lists up information for workers" do
+    test "lists information for workers" do
       assert Config.workers() == [
                [queue: "test.high", concurrency: 10, store_rejected_jobs: true, host: :default],
                [queue: "test.normal", concurrency: 2, store_rejected_jobs: true, host: :default],
-               [queue: "test.storing-rejected-disabled", concurrency: 2, store_rejected_jobs: false, host: :default],
+               [
+                 queue: "test.storing-rejected-disabled",
+                 concurrency: 2,
+                 store_rejected_jobs: false,
+                 host: :default
+               ],
                [queue: "extra.queue1", concurrency: 1, store_rejected_jobs: true, host: :extra]
              ]
+    end
+
+    test "lists all workers when empty options are provided" do
+      assert Config.workers([]) == [
+               [queue: "test.high", concurrency: 10, store_rejected_jobs: true, host: :default],
+               [queue: "test.normal", concurrency: 2, store_rejected_jobs: true, host: :default],
+               [
+                 queue: "test.storing-rejected-disabled",
+                 concurrency: 2,
+                 store_rejected_jobs: false,
+                 host: :default
+               ],
+               [queue: "extra.queue1", concurrency: 1, store_rejected_jobs: true, host: :extra]
+             ]
+    end
+
+    test "lists information for workers by namespace option" do
+      assert Config.workers(queues: [namespace: "test"]) == [
+               [queue: "test.high", concurrency: 10, store_rejected_jobs: true, host: :default],
+               [queue: "test.normal", concurrency: 2, store_rejected_jobs: true, host: :default],
+               [
+                 queue: "test.storing-rejected-disabled",
+                 concurrency: 2,
+                 store_rejected_jobs: false,
+                 host: :default
+               ]
+             ]
+    end
+
+    test "lists information for workers using namespace option when no queues match the namespace" do
+      assert Config.workers(queues: [namespace: "none"]) == []
+    end
+
+    test "lists information for workers by queues option" do
+      assert Config.workers(queues: ["test.high", "test.normal"]) == [
+               [queue: "test.high", concurrency: 10, store_rejected_jobs: true, host: :default],
+               [queue: "test.normal", concurrency: 2, store_rejected_jobs: true, host: :default]
+             ]
+    end
+
+    test "lists up information for workers by queues option when queue name is not present" do
+      assert Config.workers(queues: ["non.existing.queue"]) == []
     end
   end
 

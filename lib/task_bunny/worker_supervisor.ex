@@ -11,7 +11,6 @@ defmodule TaskBunny.WorkerSupervisor do
   """
   use Supervisor
   alias TaskBunny.{Config, Worker}
-  @defaults %{queues: []} # init default options
 
   @doc false
   @spec start_link(atom, list()) :: {:ok, pid} | {:error, term}
@@ -22,16 +21,8 @@ defmodule TaskBunny.WorkerSupervisor do
   @doc false
   @spec init(list()) :: {:ok, {:supervisor.sup_flags(), [Supervisor.Spec.spec()]}} | :ignore
   def init(args \\ []) do
-    %{queues: queues} = Enum.into(args, @defaults)
-
-    workers =
-    if Enum.empty?(queues) do
-      Config.workers()
-    else
-      Config.worker(queues)
-    end
-
-    workers
+    args
+    |> Config.workers()
     |> Enum.map(fn config ->
       worker(
         Worker,

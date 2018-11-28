@@ -17,7 +17,7 @@ defmodule TaskBunny.StatusTest do
     :meck.new(Config, [:passthrough])
     :meck.expect(Config, :hosts, fn -> [@host] end)
     :meck.expect(Config, :connect_options, fn @host -> "amqp://localhost" end)
-    :meck.expect(Config, :workers, fn -> [worker] end)
+    :meck.expect(Config, :workers, fn(_any) -> [worker] end)
   end
 
   setup do
