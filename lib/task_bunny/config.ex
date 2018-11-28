@@ -69,7 +69,7 @@ defmodule TaskBunny.Config do
   @doc """
   Transforms queue configuration into list of workers for the application to run.
   """
-  @spec workers :: [keyword]
+  @spec workers(none() | [namespace: String.t()] | [String.t()]) :: [keyword]
   def workers do
     queues()
     |> Enum.filter(&worker_enabled?/1)
@@ -100,8 +100,7 @@ defmodule TaskBunny.Config do
   @doc """
   Get workers for the application to run by queue namespace.
   """
-  @spec worker([namespace: String.t()]) :: keyword | nil
-  def worker([namespace: namespace] = queues) when is_list(queues) do
+  def workers([queues: [namespace: namespace]]) do
     Enum.filter(workers(), fn(worker) ->
       worker[:queue] =~ namespace
     end)
@@ -110,21 +109,17 @@ defmodule TaskBunny.Config do
   @doc """
   Get workers for the application to run by queue names.
   """
-  @spec worker([String.t()]) :: keyword | nil
-  def worker(queues) when is_list(queues) do
+  def workers([queues: queues]) when is_list(queues) do
     Enum.filter(workers(), fn(worker) ->
       Enum.member?(queues, worker[:queue])
     end)
   end
 
   @doc """
-  Get worker for the application to run by queue name.
+  Get all workers for the application if the queue options are empty.
   """
-  @spec worker(String.t()) :: keyword | nil
-  def worker(queue) do
-    Enum.find(workers(), fn(worker) ->
-      worker[:queue] == queue
-    end)
+  def workers([]) do
+    workers()
   end
 
   # Checks worker configuration sanity.

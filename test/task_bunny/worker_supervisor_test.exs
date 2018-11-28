@@ -38,7 +38,7 @@ defmodule TaskBunny.WorkerSupervisorTest do
     Queue.declare_with_subqueues(:default, @queue)
 
     :meck.new(Config, [:passthrough])
-    :meck.expect(Config, :workers, fn -> workers() end)
+    :meck.expect(Config, :workers, fn(_any) -> workers() end)
 
     on_exit(fn ->
       JobTestHelper.teardown()
