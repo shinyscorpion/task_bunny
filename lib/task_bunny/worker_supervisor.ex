@@ -13,15 +13,16 @@ defmodule TaskBunny.WorkerSupervisor do
   alias TaskBunny.{Config, Worker}
 
   @doc false
-  @spec start_link(atom) :: {:ok, pid} | {:error, term}
-  def start_link(name \\ __MODULE__) do
-    Supervisor.start_link(__MODULE__, [], name: name)
+  @spec start_link(atom, list()) :: {:ok, pid} | {:error, term}
+  def start_link(name \\ __MODULE__, arg \\ []) do
+    Supervisor.start_link(__MODULE__, arg, name: name)
   end
 
   @doc false
-  @spec init(list) :: {:ok, {:supervisor.sup_flags(), [Supervisor.Spec.spec()]}} | :ignore
-  def init([]) do
-    Config.workers()
+  @spec init(list()) :: {:ok, {:supervisor.sup_flags(), [Supervisor.Spec.spec()]}} | :ignore
+  def init(args \\ []) do
+    args
+    |> Config.workers()
     |> Enum.map(fn config ->
       worker(
         Worker,

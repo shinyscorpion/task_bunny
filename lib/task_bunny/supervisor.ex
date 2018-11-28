@@ -15,15 +15,15 @@ defmodule TaskBunny.Supervisor do
 
   @doc false
   @spec start_link(atom, atom) :: {:ok, pid} | {:error, term}
-  def start_link(name \\ __MODULE__, wsv_name \\ WorkerSupervisor, ps_name \\ :publisher) do
-    Supervisor.start_link(__MODULE__, [wsv_name, ps_name], name: name)
+  def start_link(name \\ __MODULE__, wsv_name \\ WorkerSupervisor, ps_name \\ :publisher, options \\ []) do
+    Supervisor.start_link(__MODULE__, [wsv_name, ps_name, options], name: name)
   end
 
   @doc false
   @spec init(list()) ::
           {:ok, {:supervisor.sup_flags(), [Supervisor.Spec.spec()]}}
           | :ignore
-  def init([wsv_name, ps_name]) do
+  def init([wsv_name, ps_name, options]) do
     # Add Connection severs for each hosts
     connections =
       Enum.map(
@@ -45,7 +45,7 @@ defmodule TaskBunny.Supervisor do
     children =
       case {Config.auto_start?(), Config.disable_worker?()} do
         {true, false} ->
-          children ++ [supervisor(WorkerSupervisor, [wsv_name])]
+          children ++ [supervisor(WorkerSupervisor, [wsv_name, options])]
 
         {true, true} ->
           # Only connections

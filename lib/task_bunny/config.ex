@@ -69,7 +69,7 @@ defmodule TaskBunny.Config do
   @doc """
   Transforms queue configuration into list of workers for the application to run.
   """
-  @spec workers :: [keyword]
+  @spec workers(none() | [namespace: String.t()] | [String.t()]) :: [keyword]
   def workers do
     queues()
     |> Enum.filter(&worker_enabled?/1)
@@ -95,6 +95,31 @@ defmodule TaskBunny.Config do
         host: queue[:host] || :default
       ]
     end)
+  end
+
+  @doc """
+  Get workers for the application to run by queue namespace.
+  """
+  def workers([queues: [namespace: namespace]]) do
+    Enum.filter(workers(), fn(worker) ->
+      worker[:queue] =~ namespace
+    end)
+  end
+
+  @doc """
+  Get workers for the application to run by queue names.
+  """
+  def workers([queues: queues]) when is_list(queues) do
+    Enum.filter(workers(), fn(worker) ->
+      Enum.member?(queues, worker[:queue])
+    end)
+  end
+
+  @doc """
+  Get all workers for the application if the queue options are empty.
+  """
+  def workers([]) do
+    workers()
   end
 
   # Checks worker configuration sanity.

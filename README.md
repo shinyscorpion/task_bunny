@@ -132,6 +132,7 @@ You need to redefine a queue when you want to change the retry interval for a qu
 #### Umbrella app
 
 When you use TaskBunny under an umbrella app and each apps needs a different queue definition, you can prefix config key like below so that it doesn't overwrite the other configuration.
+_For more granular control (starting a subset of queues) see [Control Startup](#Control-Startup) under Connection management_
 
 ```elixir
   config :task_bunny, app_a_queue: [
@@ -439,6 +440,36 @@ If you don't want to start TaskBunny automatically in a specific environment, se
 ```elixir
 config :task_bunny, disable_auto_start: true
 ```
+
+##### Control Startup
+If you wan to control the startup process yourself, disable `task_bunny` as a runtime dependency and invoke [TaskBunny.Supervisor](./lib/task_bunny/supervisor.ex) yourself:
+
+```elixir
+# mix.exs
+defp deps do
+[
+  {:task_bunny, "~> 0.3.2", runtime: false}
+]
+end
+```
+
+Add `TaskBunny.Supervisor` to your supervisor tree
+```elixir
+# Somewhere in you application
+children = [
+      supervisor(TaskBunny.Supervisor,
+        [
+          TaskBunny.Supervisor,
+          TaskBunny.WorkerSupervisor,
+          :publisher,
+          [queues: [namespace: "my-name-space"]] # empty list will start all queues in configs, you can also name queues specifically: [queues: ["my-name-space.my-queue.name"]]
+        ]
+      )
+      # ... anything else. (i.e. Ecto.Repo, etc) 
+    ]
+    Supervisor.start_link(children, [strategy: :one_for_one, name: MyApp.Supervisor])
+```
+
 
 #### Get connection
 
