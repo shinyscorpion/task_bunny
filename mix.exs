@@ -65,7 +65,7 @@ defmodule TaskBunny.Mixfile do
 
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:lager, :logger],
       mod: {TaskBunny, []}
     ]
   end
@@ -75,7 +75,7 @@ defmodule TaskBunny.Mixfile do
 
   defp deps do
     [
-      {:amqp, "~> 0.3.1"},
+      {:amqp, "~> 1.1"},
       {:poison, "~> 2.0 or ~> 3.0"},
 
       # dev/test
