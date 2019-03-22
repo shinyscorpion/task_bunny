@@ -96,7 +96,7 @@ defmodule TaskBunny.Worker do
     Logger.info(log_msg("terminating", state))
 
     if state.channel do
-      AMQP.Channel.close(state.channel)
+      :ok = AMQP.Channel.close(state.channel)
     end
 
     :normal
