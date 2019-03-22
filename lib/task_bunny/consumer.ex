@@ -32,7 +32,7 @@ defmodule TaskBunny.Consumer do
   """
   @spec cancel(AMQP.Channel.t(), String.t()) :: {:ok, String.t()}
   def cancel(channel, consumer_tag) do
-    AMQP.Basic.cancel(channel, consumer_tag)
+    {:ok, _} = AMQP.Basic.cancel(channel, consumer_tag)
   end
 
   @doc """
@@ -41,10 +41,12 @@ defmodule TaskBunny.Consumer do
   @spec ack(AMQP.Channel.t(), map, boolean) :: :ok
   def ack(channel, meta, succeeded)
 
-  def ack(channel, %{delivery_tag: tag}, true), do: AMQP.Basic.ack(channel, tag)
+  def ack(channel, %{delivery_tag: tag}, true) do
+    :ok = AMQP.Basic.ack(channel, tag)
+  end
 
   def ack(channel, %{delivery_tag: tag}, false) do
     # You have to set false to requeue option to be dead lettered
-    AMQP.Basic.nack(channel, tag, requeue: false)
+    :ok = AMQP.Basic.nack(channel, tag, requeue: false)
   end
 end

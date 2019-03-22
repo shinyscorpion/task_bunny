@@ -72,7 +72,7 @@ defmodule TaskBunny.SupervisorTest do
 
       # Close the connection
       conn = Connection.get_connection!(@host)
-      AMQP.Connection.close(conn)
+      :ok = AMQP.Connection.close(conn)
       wait_for_process_died(conn_pid)
       JobTestHelper.wait_for_connection(@host)
 
