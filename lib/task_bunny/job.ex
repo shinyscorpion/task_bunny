@@ -49,11 +49,11 @@ defmodule TaskBunny.Job do
 
   # Retry
 
-  By default TaskBunny retries 10 times every five minutes for a failed job.
+  By default TaskBunny retries after at least five minutes, up to 10 times for a failed job.
   You can change this by overriding `max_retry/0` and `retry_interval/1`.
 
   For example, if you want the job to be retried five times and gradually
-  increase the interval based on failed times, you can write logic like
+  increase the minimal interval based on failed times, you can write logic like
   the following:
 
       defmodule HttpSyncJob do
