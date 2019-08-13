@@ -70,7 +70,10 @@ defmodule TaskBunny.JobError do
       :failed_count,
       :queue
     ])
-    |> Enum.map(fn {k, v} -> {k, inspect(v)} end)
+    |> Enum.map(fn
+      {k, v} when is_binary(v) -> {k, v}
+      {k, v} -> {k, inspect(v)}
+    end)
     |> Map.new()
   end
 
