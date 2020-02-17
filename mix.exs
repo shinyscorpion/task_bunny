@@ -85,7 +85,7 @@ defmodule TaskBunny.Mixfile do
       {:excoveralls, "~> 0.5", only: :test},
       {:inch_ex, "~> 0.5", only: [:dev, :test]},
       {:logger_file_backend, "~> 0.0.9", only: :test},
-      {:meck, "~> 0.8.2", only: :test},
+      {:meck, "~> 0.8.13", only: :test},
       {:poolboy, "~> 1.5"}
     ]
   end
