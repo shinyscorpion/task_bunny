@@ -61,6 +61,11 @@ config :task_bunny, queue: [
 ]
 ```
 
+By default TaskBunny uses Poison to encode/decode JSON. This can be changed using `json_library`:
+```elixir
+config :task_bunny, json_library: Jason
+```
+
 ### 4. Define TaskBunny job
 
 Use `TaskBunny.Job` module in your job module and define `perform/1` that takes a map as an argument.

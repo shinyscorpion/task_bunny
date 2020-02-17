@@ -17,12 +17,12 @@ defmodule TaskBunny.MessageTest do
 
     test "decode broken json" do
       message = "{aaa:bbb}"
-      assert {:error, {:poison_decode_error, _}} = Message.decode(message)
+      assert {:error, {:decode_error, _}} = Message.decode(message)
     end
 
     test "decode wrong format" do
       message = "{\"foo\": \"bar\"}"
-      assert {:error, {:decode_exception, _}} = Message.decode(message)
+      assert {:error, {:decode_error, _}} = Message.decode(message)
     end
 
     test "decode invalid job" do

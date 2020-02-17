@@ -17,7 +17,7 @@ defmodule TaskBunny.Message do
   @spec encode(atom, any) :: {:ok, String.t()}
   def encode(job, payload) do
     data = message_data(job, payload)
-    Poison.encode(data, pretty: true)
+    TaskBunny.json_library().encode(data)
   end
 
   @doc """
@@ -26,7 +26,7 @@ defmodule TaskBunny.Message do
   @spec encode!(atom, any) :: String.t()
   def encode!(job, payload) do
     data = message_data(job, payload)
-    Poison.encode!(data, pretty: true)
+    TaskBunny.json_library().encode!(data)
   end
 
   @spec message_data(atom, any) :: map
@@ -43,7 +43,7 @@ defmodule TaskBunny.Message do
   """
   @spec decode(String.t()) :: {:ok, map} | {:error, any}
   def decode(message) do
-    case Poison.decode(message) do
+    case TaskBunny.json_library().decode(message) do
       {:ok, decoded} ->
         job = decode_job(decoded["job"])
 
@@ -53,11 +53,9 @@ defmodule TaskBunny.Message do
           {:error, :job_not_loaded}
         end
 
-      error ->
-        {:error, {:poison_decode_error, error}}
+      {:error, error} ->
+        {:error, {:decode_error, error}}
     end
-  rescue
-    error -> {:error, {:decode_exception, error}}
   end
 
   @doc """
@@ -130,9 +128,9 @@ defmodule TaskBunny.Message do
 
   def add_error_log(raw_message, error) do
     raw_message
-    |> Poison.decode!()
+    |> TaskBunny.json_library().decode!()
     |> add_error_log(error)
-    |> Poison.encode!(pretty: true)
+    |> TaskBunny.json_library().encode!()
   end
 
   defp host do
@@ -153,7 +151,7 @@ defmodule TaskBunny.Message do
 
   def failed_count(raw_message) do
     raw_message
-    |> Poison.decode!()
+    |> TaskBunny.json_library().decode!()
     |> failed_count()
   end
 end

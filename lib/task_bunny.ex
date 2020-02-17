@@ -3,6 +3,8 @@ defmodule TaskBunny do
   # for more information on OTP Applications
   @moduledoc false
 
+  @json_library Application.get_env(:task_bunny, :json_library, Poison)
+
   use Application
 
   alias TaskBunny.Status
@@ -21,6 +23,8 @@ defmodule TaskBunny do
     opts = [strategy: :one_for_one, name: TaskBunny]
     Supervisor.start_link(children, opts)
   end
+
+  def json_library, do: @json_library
 
   defp register_metrics do
     if Code.ensure_loaded(Wobserver) == {:module, Wobserver} do
