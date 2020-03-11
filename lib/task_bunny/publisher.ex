@@ -47,4 +47,29 @@ defmodule TaskBunny.Publisher do
       error -> raise PublishError, inner_error: error
     end
   end
+
+  @spec exchange_publish(atom, String.t(), String.t(), String.t(), keyword) :: :ok | {:error, any}
+  def exchange_publish(host, exchange, queue, message, options \\ []) do
+    exchange_publish!(host, exchange, queue, message, options)
+  rescue
+    e in [ConnectError, PublishError] -> {:error, e}
+  end
+
+  @spec exchange_publish!(atom, String.t(), String.t(), String.t(), keyword) :: :ok
+  def exchange_publish!(host, exchange, queue, message, options \\ []) do
+    Logger.debug("""
+    TaskBunny.Publisher: publish
+    #{host}:#{queue}: #{inspect(message)}. options = #{inspect(options)}
+    """)
+    options = Keyword.merge([persistent: true], options)
+
+    case :poolboy.transaction(
+           :publisher,
+           &GenServer.call(&1, {:publish, host, exchange, queue, message, options}),
+           @poolboy_timeout
+         ) do
+      :ok -> :ok
+      error -> raise PublishError, inner_error: error
+    end
+  end
 end
