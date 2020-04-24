@@ -11,7 +11,7 @@ defmodule TaskBunny.Supervisor do
   configure child processes based on configuration file.
   """
   use Supervisor
-  alias TaskBunny.{Connection, Config, Initializer, WorkerSupervisor, PublisherWorker}
+  alias TaskBunny.{Config, Connection, Initializer, PublisherWorker, WorkerSupervisor}
 
   @doc false
   @spec start_link(atom, atom) :: {:ok, pid} | {:error, term}

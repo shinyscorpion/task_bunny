@@ -27,10 +27,12 @@ defmodule TaskBunny.PublisherWorker do
   @spec handle_call({:publish, atom, String.t(), String.t(), String.t(), list}, any, map) ::
           {:reply, :ok, map}
   def handle_call({:publish, host, exchange, routing_key, message, options}, _from, state) do
-    with {:ok, channel, new_state} <- get_channel(host, state) do
-      {:reply, AMQP.Basic.publish(channel, exchange, routing_key, message, options), new_state}
-    else
-      error -> {:reply, error, state}
+    case get_channel(host, state) do
+      {:ok, channel, new_state} ->
+        {:reply, AMQP.Basic.publish(channel, exchange, routing_key, message, options), new_state}
+
+      error ->
+        {:reply, error, state}
     end
   end
 

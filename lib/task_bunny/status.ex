@@ -5,7 +5,7 @@ defmodule TaskBunny.Status do
   # This module is private to TaskBunny.
   # It's aimed at providing useful stats to Wobserver integration.
   #
-  alias TaskBunny.{Status, Connection}
+  alias TaskBunny.{Connection, Status}
   alias TaskBunny.Status.Worker
 
   @typedoc ~S"""

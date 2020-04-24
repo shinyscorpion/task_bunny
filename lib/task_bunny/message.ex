@@ -8,8 +8,8 @@ defmodule TaskBunny.Message do
   However in case you need to encode/decode TaskBunny messages,
   this module will help.
   """
-  alias TaskBunny.Message.DecodeError
   alias TaskBunny.JobError
+  alias TaskBunny.Message.DecodeError
 
   @doc """
   Encode message body in JSON with job and argument.

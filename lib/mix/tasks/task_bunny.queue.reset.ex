@@ -10,7 +10,7 @@ defmodule Mix.Tasks.TaskBunny.Queue.Reset do
   Therefore all messages in the queues are removed.
   """
 
-  alias TaskBunny.{Connection, Config, Queue}
+  alias TaskBunny.{Config, Connection, Queue}
 
   @doc false
   @spec run(list) :: any

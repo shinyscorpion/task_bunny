@@ -15,7 +15,13 @@ defmodule TaskBunny.WorkerTest do
   end
 
   defp start_worker(%{concurrency: concurrency, store_rejected_jobs: store_rejected_jobs}) do
-    {:ok, worker} = Worker.start_link(queue: @queue, concurrency: concurrency, store_rejected_jobs: store_rejected_jobs)
+    {:ok, worker} =
+      Worker.start_link(
+        queue: @queue,
+        concurrency: concurrency,
+        store_rejected_jobs: store_rejected_jobs
+      )
+
     worker
   end
 
@@ -26,7 +32,6 @@ defmodule TaskBunny.WorkerTest do
   defp start_worker(%{store_rejected_jobs: store_rejected_jobs}) do
     start_worker(%{concurrency: 1, store_rejected_jobs: store_rejected_jobs})
   end
-
 
   setup do
     clean(all_queues())

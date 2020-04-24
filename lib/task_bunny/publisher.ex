@@ -6,7 +6,7 @@ defmodule TaskBunny.Publisher do
   You should use Job.enqueue to enqueue a job from your application.
   """
   require Logger
-  alias TaskBunny.{Publisher.PublishError, Connection.ConnectError}
+  alias TaskBunny.{Connection.ConnectError, Publisher.PublishError}
 
   @poolboy_timeout 10_000
 
@@ -61,6 +61,7 @@ defmodule TaskBunny.Publisher do
     TaskBunny.Publisher: publish
     #{host}:#{queue}: #{inspect(message)}. options = #{inspect(options)}
     """)
+
     options = Keyword.merge([persistent: true], options)
 
     case :poolboy.transaction(

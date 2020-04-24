@@ -31,7 +31,7 @@ defmodule TaskBunny.FailureBackend do
   See `TaskBunny.JobError` for the details.
 
   """
-  alias TaskBunny.{JobError, Config, FailureBackend}
+  alias TaskBunny.{Config, FailureBackend, JobError}
 
   @doc """
   Callback to report a job error.
