@@ -27,7 +27,7 @@ defmodule TaskBunny.JobTestHelper do
     def on_reject(body) do
       ppid =
         body
-        |> Poison.decode!()
+        |> Jason.decode!()
         |> get_in(["payload", "ppid"])
 
       ppid &&

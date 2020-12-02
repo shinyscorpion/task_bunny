@@ -73,7 +73,7 @@ defmodule TaskBunny.Job do
   @doc """
   Callback to process a job.
 
-  It can take any type of argument as long as it can be serialized with Poison,
+  It can take any type of argument as long as it can be serialized with Jason,
   but we recommend you to use map with string keys for a consistency.
 
       def perform(name) do
