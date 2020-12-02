@@ -82,7 +82,7 @@ defmodule TaskBunny.JobError do
       payload: payload,
       error_type: :exception,
       exception: exception,
-      stacktrace: System.stacktrace()
+      stacktrace: Process.info(self(), :current_stacktrace)
     }
   end
 
@@ -94,7 +94,7 @@ defmodule TaskBunny.JobError do
       payload: payload,
       error_type: :exit,
       reason: reason,
-      stacktrace: System.stacktrace()
+      stacktrace: Process.info(self(), :current_stacktrace)
     }
   end
 

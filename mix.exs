@@ -8,7 +8,7 @@ defmodule TaskBunny.Mixfile do
     [
       app: :task_bunny,
       version: @version,
-      elixir: "~> 1.4",
+      elixir: "~> 1.7.4",
       elixirc_paths: elixirc_paths(Mix.env()),
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
@@ -65,7 +65,7 @@ defmodule TaskBunny.Mixfile do
 
   def application do
     [
-      extra_applications: [:logger],
+      extra_applications: [:lager, :logger, :amqp],
       mod: {TaskBunny, []}
     ]
   end
@@ -75,17 +75,17 @@ defmodule TaskBunny.Mixfile do
 
   defp deps do
     [
-      {:amqp, "~> 0.3.1"},
-      {:poison, "~> 2.0 or ~> 3.0"},
+      {:amqp, "~> 1.6"},
+      {:jason, "~> 1.2"},
 
       # dev/test
       {:credo, "~> 0.6", only: [:dev]},
-      {:dialyxir, "~> 0.4", only: [:dev], runtime: false},
-      {:ex_doc, "~> 0.14", only: :dev},
-      {:excoveralls, "~> 0.5", only: :test},
-      {:inch_ex, "~> 0.5", only: [:dev, :test]},
-      {:logger_file_backend, "~> 0.0.9", only: :test},
-      {:meck, "~> 0.8.2", only: :test},
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
+      {:ex_doc, "~> 0.23.0", only: :dev},
+      {:excoveralls, "~> 0.13.3", only: :test},
+      {:inch_ex, "~> 2.0", only: [:dev, :test]},
+      {:logger_file_backend, "~> 0.0.11", only: :test},
+      {:meck, "~> 0.9.0", only: :test},
       {:poolboy, "~> 1.5"}
     ]
   end

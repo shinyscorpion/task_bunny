@@ -17,7 +17,7 @@ defmodule TaskBunny.MessageTest do
 
     test "decode broken json" do
       message = "{aaa:bbb}"
-      assert {:error, {:poison_decode_error, _}} = Message.decode(message)
+      assert {:error, {:jason_decode_error, _}} = Message.decode(message)
     end
 
     test "decode wrong format" do
@@ -47,7 +47,7 @@ defmodule TaskBunny.MessageTest do
         error_type: :return_value,
         return_value: {:error, :test_error},
         failed_count: 0,
-        stacktrace: System.stacktrace(),
+        stacktrace: Process.info(self(), :current_stacktrace),
         raw_body: "abcdefg"
       }
 
