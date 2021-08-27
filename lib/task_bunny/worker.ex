@@ -148,7 +148,8 @@ defmodule TaskBunny.Worker do
   # Called when message was delivered from RabbitMQ.
   # Invokes a job here.
   def handle_info({:basic_deliver, body, meta}, state) do
-    case Message.decode(body) do
+    uncompressed_body = Message.uncompress(body, meta)
+    case Message.decode(uncompressed_body) do
       {:ok, decoded} ->
         Logger.debug(log_msg("basic_deliver", state, body: body))
 
@@ -157,7 +158,9 @@ defmodule TaskBunny.Worker do
         {:noreply, %{state | runners: state.runners + 1}}
 
       error ->
-        Logger.error(log_msg("basic_deliver invalid body", state, body: body, error: error))
+        Logger.error(
+          log_msg("basic_deliver invalid body", state, body: body, meta: meta, error: error)
+        )
 
         reject_message(state, body, meta)
 
