@@ -149,6 +149,7 @@ defmodule TaskBunny.Worker do
   # Invokes a job here.
   def handle_info({:basic_deliver, body, meta}, state) do
     uncompressed_body = Message.uncompress(body, meta)
+
     case Message.decode(uncompressed_body) do
       {:ok, decoded} ->
         Logger.debug(log_msg("basic_deliver", state, body: body))
