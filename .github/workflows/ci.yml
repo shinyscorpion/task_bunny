@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+env:
+  MIX_ENV: test
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      rabbitmq:
+        image: rabbitmq
+        ports:
+          - 5672:5672
+    strategy:
+      matrix:
+        elixir: [1.7.1]
+        otp: [21.0]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup elixir
+        uses: erlef/setup-beam@v1
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+      - name: Install Mix dependencies
+        run: mix deps.get
+      - name: Check Formatting
+        run: mix format --check-formatted
+      - name: Run Credo
+        run: mix credo --strict
+      - name: Compile dependencies
+        run: mix deps.compile -f
+      - name: Compile Mix app
+        run: mix compile -f
+      - name: Run tests
+        run: mix test.ci
+

@@ -17,6 +17,7 @@ erl_crash.dump
 *.ez
 
 /logs
+/log
 
 # asdf version file
 .tool-versions

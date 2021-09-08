@@ -1,9 +1,7 @@
 # TaskBunny
 
 [![Hex.pm](https://img.shields.io/hexpm/v/task_bunny.svg "Hex")](https://hex.pm/packages/task_bunny)
-[![Build Status](https://travis-ci.org/shinyscorpion/task_bunny.svg?branch=master)](https://travis-ci.org/shinyscorpion/task_bunny)
-[![Inline docs](http://inch-ci.org/github/shinyscorpion/task_bunny.svg?branch=master)](http://inch-ci.org/github/shinyscorpion/task_bunny)
-[![Deps Status](https://beta.hexfaktor.org/badge/all/github/shinyscorpion/task_bunny.svg)](https://beta.hexfaktor.org/github/shinyscorpion/task_bunny)
+[![CI](https://github.com/salemove/task_bunny/actions/workflows/ci.yml/badge.svg)](https://github.com/salemove/task_bunny/actions/workflows/ci.yml)
 [![Hex.pm](https://img.shields.io/hexpm/l/task_bunny.svg "License")](LICENSE.md)
 
 TaskBunny is a background processing application written in Elixir and uses RabbitMQ as a messaging backend.
@@ -25,12 +23,11 @@ However you might want to try out TaskBunny in the following cases:
 - You want to enqueue jobs from other system via RabbitMQ
 - You want to control the concurrency to avoid making too much traffic
 
-
 ## Getting started
 
 ### 1. Check requirements
 
-- Elixir 1.4+
+- Elixir 1.7+
 - RabbitMQ 3.6.0 or greater
 
 ### 2. Install TaskBunny
@@ -115,7 +112,6 @@ If have a config like above, TaskBunny will define these four queues on RabbitMQ
 - task_bunny.normal.rejected: queue that stores jobs failed more than allowed times
 - task_bunny.normal.delay: queue that stores jobs that are performed in the future
 
-
 #### Reset queues
 
 TaskBunny provides a mix task to reset queues.
@@ -127,7 +123,6 @@ Existing messages in the queue will be lost so please be aware of this.
 ```
 
 You need to redefine a queue when you want to change the retry interval for a queue.
-
 
 #### Umbrella app
 
@@ -148,7 +143,6 @@ When you use TaskBunny under an umbrella app and each apps needs a different que
     ]
   ]
 ```
-
 
 ## Enqueue job
 
@@ -501,15 +495,14 @@ If you are not familiar with them we recommend you to look into those.
 
 The following plugins will help you use RabbitMQ with TaskBunny.
 
-* [Management Plugin](http://www.rabbitmq.com/management.html): provides an HTTP-based API for management and monitoring of your RabbitMQ server, along with a browser-based UI and a command line tool, rabbitmqadmin.
-* [Shovel Plugin](http://www.rabbitmq.com/shovel.html): helps you to move messages(job) from a queue to another queue.
+- [Management Plugin](http://www.rabbitmq.com/management.html): provides an HTTP-based API for management and monitoring of your RabbitMQ server, along with a browser-based UI and a command line tool, rabbitmqadmin.
+- [Shovel Plugin](http://www.rabbitmq.com/shovel.html): helps you to move messages(job) from a queue to another queue.
 
 #### Wobserver integration
 
 TaskBunny automatically integrates with [Wobserver](https://github.com/shinyscorpion/wobserver).
 All worker and connection information will be added as a page on the web interface.
 The current amount of job runners and job success, failure, and reject totals are added to the `/metrics` endpoint.
-
 
 ## Copyright and License
 

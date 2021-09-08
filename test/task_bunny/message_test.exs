@@ -36,6 +36,14 @@ defmodule TaskBunny.MessageTest do
 
       assert {:error, :job_not_loaded} == Message.decode(message)
     end
+
+    test "decode compressed json" do
+      encoded_json = %{"pay" => 'load'} |> Poison.encode!()
+      compressed_json = :zlib.compress(encoded_json)
+
+      message = Message.uncompress(compressed_json, %{content_encoding: "zlib"})
+      assert message == encoded_json
+    end
   end
 
   describe "add_error_log" do

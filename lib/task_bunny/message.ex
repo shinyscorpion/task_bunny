@@ -77,6 +77,13 @@ defmodule TaskBunny.Message do
     end
   end
 
+  @doc """
+  Uncompresses the message with zlib algorithm
+  """
+  @spec uncompress(String.t(), map) :: String.t()
+  def uncompress(message, %{content_encoding: "zlib"}), do: :zlib.uncompress(message)
+  def uncompress(message, %{}), do: message
+
   @spec encode_job(atom) :: String.t()
   defp encode_job(job) do
     job
