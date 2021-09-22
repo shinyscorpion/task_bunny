@@ -148,26 +148,12 @@ defmodule TaskBunny.Worker do
   # Called when message was delivered from RabbitMQ.
   # Invokes a job here.
   def handle_info({:basic_deliver, body, meta}, state) do
-    uncompressed_body = Message.uncompress(body, meta)
+    case Message.uncompress(body, meta) do
+      {:ok, uncompressed_body} ->
+        decode_body(uncompressed_body, meta, state)
 
-    case Message.decode(uncompressed_body) do
-      {:ok, decoded} ->
-        Logger.debug(log_msg("basic_deliver", state, body: body))
-
-        JobRunner.invoke(decoded["job"], decoded["payload"], {body, meta})
-
-        {:noreply, %{state | runners: state.runners + 1}}
-
-      error ->
-        Logger.error(
-          log_msg("basic_deliver invalid body", state, body: body, meta: meta, error: error)
-        )
-
-        reject_message(state, body, meta)
-
-        # Needs state.runners + 1, because reject_payload does state.runners - 1
-        state = %{state | runners: state.runners + 1}
-        {:noreply, update_job_stats(state, :rejected)}
+      {:error, error} ->
+        Logger.error(log_msg("uncompress_error", state, body: body, meta: meta, error: error))
     end
   end
 
@@ -207,6 +193,28 @@ defmodule TaskBunny.Worker do
     }
 
     {:reply, status, state}
+  end
+
+  defp decode_body(body, meta, state) do
+    case Message.decode(body) do
+      {:ok, decoded} ->
+        Logger.debug(log_msg("basic_deliver", state, body: body))
+
+        JobRunner.invoke(decoded["job"], decoded["payload"], {body, meta})
+
+        {:noreply, %{state | runners: state.runners + 1}}
+
+      error ->
+        Logger.error(
+          log_msg("basic_deliver invalid body", state, body: body, meta: meta, error: error)
+        )
+
+        reject_message(state, body, meta)
+
+        # Needs state.runners + 1, because reject_payload does state.runners - 1
+        state = %{state | runners: state.runners + 1}
+        {:noreply, update_job_stats(state, :rejected)}
+    end
   end
 
   @spec pname(String.t()) :: atom

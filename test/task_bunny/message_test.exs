@@ -41,8 +41,13 @@ defmodule TaskBunny.MessageTest do
       encoded_json = %{"pay" => 'load'} |> Poison.encode!()
       compressed_json = :zlib.compress(encoded_json)
 
-      message = Message.uncompress(compressed_json, %{content_encoding: "zlib"})
+      {:ok, message} = Message.uncompress(compressed_json, %{content_encoding: "zlib"})
       assert message == encoded_json
+    end
+
+    test "problematic compressed json return an error" do
+      {:error, error} = Message.uncompress("random_string", %{content_encoding: "zlib"})
+      assert error == %ErlangError{original: :data_error}
     end
   end
 
