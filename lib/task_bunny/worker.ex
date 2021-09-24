@@ -153,7 +153,9 @@ defmodule TaskBunny.Worker do
         decode_body(uncompressed_body, meta, state)
 
       {:error, error} ->
-        Logger.error(log_msg("uncompress_error", state, body: body, meta: meta, error: error))
+        Logger.error(log_msg("uncompress error", state, body: body, meta: meta, error: error))
+
+        {:noreply, update_job_stats(state, :failed)}
     end
   end
 
